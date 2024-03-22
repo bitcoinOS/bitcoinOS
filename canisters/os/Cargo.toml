@@ -1,0 +1,23 @@
+[package]
+name = "os"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+ic-cdk-macros = { workspace = true }
+ic-cdk-timers = { workspace = true } # Feel free to remove this dependency if you don't need timers
+ic-stable-structures = { workspace = true }
+ic-ledger-types ={ worksapce = true }
+
+ciborium = { workspace = true }
+
+serde = { workspace = true }
+thiserror = { workspace = true }

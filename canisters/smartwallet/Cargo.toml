@@ -1,0 +1,39 @@
+[package]
+name = "smartwallet"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# for ICP
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+ic-cdk-timers = { workspace = true } # Feel free to remove this dependency if you don't need timers
+ic-stable-structures = { workspace = true }
+
+# for Bitcoin & RGB
+aluvm = { workspace = true }
+amplify = { workspace = true }
+bitcoin = { workspace = true }
+bp-core = { workspace = true }
+core2 = { workspace = true }
+
+getrandom = { workspace = true }
+maybe-async ={ workspace = true }
+miniscript = { workspace = true }
+rgb-schemata = { workspace = true }
+rgb-std = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+strict_encoding = { workspace = true }
+strict_types = { workspace = true }
+thiserror = { workspace = true }
+zeroize = { workspace = true }
+zeroize_derive = { workspace = true }
+
+ic-wasi-polyfill = { git = "https://github.com/wasm-forge/ic-wasi-polyfill", version = "0.3.17" }

@@ -1,0 +1,26 @@
+type Action = variant { Delete; Create };
+type Error = variant {
+  AlreadyExists;
+  CreateCanisterFailed : record { msg : text };
+  Unknown;
+  WriteError : record { msg : text };
+};
+type Result = variant { Ok : principal; Err : Error };
+type Tokens = record { e8s : nat64 };
+type WalletAction = record {
+  action : Action;
+  operator : principal;
+  op_time : nat64;
+};
+type WalletOwner = record {
+  owner : principal;
+  canister_id : principal;
+  created_at : nat64;
+};
+service : {
+  canister_balance : () -> (Tokens);
+  count_wallet : () -> (nat64) query;
+  create_wallet : () -> (Result);
+  get_wallet_action : (nat64) -> (opt WalletAction) query;
+  list_wallet : () -> (vec WalletOwner) query;
+}

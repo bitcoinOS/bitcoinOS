@@ -1,0 +1,24 @@
+{
+  "canisters": {
+    
+    "os": {
+      "candid": "canisters/os/os.did",
+      "package": "os",
+      "type": "rust"
+    },
+    "smartwallet": {
+      "candid": "canisters/smartwallet/wallet.did",
+      "package": "smartwallet",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  
+  "output_env_file": ".env",
+  "version": 1
+}
