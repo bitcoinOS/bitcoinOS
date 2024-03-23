@@ -14,6 +14,8 @@ In the era of artificial intelligence, data is considered the most important mea
 
 Similar to Bitcoin's empowerment of identity and currency, btcOS's data empowerment can activate innovation for everyone by utilizing massive data with large language models (LLMs) or large world models (LWM). This not only promotes the rapid integration of Web2 and Web3 but also drives the widespread adoption of Bitcoin and blockchain technology.
 
+[White paper](./whitepaper/btcOS-whitepaper.pdf)
+
 ## Vision
 - Digital Sovereign Network: While Bitcoin L1 has successfully established sovereignty over identity and assets, btcOS takes this concept to new heights. Built on the core of Bitcoin L1 and utilizing the RGB smart contract protocol on the ICP network, btcOS constructs Bitcoin L2: Fastnet. Fastnet provides comprehensive Bitcoin smart contract functionality and unlimited scalability while enhancing support for data sovereignty. On the btcOS platform, ownership and rights to data assets belong entirely to individuals, making data assets a first-class asset.
 
