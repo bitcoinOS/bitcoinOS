@@ -44,7 +44,7 @@ To learn more before you start working with bitcoinOS, see the following documen
 If you want to start working on your project right away, you might want to try the following commands:
 
 ```bash
-git clone https://github.com/bitcoinOSlabs/bitcoinOS.git
+git clone https://github.com/bitcoinOS/bitcoinOS.git
 cd bitcoinOS/
 dfx help
 dfx canister --help
