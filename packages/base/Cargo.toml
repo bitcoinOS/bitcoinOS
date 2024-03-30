@@ -1,0 +1,15 @@
+[package]
+name = "base"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bitcoin = { workspace = true }
+candid = { workspace = true }
+ciborium = { workspace = true }
+ic-cdk = { workspace = true }
+ic-stable-structures = { workspace = true }
+serde = { workspace = true }
+thiserror ={ workspace = true }
