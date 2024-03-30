@@ -1,0 +1,17 @@
+type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type Metadata = record { network : BitcoinNetwork };
+type Result = variant { Ok : text; Err : StewardError };
+type Result_1 = variant { Ok : bool; Err : StewardError };
+type StewardError = variant {
+  NetworkAlreadyExists;
+  ECDSAKeyUpdateError;
+  ECDSAKeyNotFound : text;
+  ECDSAKeyAlreadyExists : text;
+};
+type UpdateKeyRequest = record { new_key : text; old_key : text };
+service : (text) -> {
+  get_ecdsa_key : () -> (Result) query;
+  metadata : () -> (Metadata) query;
+  register_ecdsa_key : (text) -> (Result_1);
+  update_ecdsa_key : (UpdateKeyRequest) -> (Result_1);
+}
