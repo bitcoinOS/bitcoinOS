@@ -10,6 +10,11 @@
       "candid": "canisters/smartwallet/wallet.did",
       "package": "smartwallet",
       "type": "rust"
+    },
+    "steward" : {
+      "candid": "canisters/steward/steward.did",
+      "package": "steward",
+      "type": "rust"
     }
   },
   "defaults": {
