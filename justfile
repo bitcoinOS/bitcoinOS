@@ -5,4 +5,4 @@ translate_wasm:
     wasi2ic ./target/wasm32-wasi/release/smartwallet.wasm smartwallet.wasm
 
 install_wallet:
-    dfx canister install --mode reinstall --wasm smartwallet.wasm smartwallet
+    dfx canister install --mode reinstall --wasm smartwallet.wasm smartwallet --argument '("regtest", "replace by steward canister id", "ecdsa_key")'

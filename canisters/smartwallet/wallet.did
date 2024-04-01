@@ -1,3 +1,41 @@
-service : {
-    "greet": (text) -> (text) query;
-}
+type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type Metadata = record { 
+    network : BitcoinNetwork;
+    steward_canister: principal;
+    key_name: text;
+    updated_time: u64; 
+    };
+type MetadataResult = variant { Ok : Metadata; Err : WalletError };
+
+type WalletError = variant {
+    ECDSAKeyAlreadyExists : text;
+    ECDSAKeyNotFound : text;
+    ECDSAKeyUpdateError;
+    RegisterECDSAKeyError;
+    NetworkAlreadyExists;
+    UnAuthorized : text;
+    CreateWalletError : text
+};
+
+type BoolResult = variant { Ok : bool; Err : WalletError };
+type StringResult = variant { Ok : text; Err : WalletError };
+type NetworkResponse = record { network : text };
+type ControllerResult = variant { Ok : vec principal; Err : WalletError };
+
+type UpdateKeyRequest = record { new_key : text; old_key : text };
+
+service : (text) -> {
+
+    // Query
+    controller : () -> (ControllerResult) query;
+    get_edcsa_key : () -> (StringResult) query;
+    metadata : () -> (MetadataResult) query;
+    network : () -> (NetworkResponse) query;
+    
+    // Update
+    get_or_create_wallet_address: () -> (StringResult);
+    register_ecdsa_key : (text) -> (BoolResult);
+    update_ecdsa_key: (UpdateKeyRequest) -> (BoolResult);
+    issue_rgb20 : () -> (text);
+    
+}   

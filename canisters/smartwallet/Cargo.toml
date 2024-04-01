@@ -12,10 +12,10 @@ crate-type = ["cdylib"]
 # for ICP
 candid = { workspace = true }
 ic-cdk = { workspace = true }
-ic-cdk-timers = { workspace = true } # Feel free to remove this dependency if you don't need timers
+ic-cdk-timers = { workspace = true }
 ic-stable-structures = { workspace = true }
 
-# for Bitcoin & RGB
+# for bitcoin & RGB
 aluvm = { workspace = true }
 amplify = { workspace = true }
 bitcoin = { workspace = true }
@@ -37,3 +37,6 @@ zeroize = { workspace = true }
 zeroize_derive = { workspace = true }
 
 ic-wasi-polyfill = { git = "https://github.com/wasm-forge/ic-wasi-polyfill", version = "0.3.17" }
+
+base = { path = "../../packages/base" }
+
