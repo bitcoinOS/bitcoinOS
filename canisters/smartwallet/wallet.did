@@ -14,9 +14,11 @@ type WalletError = variant {
     RegisterECDSAKeyError;
     NetworkAlreadyExists;
     UnAuthorized : text;
-    CreateWalletError : text
+    CreateWalletError : text;
+    BaseError : text;
 };
 
+type U64Result = variant { Ok : u64; Err : WalletError };
 type BoolResult = variant { Ok : bool; Err : WalletError };
 type StringResult = variant { Ok : text; Err : WalletError };
 type NetworkResponse = record { network : text };
@@ -33,6 +35,7 @@ service : (text) -> {
     network : () -> (NetworkResponse) query;
     
     // Update
+    balance : (text) -> (StringResult) ;
     get_or_create_wallet_address: () -> (StringResult);
     register_ecdsa_key : (text) -> (BoolResult);
     update_ecdsa_key: (UpdateKeyRequest) -> (BoolResult);

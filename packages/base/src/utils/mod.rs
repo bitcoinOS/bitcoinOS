@@ -1,30 +1,32 @@
 use std::future::Future;
+use std::str::FromStr;
 
 use bitcoin::secp256k1::PublicKey;
-use bitcoin::{Network, ScriptBuf};
+use bitcoin::{Address, Network, ScriptBuf};
 use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::Principal;
 use ic_cdk::api::call::{call_with_payment, CallResult};
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetBalanceRequest, GetCurrentFeePercentilesRequest, GetUtxosRequest,
-    GetUtxosResponse, MillisatoshiPerByte, Satoshi, SendTransactionRequest,
+    GetUtxosResponse, MillisatoshiPerByte, Satoshi, SendTransactionRequest, Utxo,
 };
 
 use crate::constants::{
-    GET_CURRENT_FEE_PERCENTILES_CYCLES, GET_UTXOS_COST_CYCLES, SEND_TRANSACTION_BASE_CYCLES,
-    SEND_TRANSACTION_PER_BYTE_CYCLES,
+    DEFAULT_FEE_MILLI_SATOSHI, GET_CURRENT_FEE_PERCENTILES_CYCLES, GET_UTXOS_COST_CYCLES,
+    SEND_TRANSACTION_BASE_CYCLES, SEND_TRANSACTION_PER_BYTE_CYCLES,
 };
 use crate::domain::Wallet;
+use crate::tx::TransactionInfo;
+use crate::{bitcoins, ecdsa, ICBitcoinNetwork};
 use crate::{constants::GET_BALANCE_COST_CYCLES, error::Error};
-use crate::{ecdsa, ICBitcoinNetwork};
 
-pub type WalletResult<T> = Result<T, Error>;
+pub type BaseResult<T> = Result<T, Error>;
 
 /// Returns the balance of the given bitcoin address from IC management canister
 ///
 /// NOTE: Relies on the `bitcoin_get_balance` endpoint.
 /// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_get_balance
-pub async fn get_balance(
+pub async fn balance(
     address: impl Into<String>,
     network: BitcoinNetwork,
 ) -> Result<Satoshi, Error> {
@@ -42,50 +44,55 @@ pub async fn get_balance(
         .map_err(|e| e.into())
 }
 
-/// Returns UTXOs of the given bitcoin address
-///
-/// NOTE: Relies on the `bitcoin_get_utxos` endpoint.
-/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_get_utxos
-pub async fn get_utxos(
-    address: impl Into<String>,
-    network: BitcoinNetwork,
-) -> Result<GetUtxosResponse, Error> {
-    let args = (GetUtxosRequest {
-        address: address.into(),
-        network,
-        filter: None,
-    },);
+/// Build an unsigned transaction for the given amount, network, address
+pub async fn build_unsigned_transaction(
+    wallet: Wallet,
+    amount: Satoshi,
+    receive_address: String,
+    network: ICBitcoinNetwork,
+) -> BaseResult<TransactionInfo> {
+    let fee_percentiles = bitcoins::get_current_fee_percentiles(network).await?;
 
-    let fee = GET_UTXOS_COST_CYCLES;
+    let fee_per_byte = if fee_percentiles.is_empty() {
+        DEFAULT_FEE_MILLI_SATOSHI
+    } else {
+        // Choose the median of the percentiles
+        fee_percentiles[fee_percentiles.len() / 2]
+    };
 
-    call_management_with_payment("bitcion_get_utxos", args, fee)
-        .await
-        .map(|(utxo,)| utxo)
-        .map_err(|e| e.into())
+    ic_cdk::print("Fetching UTXOs... \n");
+
+    // Get the all UTXOS for the given address and network
+    let utxos = bitcoins::get_utxos(wallet.address.to_string(), network)
+        .await?
+        .utxos;
+
+    let receive_address = Address::from_str(&receive_address)
+        .map_err(|e| Error::BitcoinAddressError(e.to_string()))
+        .and_then(|address| {
+            address
+                .require_network(match_network(network))
+                .map_err(|e| e.into())
+        })?;
+
+    // Build transaction
+    build_transaction(wallet, &utxos, &receive_address, amount, fee_per_byte).await
 }
 
-/// Returns the current fee percentiles measured in millisatoshi per byte
-/// Percentiles are computed from the last 10,000 transactions (if available).
-///
-/// NOTE: Relies on the `bitcoin_get_current_fee_percentiles` endpoint.
-/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-
-pub async fn get_current_fee_percentiles(
-    network: BitcoinNetwork,
-) -> WalletResult<MillisatoshiPerByte> {
-    let args = (GetCurrentFeePercentilesRequest { network },);
-    let fee = GET_CURRENT_FEE_PERCENTILES_CYCLES;
-
-    call_management_with_payment("bitcoin_get_current_fee_percentiles", args, fee)
-        .await
-        .map(|(percentiles,)| percentiles)
-        .map_err(|e| e.into())
+async fn build_transaction(
+    wallet: Wallet,
+    utxos: &[Utxo],
+    receive_address: &Address,
+    amount: Satoshi,
+    fee_per_byte: MillisatoshiPerByte,
+) -> BaseResult<TransactionInfo> {
+    todo!()
 }
-
 /// Sends a transaction to bitcoin network
 ///
 /// NOTE: Relies on the `bitcoin_send_transaction` endpoint.
 /// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_send_transaction
-pub async fn send_transaction(transaction: Vec<u8>, network: BitcoinNetwork) -> WalletResult<()> {
+pub async fn send_transaction(transaction: Vec<u8>, network: BitcoinNetwork) -> BaseResult<()> {
     let fee = SEND_TRANSACTION_BASE_CYCLES
         + (transaction.len() as u64) * SEND_TRANSACTION_PER_BYTE_CYCLES;
 
@@ -107,7 +114,7 @@ pub async fn create_wallet(
     steward_canister: Principal,
     bitcoin_network: ICBitcoinNetwork,
     key_name: String,
-) -> WalletResult<Wallet> {
+) -> BaseResult<Wallet> {
     if !is_normal_principal(principal) {
         return Err(Error::InvalidPrincipal(principal));
     }

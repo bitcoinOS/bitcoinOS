@@ -1,3 +1,4 @@
+pub mod bitcoins;
 pub mod constants;
 pub mod domain;
 pub mod ecdsa;
