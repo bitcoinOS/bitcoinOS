@@ -13,14 +13,14 @@ pub struct Wallet {
 }
 
 #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-pub struct ECDSAPublicKey {
+pub struct EcdsaPublicKey {
     pub canister_id: Option<Principal>,
     pub derivation_path: Vec<Vec<u8>>,
     pub key_id: EcdsaKeyId,
 }
 
 #[derive(CandidType, Deserialize, Debug, Serialize)]
-pub struct ECDSAPublicKeyReply {
+pub struct EcdsaPublicKeyReply {
     pub public_key: Vec<u8>,
     pub chain_code: Vec<u8>,
 }
@@ -35,4 +35,25 @@ pub struct EcdsaKeyId {
 pub enum EcdsaCurve {
     #[serde(rename = "secp256k1")]
     Secp256k1,
+}
+
+#[derive(CandidType, Deserialize, Debug)]
+pub struct SignWithEcdsaReply {
+    pub signature: Vec<u8>,
+}
+
+#[derive(CandidType, Serialize, Debug)]
+pub struct SignWithEcdsa {
+    pub message_hash: Vec<u8>,
+    pub derivation_path: Vec<Vec<u8>>,
+    pub key_id: EcdsaKeyId,
+}
+
+/// 2-2 MultiSignature a transaction will contains 2 signatures,
+/// the first signature is the wallet sign, the second signature is the steward sign
+/// the sequcence is [wallet_signature, steward_signature]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MultiSigIndex {
+    First,  // For `Wallet` canister
+    Second, // For `Steward` canister
 }

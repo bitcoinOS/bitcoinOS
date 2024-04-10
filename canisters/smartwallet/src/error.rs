@@ -25,6 +25,9 @@ pub enum WalletError {
 
     #[error("Error {0:?} when use base function")]
     BaseError(String),
+
+    #[error("Wallet {0:?} not found")]
+    WalletNotFound(String),
 }
 
 impl From<base::error::Error> for WalletError {

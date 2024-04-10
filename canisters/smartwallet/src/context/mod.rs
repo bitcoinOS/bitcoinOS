@@ -8,6 +8,7 @@ use ic_stable_structures::{
     BTreeMap as StableBTreeMap, Cell as StableCell, DefaultMemoryImpl, RestrictedMemory,
 };
 
+pub type Timestamp = u64;
 pub type DefMem = DefaultMemoryImpl;
 pub type RM = RestrictedMemory<DefMem>;
 pub type VM = VirtualMemory<RM>;
@@ -39,12 +40,15 @@ thread_local! {
             controllers: StableBTreeMap::init(
                 MEMORY_MANAGER.with(|m| m.borrow().get(CONTROLLER_ID))
             ),
+            // logs: TODO:
         }
     )
 }
 
+/// The Smart wallet state will store mulitple wallets(addresses)
 pub struct State {
     pub metadata: StableCell<Metadata, RM>,
     pub raw_wallet: RawWalletStable,
-    pub controllers: StableBTreeMap<Principal, u64, Memory>,
+    pub controllers: StableBTreeMap<Principal, Timestamp, Memory>,
+    // pub logs: StableLog      // TODO: Add logs
 }

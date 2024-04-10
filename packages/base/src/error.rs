@@ -31,6 +31,24 @@ pub enum Error {
 
     #[error("Failed to update ECDSA key")]
     ECDSAKeyUpdateError,
+
+    #[error("Amount is not match with address amount")]
+    AmountsAndAddressesMismatch,
+
+    #[error("Transaction and signatures mismatch")]
+    TransactionAndSignaturesMismatch,
+
+    #[error("Transaction hash error: {0:?}")]
+    TransactionHashError(String),
+
+    #[error("P2wshSigHash error: {0:?}")]
+    P2wshSigHashError(String),
+
+    #[error("Transaction amount less than dust")]
+    AmountLessThanDust,
+
+    #[error("Insufficient funds")]
+    InsufficientFunds,
 }
 
 impl From<(ic_cdk::api::call::RejectionCode, String)> for Error {

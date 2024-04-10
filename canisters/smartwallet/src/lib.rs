@@ -9,10 +9,15 @@ pub mod rgb;
 use std::str::FromStr;
 
 use crate::context::STATE;
-use crate::domain::{request::UpdateKeyRequest, response::NetworkResponse, Metadata};
+use crate::domain::{
+    request::{TransferRequest, UpdateKeyRequest},
+    response::NetworkResponse,
+    Metadata,
+};
 use crate::error::WalletError;
 
-use base::utils::{create_wallet, validate_network};
+use base::tx::RawTransactionInfo;
+use base::utils::{create_wallet, to_ic_bitcoin_network};
 use candid::Principal;
 use domain::SelfCustodyKey;
 use ic_cdk::api::management_canister::bitcoin::Satoshi;
@@ -23,9 +28,10 @@ use ic_cdk::export_candid;
 async fn init(network: String, steward_canister: String, key_name: String) {
     ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
-    let network = validate_network(&network);
-    let steward_canister = Principal::from_str(&steward_canister).expect("Failed to parse steward canister id");
-    
+    let network = to_ic_bitcoin_network(&network);
+    let steward_canister =
+        Principal::from_str(&steward_canister).expect("Failed to parse steward canister id");
+
     // TODO: FIXME when bitcoin network is standby
     // let owner = ic_caller();
 
@@ -35,14 +41,16 @@ async fn init(network: String, steward_canister: String, key_name: String) {
     //     steward_canister,
     // };
 
+    // Create a wallet using ECDSA Key canister and interface
     // let wallet = create_wallet(owner, steward_canister, network, key_name.clone())
     //     .await
     //     .map(|w| w.into()).expect("Failed to create first wallet in init wallet canister");
 
     STATE.with(|m| {
         let mut state = m.borrow_mut();
-    
-        state.metadata
+
+        state
+            .metadata
             .set(Metadata {
                 network,
                 steward_canister,
@@ -51,7 +59,6 @@ async fn init(network: String, steward_canister: String, key_name: String) {
             })
             .expect("Failed to init network");
 
-        
         state.controllers.insert(ic_caller(), ic_time());
 
         // state.raw_wallet.insert(wallet_key, wallet);

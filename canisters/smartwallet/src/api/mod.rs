@@ -4,11 +4,13 @@ mod get_ecdsa_key;
 mod register_ecdsa_key;
 mod update_ecdsa_key;
 
+use base::tx::RawTransactionInfo;
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::Satoshi;
 use ic_cdk::{query, update};
 
 use crate::context::{State, STATE};
+use crate::domain::request::TransferRequest;
 use crate::domain::response::NetworkResponse;
 use crate::domain::{request::UpdateKeyRequest, Metadata};
 use crate::error::WalletError;
@@ -55,10 +57,10 @@ pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
 /// Build a transaction if the caller is controller,
 /// otherwise return `UnAuthorized`
 #[update]
-pub async fn build_transaction() -> Result<String, WalletError> {
+pub async fn build_transaction(req: TransferRequest) -> Result<RawTransactionInfo, WalletError> {
     let caller = ic_caller();
 
-    todo!()
+    build_transaction::serve(caller, req).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
