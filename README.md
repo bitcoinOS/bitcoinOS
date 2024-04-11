@@ -32,6 +32,9 @@ Similar to Bitcoin's empowerment of identity and currency, bitcoinOS's data empo
 
 - Copilot of Developers & Creators: The runtime of bitcoinOS is based on WebAssembly, standing at the forefront of industry standards and benefiting from the research achievements of the entire industry. The core functionality of bitcoinOS smart contract containers simplifies the complexity of developers' smart contract development. They can utilize various programming languages supported by WebAssembly, such as Golang, JavaScript, Python, Java, Rust, for development. Additionally, the built-in dApp store in bitcoinOS greatly facilitates developers and users in accessing Bitcoin ecosystem resources, as well as enabling Bitcoin developers and users to utilize resources and services from web2, integrating Web2 and Web3.
 
+## Architecture
+![avatar](./images/bitcoinOS-arch.svg)
+
 ## Setup
 To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
 
