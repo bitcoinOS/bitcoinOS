@@ -6,18 +6,21 @@
 [![Apache-2 licensed](https://img.shields.io/crates/l/rgb-wallet)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-## What's bitcoinOS
+## What's `bitcoinOS`
 
-Bitcoin is a peer-to-peer electronic cash system designed to create a decentralized financial ecosystem, providing individuals with sovereignty over their identity and digital assets. 
-bitcoinOS, on the other hand, takes Bitcoin as its core and adds sovereignty protection for data assets on top of it. bitcoinOS is a modular blockchain network that uses Bitcoin L1 as the settlement layer and builds Bitcoin L2: Fastnet with RGB smart contracts and ICP network technology at its core. 
+`bitcoinOS` is an innovative project that combines `Bitcoin` with `AI`. It serves as a `Bitcoin Layer2` asset issuance and management system, incorporating the security of `Bitcoin`, the privacy and smart contract capabilities of `RGB`, and the linear scalability of the `ICP` network. Additionally, it provides individual data sovereignty and data assets, supporting AI innovation platforms with the capability to utilize `GPT` Large Language Models.
 
-While the Bitcoin network primarily focuses on asset platforms and payment applications, bitcoinOS expands the scope of Bitcoin's ecosystem and enhances user experience by fully integrating Bitcoin L1 assets and combining them with the ICP network through the SmartWallet.
+`Bitcoin` is a peer-to-peer electronic cash system designed to create a decentralized financial ecosystem, providing individuals with sovereignty over their identity and digital assets. 
 
-bitcoinOS maintains the identity and asset sovereignty of Bitcoin while also increasing support and protection for data sovereignty, enhancing privacy and scalability, thereby facilitating rapid payments and transactions for all Bitcoin assets.
+`bitcoinOS`, on the other hand, takes `Bitcoin` as its core and adds sovereignty protection for data assets on top of it. `bitcoinOS` is a modular blockchain network that uses Bitcoin L1 as the settlement layer and builds Bitcoin L2: `Fastnet` with `RGB` smart contracts and `ICP` network technology at its core. 
 
-In the era of artificial intelligence, data is considered the most important means of production and factor. Through data sovereignty provided by bitcoinOS, legitimate data owners are given the first step of protection. 
+While the `Bitcoin` network primarily focuses on asset platforms and payment applications, `bitcoinOS` expands the scope of Bitcoin's ecosystem and enhances user experience by fully integrating Bitcoin L1 assets and combining them with the ICP network through the `SmartWallet`.
 
-Similar to Bitcoin's empowerment of identity and currency, bitcoinOS's data empowerment can activate innovation for everyone by utilizing massive data with large language models (LLMs) or large world models (LWM). This not only promotes the rapid integration of Web2 and Web3 but also drives the widespread adoption of Bitcoin and blockchain technology.
+`bitcoinOS` maintains the identity and asset sovereignty of Bitcoin while also increasing support and protection for data sovereignty, enhancing privacy and scalability, thereby facilitating rapid payments and transactions for all Bitcoin assets.
+
+In the era of artificial intelligence, data is considered the most important means of production and factor. Through data sovereignty provided by `bitcoinOS`, legitimate data owners are given the first step of protection. 
+
+Similar to Bitcoin's empowerment of identity and currency, `bitcoinOS's` data empowerment can activate innovation for everyone by utilizing massive data with Large Language Models (`LLMs`) or Large World Models (`LWMs`). This not only promotes the rapid integration of Web2 and Web3 but also drives the widespread adoption of Bitcoin and blockchain technology.
 
 [White paper](./whitepaper/bitcoinOS-whitepaper.pdf)
 
