@@ -1,7 +1,7 @@
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type InitArgument = record {
-    network : text;
-    steward_canister : text;
+    network : BitcoinNetwork;
+    steward_canister : principal;
     key_name : text;
 };
 

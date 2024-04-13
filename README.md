@@ -80,6 +80,8 @@ dfx start --background
 
 
 # All the just command details are in `justfile`
+# Create all canisters
+just create_all_canisters
 
 # Deploy steward canister
 just deploy_steward
@@ -87,8 +89,8 @@ just deploy_steward
 # Deploy os canister
 just deploy_os
 
-# Create canister if first time to install
-just create_wallet
+# Install internet identity canister
+just install_ii
 
 # Compile the project with `wasm-wasi` inside the project folder
 just build_wallet

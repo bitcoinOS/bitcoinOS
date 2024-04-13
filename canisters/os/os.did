@@ -13,8 +13,14 @@ type WalletAction = record {
   op_time : nat64;
 };
 type InitArgument = record {
-  network : text;
-  steward_canister : text;
+  network : network;
+  steward_canister : principal;
+};
+
+type network = variant {
+    regtest;
+    testnet;
+    mainnet;
 };
 
 type WalletOwner = record {

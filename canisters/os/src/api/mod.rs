@@ -31,8 +31,8 @@ pub async fn create_wallet(req: CreateWalletRequest) -> Result<Principal, Error>
     let metadata = METADATA.with(|m| m.borrow().get().clone());
 
     let init_wallet = InitWalletArgument {
-        network: format!("{:?}", metadata.network),
-        steward_canister: metadata.steward_canister.to_string(),
+        network: metadata.network,
+        steward_canister: metadata.steward_canister,
         key_name: req.key_name,
     };
 
@@ -86,9 +86,8 @@ fn init(args: InitArgument) {
         let mut metadata = m.borrow_mut();
         metadata
             .set(Metadata {
-                network: to_ic_bitcoin_network(&args.network),
-                steward_canister: Principal::from_text(args.steward_canister)
-                    .expect("Failed to parse steward canister id"),
+                network: args.network,
+                steward_canister: args.steward_canister,
             })
             .expect("Failed to init network")
     });
