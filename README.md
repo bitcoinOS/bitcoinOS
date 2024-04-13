@@ -81,11 +81,11 @@ dfx start --background
 
 # All the just command details are in `justfile`
 
-# Deploy os canister
-just deploy_os
-
 # Deploy steward canister
 just deploy_steward
+
+# Deploy os canister
+just deploy_os
 
 # Create canister if first time to install
 just create_wallet
