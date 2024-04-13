@@ -13,4 +13,13 @@ pub enum StewardError {
 
     #[error("Failed to init network")]
     NetworkAlreadyExists,
+
+    #[error("Error from base: {0:?}")]
+    BaseError(String),
+}
+
+impl From<base::error::Error> for StewardError {
+    fn from(value: base::error::Error) -> Self {
+        Self::BaseError(value.to_string())
+    }
 }

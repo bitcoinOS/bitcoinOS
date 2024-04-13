@@ -317,7 +317,7 @@ pub async fn create_wallet(
     let pk2: Result<(Vec<u8>,), Error> = ic_cdk::call(
         steward_canister,
         "public_key",
-        (bitcoin_network, derivation_path.clone()),
+        (derivation_path.clone(), ),
     )
     .await
     .map_err(|e| e.into());

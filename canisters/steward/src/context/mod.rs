@@ -14,6 +14,7 @@ pub type VM = VirtualMemory<RM>;
 
 pub type Memory = VirtualMemory<DefMem>;
 
+/// A wallet canister will has its unique ecdsa key (wallet_canister_id, ecdsa_key)
 pub type ECDSAKeyStable = StableBTreeMap<Principal, ECDSAKey, Memory>;
 
 const METADATA_PAGES: u64 = 64;

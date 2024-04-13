@@ -54,7 +54,7 @@ pub(super) async fn serve(
     )
     .await;
 
-    /// TODO: Log transactions
+    // TODO: Log transactions
     // STATE.with(|s| {
     //     let mut state = s.borrow_mut();
     //     state.transactions.push(tx_info.clone());

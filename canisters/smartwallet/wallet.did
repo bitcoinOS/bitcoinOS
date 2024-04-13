@@ -1,4 +1,10 @@
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type InitArgument = record {
+    network : text;
+    steward_canister : text;
+    key_name : text;
+};
+
 type Metadata = record { 
     network : BitcoinNetwork;
     steward_canister: principal;
@@ -18,15 +24,22 @@ type WalletError = variant {
     BaseError : text;
 };
 
-type U64Result = variant { Ok : u64; Err : WalletError };
+type RawTransactionInfo = record {
+  transaction: blob;
+  witness_script: blob;
+  sig_hashes: vec blob;
+};
+
 type BoolResult = variant { Ok : bool; Err : WalletError };
 type StringResult = variant { Ok : text; Err : WalletError };
 type NetworkResponse = record { network : text };
 type ControllerResult = variant { Ok : vec principal; Err : WalletError };
 
+type RawTransactionInfoResult = variant { Ok: RawTransactionInfo; Error: WalletError };
 type UpdateKeyRequest = record { new_key : text; old_key : text };
+type TransferRequest = record { addresses : vec text; amounts : vec nat64}
 
-service : (text) -> {
+service : (InitArgument) -> {
 
     // Query
     controller : () -> (ControllerResult) query;
@@ -36,6 +49,7 @@ service : (text) -> {
     
     // Update
     balance : (text) -> (StringResult) ;
+    bulid_transaction : (TransferRequest) -> (RawTransactionInfoResult);
     get_or_create_wallet_address: () -> (StringResult);
     register_ecdsa_key : (text) -> (BoolResult);
     update_ecdsa_key: (UpdateKeyRequest) -> (BoolResult);

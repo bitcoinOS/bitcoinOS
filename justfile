@@ -1,18 +1,16 @@
 deploy_os:
-    dfx canister create os
+    dfx deploy os
 
-deploy_steward:    
-    dfx canister create steward --argument '("regtest")'
-
-create_wallet:
-    dfx canister create smartwallet
+deploy_steward:
+    dfx deploy steward --argument '("regtest")'
 
 build_wallet:   
-    cargo build -p smartwallet --release --target wasm32-wasi
+    cargo build -p wallet --release --target wasm32-wasi
 
 translate_wasm:
-    wasi2ic ./target/wasm32-wasi/release/smartwallet.wasm smartwallet.wasm
+    wasi2ic ./target/wasm32-wasi/release/wallet.wasm wallet.wasm
 
 install_wallet:
-    dfx canister install --mode reinstall --wasm smartwallet.wasm smartwallet --argument '("regtest", "replace by steward canister id", "ecdsa_key")'
-
+    export STEWARD_CANISTER=$(dfx canister id steward)
+    echo ${STEWARD_CANISTER}
+    dfx canister install --mode reinstall --wasm wallet.wasm wallet --argument '(record { network = "regtest"; steward_canister = "${STEWARD_CANISTER}"; key_name = "ecdsa_key" })'
