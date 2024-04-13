@@ -36,9 +36,7 @@ pub async fn update_ecdsa_key(req: UpdateKeyRequest) -> Result<bool, StewardErro
 }
 
 #[update]
-pub async fn public_key(
-    derivation_path: Vec<Vec<u8>>,
-) -> Result<Vec<u8>, StewardError> {
+pub async fn public_key(derivation_path: Vec<Vec<u8>>) -> Result<Vec<u8>, StewardError> {
     let caller = ic_caller();
     let key_name = get_ecdsa_key::serve(&caller)?;
     base::ecdsa::public_key(key_name, derivation_path, Some(caller))

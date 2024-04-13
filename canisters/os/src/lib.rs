@@ -8,11 +8,12 @@ pub mod services;
 use std::{borrow::Cow, cell::RefCell};
 
 use candid::Principal;
-use domain::{WalletAction, WalletOwner};
+use domain::{Metadata, WalletAction, WalletOwner};
 use ic_stable_structures::{
     memory_manager::{MemoryId, MemoryManager as MM, VirtualMemory},
     storable::Bound,
-    DefaultMemoryImpl, Log as StableLog, RestrictedMemory, StableBTreeMap, Storable,
+    Cell as StableCell, DefaultMemoryImpl, Log as StableLog, RestrictedMemory, StableBTreeMap,
+    Storable,
 };
 
 // const WASM_PAGE_SIZE: u64 = 65536;
@@ -42,16 +43,16 @@ pub type WalletOwnerStable = StableBTreeMap<Principal, WalletOwner, Memory>;
 
 pub type WalletActionStable = StableLog<WalletAction, Memory, Memory>;
 
+const METADATA_PAGES: u64 = 64;
+
 thread_local! {
 
-    // static METADATA: RefCell<StableCell<Cbor<Option<Metadata>>, RM>> =
-    //     RefCell::new(StableCell::init(
-    //         RM::new(DefMem::default(), 0..METADATA_PAGES),
-    //         Cbor::default()
-    //     ).expect("failed to initialized")
-    //     );
-
-    // static MEMORY_MANAGER: RefCell<MM<RM>> = RefCell::new(MM::init(RM::new(DefMem::default(), METADATA_PAGES..u64::MAX)));
+    pub static METADATA: RefCell<StableCell<Metadata, RM>> =
+    RefCell::new(StableCell::init(
+        RM::new(DefMem::default(), 0..METADATA_PAGES),
+        Metadata::default(),
+      ).expect("failed to initialize the metadata cell")
+    );
 
     static MEMORY_MANAGER: RefCell<MM<DefaultMemoryImpl>> = RefCell::new(
         MM::init(DefaultMemoryImpl::default())

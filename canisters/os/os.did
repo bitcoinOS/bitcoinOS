@@ -12,12 +12,17 @@ type WalletAction = record {
   operator : principal;
   op_time : nat64;
 };
+type InitArgument = record {
+  network : text;
+  steward_canister : text;
+};
+
 type WalletOwner = record {
   owner : principal;
   canister_id : principal;
   created_at : nat64;
 };
-service : {
+service : (InitArgument) -> {
   canister_balance : () -> (Tokens);
   count_wallet : () -> (nat64) query;
   create_wallet : () -> (Result);
