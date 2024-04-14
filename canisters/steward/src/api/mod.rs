@@ -1,47 +1,55 @@
 mod get_ecdsa_key;
-mod register_ecdsa_key;
-mod update_ecdsa_key;
-mod update_public_key;
+mod public_key;
 
-use base::utils::to_ic_bitcoin_network;
+use base::domain::EcdsaKeyIds;
+use base::tx::RawTransactionInfo;
+use base::utils::{principal_to_derivation_path, to_ic_bitcoin_network};
 use candid::Principal;
+use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use ic_cdk::{export_candid, init, query, update};
 
-use crate::context::METADATA;
-use crate::{
-    domain::{Metadata, UpdateKeyRequest},
-    error::StewardError,
-};
+use crate::context::{ECDSA_KEYS, METADATA};
+use crate::domain::response::PublicKeyResponse;
+use crate::{domain::Metadata, error::StewardError};
 
 /// --------------------- Update interface of this Canister ----------------------
 ///
-/// Register ecdsa key of caller(wallet canister)
-/// Returns Ok(true) if success, otherwise returns ECDSAKeyAlreadyExists error
+/// Returns the public key of the given ecdsa key and caller
 #[update]
-pub async fn register_ecdsa_key(key: String) -> Result<bool, StewardError> {
+pub async fn public_key() -> Result<PublicKeyResponse, StewardError> {
     let caller = ic_caller();
-    let updated_time = ic_time();
+    let key_name = METADATA.with(|m| m.borrow().get().ecdsa_key_id.name.clone());
+    let derivation_path = principal_to_derivation_path(caller);
 
-    register_ecdsa_key::serve(caller, key, updated_time)
+    public_key::serve(&key_name, derivation_path).await
 }
 
-/// Update ecdsa key of this canister if old key is match and caller is match wallet canister
-/// Returns Ok(true) if success, otherwise returns ECDSAKeyNotFound or ECDSAKeyUpdateError
+/// Finalize the tx and send it to Bitcoin network
+/// Returns txid if success
+///
 #[update]
-pub async fn update_ecdsa_key(req: UpdateKeyRequest) -> Result<bool, StewardError> {
+pub async fn finalize_tx_and_send(
+    network: BitcoinNetwork,
+    raw_tx_info: RawTransactionInfo,
+) -> Result<String, StewardError> {
     let caller = ic_caller();
-    let updated_time = ic_time();
+    let key_name = ECDSA_KEYS
+        .with(|m| m.borrow().get(&caller))
+        .ok_or_else(|| StewardError::ECDSAKeyNotFound(caller.to_string()))?;
 
-    update_ecdsa_key::serve(caller, req.new_key, req.old_key, updated_time)
-}
+    let mut tx_info = base::tx::TransactionInfo::try_from(raw_tx_info)?;
 
-#[update]
-pub async fn public_key(derivation_path: Vec<Vec<u8>>) -> Result<Vec<u8>, StewardError> {
-    let caller = ic_caller();
-    let key_name = get_ecdsa_key::serve(&caller)?;
-    base::ecdsa::public_key(key_name, derivation_path, Some(caller))
-        .await
-        .map_err(|e| e.into())
+    tx_info = base::utils::sign_transaction(
+        tx_info,
+        &key_name.key,
+        &[caller.as_slice().to_vec()],
+        base::domain::MultiSigIndex::Second,
+    )
+    .await?;
+
+    base::utils::send_transaction(&tx_info, network).await?;
+
+    Ok(tx_info.tx.txid().to_string())
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -49,7 +57,7 @@ pub async fn public_key(derivation_path: Vec<Vec<u8>>) -> Result<Vec<u8>, Stewar
 /// Returns ecdsa key if caller already registered
 /// otherwise retunrs ECDSAKeyNotFound
 #[query]
-pub fn get_ecdsa_key() -> Result<String, StewardError> {
+pub fn ecdsa_key() -> Result<String, StewardError> {
     let caller = ic_caller();
     get_ecdsa_key::serve(&caller)
 }
@@ -64,10 +72,17 @@ fn metadata() -> Metadata {
 #[init]
 fn init(network: String) {
     METADATA.with(|m| {
+        let network = to_ic_bitcoin_network(&network);
+        let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
+        let updated_time = ic_time();
+
         let mut metadata = m.borrow_mut();
+
         metadata
             .set(Metadata {
-                network: to_ic_bitcoin_network(&network),
+                network,
+                ecdsa_key_id,
+                updated_time,
             })
             .expect("Failed to init network")
     });

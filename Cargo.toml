@@ -19,7 +19,10 @@ ciborium = "0.2"
 # for Bitcoin
 bitcoin = { version = "0.31", features = ["std", "no-std"] }
 core2 = "0.4"
-getrandom = { version = "0.2", features = ["js"] }
+k256 = { version = "0.13", features = ["ecdsa"] }
+# Enable `custom` feature of k256's getrandom dependency. See lib.rs for more details.
+getrandom = { version = "0.2", features = ["custom"] }
+hex = "0.4"
 maybe-async = "0.2"
 miniscript = { version = "11.0", features = ["std", "no-std"] }
 

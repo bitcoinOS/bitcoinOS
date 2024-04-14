@@ -10,12 +10,8 @@ pub(crate) fn serve(caller: &Principal) -> Result<String, WalletError> {
         let state = s.borrow();
 
         validate_controller(&state, caller, |s| {
-            let key = &s.metadata.get().key_name;
-            if key.is_empty() {
-                Err(WalletError::ECDSAKeyNotFound(ic_cdk::id().to_string()))
-            } else {
-                Ok(key.to_string())
-            }
+            let key = &s.metadata.get().ecdsa_key_id;
+            Ok(key.name.clone())
         })
     })
 }

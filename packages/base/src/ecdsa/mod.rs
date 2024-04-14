@@ -1,31 +1,31 @@
 use candid::Principal;
+use ic_cdk::api::management_canister::ecdsa::{
+    EcdsaCurve, EcdsaKeyId, EcdsaPublicKeyArgument, EcdsaPublicKeyResponse,
+};
 
 use crate::{
     constants::SIGN_WITH_ECDSA_COST_CYCLES,
-    domain::{
-        EcdsaCurve, EcdsaKeyId, EcdsaPublicKey, EcdsaPublicKeyReply, SignWithEcdsa,
-        SignWithEcdsaReply,
-    },
+    domain::{SignWithEcdsa, SignWithEcdsaReply},
     error::Error,
     utils::{call_management_with_payment, mgmt_canister_id},
 };
 
 /// Returns the ECDSA public key of this canister at the given derivation path.
 pub async fn public_key(
-    key_name: String,
+    key_name: &str,
     derivation_path: Vec<Vec<u8>>,
     canister_id: Option<Principal>,
 ) -> Result<Vec<u8>, Error> {
     // Retrieve public key of this canister with the given derivation path from ic management canister
-    let resp: Result<(EcdsaPublicKeyReply,), _> = ic_cdk::call(
+    let resp: Result<(EcdsaPublicKeyResponse,), _> = ic_cdk::call(
         mgmt_canister_id(),
         "ecdsa_public_key",
-        (EcdsaPublicKey {
+        (EcdsaPublicKeyArgument {
             canister_id,
             derivation_path,
             key_id: EcdsaKeyId {
                 curve: EcdsaCurve::Secp256k1,
-                name: key_name,
+                name: key_name.to_string(),
             },
         },),
     )

@@ -1,4 +1,7 @@
+pub mod response;
+
 use candid::{CandidType, Decode, Deserialize, Encode};
+use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 use ic_stable_structures::{storable::Bound, Storable};
 
 use crate::{
@@ -7,12 +10,12 @@ use crate::{
 };
 
 #[derive(Debug, Clone, CandidType, Deserialize, Default)]
-pub struct ECDSAKey {
+pub struct EcdsaKey {
     pub key: String,
     pub updated_time: u64,
 }
 
-impl Storable for ECDSAKey {
+impl Storable for EcdsaKey {
     fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
         std::borrow::Cow::Owned(Encode!(self).unwrap())
     }
@@ -30,6 +33,8 @@ impl Storable for ECDSAKey {
 #[derive(Debug, Clone, CandidType, Deserialize, Default)]
 pub struct Metadata {
     pub network: ICBitcoinNetwork,
+    pub ecdsa_key_id: EcdsaKeyId,
+    pub updated_time: u64,
 }
 
 impl Storable for Metadata {
@@ -45,10 +50,4 @@ impl Storable for Metadata {
         max_size: METADATA_SIZE as u32,
         is_fixed_size: false,
     };
-}
-
-#[derive(Debug, Clone, CandidType, Deserialize)]
-pub struct UpdateKeyRequest {
-    pub new_key: String,
-    pub old_key: String,
 }

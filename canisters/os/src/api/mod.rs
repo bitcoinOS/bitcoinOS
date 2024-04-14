@@ -14,7 +14,7 @@ use ic_ledger_types::{
 use crate::{
     constants::WALLET_WASM,
     domain::{
-        request::{CreateWalletRequest, InitArgument, InitWalletArgument},
+        request::{InitArgument, InitWalletArgument},
         Action, Metadata, WalletAction, WalletOwner,
     },
     error::Error,
@@ -23,17 +23,17 @@ use crate::{
 
 /// Create a smart wallet canister, log the action, and store the wallet owner info
 #[ic_cdk::update]
-pub async fn create_wallet(req: CreateWalletRequest) -> Result<Principal, Error> {
+pub async fn create_wallet() -> Result<Principal, Error> {
     // let os = ic_cdk::api::id();
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
 
     let metadata = METADATA.with(|m| m.borrow().get().clone());
+    let network = metadata.network;
 
     let init_wallet = InitWalletArgument {
-        network: metadata.network,
+        network,
         steward_canister: metadata.steward_canister,
-        key_name: req.key_name,
     };
 
     let init_arguemnt = Encode!(&init_wallet).unwrap();

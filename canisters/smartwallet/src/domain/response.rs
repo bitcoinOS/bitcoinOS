@@ -14,3 +14,8 @@ impl From<ICBitcoinNetwork> for NetworkResponse {
         }
     }
 }
+
+#[derive(Debug, Clone, CandidType, Deserialize)]
+pub struct PublicKeyResponse {
+    pub public_key_hex: String,
+}

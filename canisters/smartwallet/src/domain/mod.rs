@@ -3,9 +3,10 @@ pub mod response;
 
 use std::str::FromStr;
 
-use base::ICBitcoinNetwork;
+use base::{domain::EcdsaKeyIds, ICBitcoinNetwork};
 use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
+use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
@@ -13,18 +14,23 @@ use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE};
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
+    pub owner: Principal,
     pub network: ICBitcoinNetwork,
     pub steward_canister: Principal,
-    pub key_name: String,
+    pub ecdsa_key_id: EcdsaKeyId,
     pub updated_time: u64,
 }
 
 impl Default for Metadata {
     fn default() -> Self {
+        let network = ICBitcoinNetwork::Regtest;
+        let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
+
         Self {
+            owner: Principal::anonymous(),
             steward_canister: Principal::anonymous(),
-            network: ICBitcoinNetwork::Regtest,
-            key_name: String::new(),
+            network,
+            ecdsa_key_id,
             updated_time: 0,
         }
     }

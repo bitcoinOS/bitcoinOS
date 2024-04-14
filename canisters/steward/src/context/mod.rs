@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use crate::domain::{ECDSAKey, Metadata};
+use crate::domain::{EcdsaKey, Metadata};
 use candid::Principal;
 
 use ic_stable_structures::{
@@ -15,7 +15,7 @@ pub type VM = VirtualMemory<RM>;
 pub type Memory = VirtualMemory<DefMem>;
 
 /// A wallet canister will has its unique ecdsa key (wallet_canister_id, ecdsa_key)
-pub type ECDSAKeyStable = StableBTreeMap<Principal, ECDSAKey, Memory>;
+pub type ECDSAKeyStable = StableBTreeMap<Principal, EcdsaKey, Memory>;
 
 const METADATA_PAGES: u64 = 64;
 

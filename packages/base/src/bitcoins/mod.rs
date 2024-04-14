@@ -1,9 +1,13 @@
 use ic_cdk::api::management_canister::bitcoin::{
     GetCurrentFeePercentilesRequest, GetUtxosRequest, GetUtxosResponse, MillisatoshiPerByte,
+    SendTransactionRequest,
 };
 
 use crate::{
-    constants::{GET_CURRENT_FEE_PERCENTILES_CYCLES, GET_UTXOS_COST_CYCLES},
+    constants::{
+        GET_CURRENT_FEE_PERCENTILES_CYCLES, GET_UTXOS_COST_CYCLES, SEND_TRANSACTION_BASE_CYCLES,
+        SEND_TRANSACTION_PER_BYTE_CYCLES,
+    },
     utils::{call_management_with_payment, BaseResult},
     ICBitcoinNetwork,
 };
@@ -44,5 +48,24 @@ pub async fn get_utxos(
     call_management_with_payment("bitcion_get_utxos", args, fee)
         .await
         .map(|(utxo,)| utxo)
+        .map_err(|e| e.into())
+}
+
+/// Sends a transaction to bitcoin network
+///
+/// NOTE: Relies on the `bitcoin_send_transaction` endpoint.
+/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_send_transaction
+pub async fn send_transaction(transaction: Vec<u8>, network: ICBitcoinNetwork) -> BaseResult<()> {
+    let fee = SEND_TRANSACTION_BASE_CYCLES
+        + (transaction.len() as u64) * SEND_TRANSACTION_PER_BYTE_CYCLES;
+
+    let args = (SendTransactionRequest {
+        transaction,
+        network,
+    },);
+
+    call_management_with_payment("bitcoin_send_transaction", args, fee)
+        .await
+        .map(|((),)| ())
         .map_err(|e| e.into())
 }

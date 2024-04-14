@@ -41,7 +41,7 @@ fn get_wallet_key_network_steward(
 
         let network = metadata.network;
         let steward_canister = metadata.steward_canister;
-        let key_name = metadata.key_name.clone();
+        let key_name = metadata.ecdsa_key_id.name.clone();
         let wallet_key = SelfCustodyKey {
             network,
             owner: caller,
@@ -62,7 +62,7 @@ async fn create_wallet(
     network: ICBitcoinNetwork,
     key_name: String,
 ) -> Result<Wallet, WalletError> {
-    base::utils::create_wallet(caller, steward_canister, network, key_name)
+    base::utils::create_wallet(caller, steward_canister, network, &key_name)
         .await
         .map_err(|e| WalletError::CreateWalletError(e.to_string()))
 }

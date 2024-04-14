@@ -12,7 +12,7 @@ pub(super) async fn serve(
     let metadata = STATE.with(|s| s.borrow().metadata.get().clone());
 
     let network = metadata.network;
-    let key_name = metadata.key_name;
+    let key_name = metadata.ecdsa_key_id.name;
     let steward_canister = metadata.steward_canister;
     let wallet_key = SelfCustodyKey {
         network,

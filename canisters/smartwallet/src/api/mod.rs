@@ -1,24 +1,24 @@
 mod balance;
 mod build_transaction;
-mod get_ecdsa_key;
-mod register_ecdsa_key;
-mod update_ecdsa_key;
+mod ecdsa_key;
+mod public_key;
 
 use base::tx::RawTransactionInfo;
+use base::utils::{ic_caller, principal_to_derivation_path};
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::Satoshi;
 use ic_cdk::{query, update};
 
 use crate::context::{State, STATE};
 use crate::domain::request::TransferRequest;
-use crate::domain::response::NetworkResponse;
-use crate::domain::{request::UpdateKeyRequest, Metadata};
+use crate::domain::response::{NetworkResponse, PublicKeyResponse};
+use crate::domain::Metadata;
 use crate::error::WalletError;
 
 /// ---------------- Update interface of this canister ------------------
 ///
-/// Get an exists address for the caller,
-/// or create a new one if it doesn't exist
+/// Returns an exists address for the caller,
+/// or create a new one if it doesn't exist, and returns it
 #[update]
 pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
     let caller = ic_caller();
@@ -26,26 +26,14 @@ pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
     crate::bitcoin::get_or_create_wallet_address(caller).await
 }
 
-/// Register ecdsa key of this canister if the caller is controller and the key donesn't exists
-/// Returns true if success, or returns `RegisterECDSAKeyError`
-/// otherwise return `EcdsaKeyAlreadyExists` or `UnAuthorized`
+/// Returns this canister's public key with hex string
 #[update]
-pub fn register_ecdsa_key(key: String) -> Result<bool, WalletError> {
+pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
     let caller = ic_caller();
-    let updated_time = ic_time();
+    let key_name = STATE.with(|s| s.borrow().metadata.get().ecdsa_key_id.name.clone());
+    let derivation_path = principal_to_derivation_path(caller);
 
-    register_ecdsa_key::serve(&caller, key, updated_time)
-}
-
-/// Update ecdsa key of this canister if the caller is controller and the key exists
-/// Returns true if success, or returns `EcdsaKeyUpdateError`
-/// otherwise return `UnAuthorized`
-#[update]
-pub fn update_ecdsa_key(req: UpdateKeyRequest) -> Result<bool, WalletError> {
-    let caller = ic_caller();
-    let updated_time = ic_time();
-
-    update_ecdsa_key::serve(&caller, req.new_key, req.old_key, updated_time)
+    public_key::serve(&key_name, derivation_path).await
 }
 
 /// Returns the balance of the given bitcoin address
@@ -69,7 +57,7 @@ pub async fn build_transaction(req: TransferRequest) -> Result<RawTransactionInf
 #[query]
 pub fn get_ecdsa_key() -> Result<String, WalletError> {
     let caller = ic_caller();
-    get_ecdsa_key::serve(&caller)
+    ecdsa_key::serve(&caller)
 }
 
 /// Returns the network of this canister
@@ -92,34 +80,24 @@ fn metadata() -> Result<Metadata, WalletError> {
 /// Returns the controllers of this canister if the caller is controller
 /// otherwise return `UnAuthorized`
 #[query]
-fn controller() -> Result<Vec<Principal>, WalletError> {
+fn owner() -> Result<Principal, WalletError> {
     let caller = ic_caller();
 
     STATE.with(|s| {
         let state = s.borrow();
 
-        validate_controller(&state, &caller, |s| match s.controllers.get(&caller) {
-            Some(_) => Ok(state.controllers.iter().map(|(k, _)| k).collect()),
-            None => Err(WalletError::UnAuthorized(caller.to_string())),
-        })
+        validate_controller(&state, &caller, |s| Ok(s.metadata.get().owner))
     })
-}
-
-fn ic_caller() -> Principal {
-    ic_cdk::caller()
-}
-
-fn ic_time() -> u64 {
-    ic_cdk::api::time()
 }
 
 fn validate_controller<F, T>(state: &State, caller: &Principal, f: F) -> Result<T, WalletError>
 where
     F: FnOnce(&State) -> Result<T, WalletError>,
 {
-    match state.controllers.get(caller) {
-        Some(_) => f(state),
-        None => Err(WalletError::UnAuthorized(caller.to_string())),
+    if state.metadata.get().owner == *caller {
+        f(state)
+    } else {
+        Err(WalletError::UnAuthorized(caller.to_string()))
     }
 }
 
@@ -131,8 +109,9 @@ fn validate_controller_mut<F, T>(
 where
     F: FnMut(&mut State) -> Result<T, WalletError>,
 {
-    match state.controllers.get(caller) {
-        Some(_) => f(state),
-        None => Err(WalletError::UnAuthorized(caller.to_string())),
+    if state.metadata.get().owner == *caller {
+        f(state)
+    } else {
+        Err(WalletError::UnAuthorized(caller.to_string()))
     }
 }

@@ -12,13 +12,12 @@ use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::Principal;
 use ic_cdk::api::call::{call_with_payment, CallResult};
 use ic_cdk::api::management_canister::bitcoin::{
-    BitcoinNetwork, GetBalanceRequest, MillisatoshiPerByte, Satoshi, SendTransactionRequest, Utxo,
+    BitcoinNetwork, GetBalanceRequest, MillisatoshiPerByte, Satoshi, Utxo,
 };
 
-use crate::constants::{
-    DEFAULT_FEE_MILLI_SATOSHI, DUST_AMOUNT_SATOSHI, SEND_TRANSACTION_BASE_CYCLES,
-    SEND_TRANSACTION_PER_BYTE_CYCLES, SIG_HASH_TYPE,
-};
+use hex::ToHex;
+
+use crate::constants::{DEFAULT_FEE_MILLI_SATOSHI, DUST_AMOUNT_SATOSHI, SIG_HASH_TYPE};
 use crate::domain::{MultiSigIndex, Wallet};
 use crate::tx::TransactionInfo;
 use crate::{bitcoins, ecdsa, ICBitcoinNetwork};
@@ -277,31 +276,12 @@ fn build_transaction_sighashes(
         .collect()
 }
 
-/// Sends a transaction to bitcoin network
-///
-/// NOTE: Relies on the `bitcoin_send_transaction` endpoint.
-/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_send_transaction
-pub async fn send_transaction(transaction: Vec<u8>, network: BitcoinNetwork) -> BaseResult<()> {
-    let fee = SEND_TRANSACTION_BASE_CYCLES
-        + (transaction.len() as u64) * SEND_TRANSACTION_PER_BYTE_CYCLES;
-
-    let args = (SendTransactionRequest {
-        transaction,
-        network,
-    },);
-
-    call_management_with_payment("bitcoin_send_transaction", args, fee)
-        .await
-        .map(|((),)| ())
-        .map_err(|e| e.into())
-}
-
 /// Create wallet for a given Principal, steward_canister, bitcoin network and key_name
 pub async fn create_wallet(
     principal: Principal,
     steward_canister: Principal,
     bitcoin_network: ICBitcoinNetwork,
-    key_name: String,
+    key_name: &str,
 ) -> BaseResult<Wallet> {
     check_normal_principal(principal)?;
 
@@ -382,6 +362,25 @@ pub async fn sign_transaction(
     }
 
     TransactionInfo::new(tx, tx_info.witness_script.clone(), tx_info.sig_hashes)
+}
+
+/// Send a transaction
+pub async fn send_transaction(
+    tx_info: &TransactionInfo,
+    network: ICBitcoinNetwork,
+) -> BaseResult<()> {
+    let txid = tx_info.tx.txid();
+    let tx_bytes = consensus::serialize(tx_info.tx());
+    ic_cdk::print(format!(
+        "Signed {:?} transaction: {}",
+        txid,
+        hex::encode(&tx_bytes)
+    ));
+
+    bitcoins::send_transaction(tx_bytes, network).await?;
+
+    ic_cdk::print(format!("Transaction {:?} sent.", txid));
+    Ok(())
 }
 
 /// Check a principal is a normal principal or not
@@ -472,4 +471,20 @@ fn sign_to_der(sign: Vec<u8>) -> Vec<u8> {
 
 pub fn mgmt_canister_id() -> Principal {
     Principal::from_str("aaaaa-aa").unwrap()
+}
+
+pub fn principal_to_derivation_path(principal: Principal) -> Vec<Vec<u8>> {
+    vec![principal.as_slice().to_vec()]
+}
+
+pub fn hex<T: AsRef<[u8]>>(data: T) -> String {
+    data.encode_hex()
+}
+
+pub fn ic_caller() -> Principal {
+    ic_cdk::caller()
+}
+
+pub fn ic_time() -> u64 {
+    ic_cdk::api::time()
 }

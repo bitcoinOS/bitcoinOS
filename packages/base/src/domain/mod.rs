@@ -1,5 +1,9 @@
 use bitcoin::{Address, ScriptBuf};
-use candid::{CandidType, Principal};
+use candid::CandidType;
+use ic_cdk::api::management_canister::{
+    bitcoin::BitcoinNetwork,
+    ecdsa::{EcdsaCurve, EcdsaKeyId},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
@@ -12,29 +16,62 @@ pub struct Wallet {
     pub derivation_path: Vec<Vec<u8>>,
 }
 
-#[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-pub struct EcdsaPublicKey {
-    pub canister_id: Option<Principal>,
-    pub derivation_path: Vec<Vec<u8>>,
-    pub key_id: EcdsaKeyId,
+// #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
+// pub struct EcdsaPublicKeyRequest {
+//     pub canister_id: Option<Principal>,
+//     pub derivation_path: Vec<Vec<u8>>,
+//     pub key_id: EcdsaKeyId,
+// }
+
+// #[derive(CandidType, Deserialize, Debug, Serialize)]
+// pub struct EcdsaPublicKeyResponse {
+//     pub public_key: Vec<u8>,
+//     pub chain_code: Vec<u8>,
+// }
+
+// #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
+// pub struct EcdsaKeyId {
+//     pub curve: EcdsaCurve,
+//     pub name: String,
+// }
+
+// #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
+// pub enum EcdsaCurve {
+//     #[serde(rename = "secp256k1")]
+//     Secp256k1,
+// }
+
+pub enum EcdsaKeyIds {
+    #[allow(unused)]
+    TestKeyLocalDevelopment,
+    #[allow(unused)]
+    TestKey1,
+    #[allow(unused)]
+    ProductionKey1,
 }
 
-#[derive(CandidType, Deserialize, Debug, Serialize)]
-pub struct EcdsaPublicKeyReply {
-    pub public_key: Vec<u8>,
-    pub chain_code: Vec<u8>,
+impl From<BitcoinNetwork> for EcdsaKeyIds {
+    fn from(network: BitcoinNetwork) -> Self {
+        match network {
+            BitcoinNetwork::Mainnet => Self::ProductionKey1,
+            BitcoinNetwork::Testnet => Self::TestKey1,
+            BitcoinNetwork::Regtest => Self::TestKeyLocalDevelopment,
+        }
+    }
 }
 
-#[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-pub struct EcdsaKeyId {
-    pub curve: EcdsaCurve,
-    pub name: String,
-}
-
-#[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-pub enum EcdsaCurve {
-    #[serde(rename = "secp256k1")]
-    Secp256k1,
+impl EcdsaKeyIds {
+    pub fn to_key_id(&self) -> EcdsaKeyId {
+        EcdsaKeyId {
+            curve: EcdsaCurve::Secp256k1,
+            name: match self {
+                Self::TestKeyLocalDevelopment => "dfx_test_key",
+                Self::TestKey1 => "test_key_1",
+                Self::ProductionKey1 => "key_1",
+            }
+            .to_string(),
+        }
+    }
 }
 
 #[derive(CandidType, Deserialize, Debug)]

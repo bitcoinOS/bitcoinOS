@@ -33,7 +33,7 @@ type RawTransactionInfo = record {
 type BoolResult = variant { Ok : bool; Err : WalletError };
 type StringResult = variant { Ok : text; Err : WalletError };
 type NetworkResponse = record { network : text };
-type ControllerResult = variant { Ok : vec principal; Err : WalletError };
+type PrincipalResult = variant { Ok : principal; Err : WalletError };
 
 type RawTransactionInfoResult = variant { Ok: RawTransactionInfo; Error: WalletError };
 type UpdateKeyRequest = record { new_key : text; old_key : text };
@@ -42,7 +42,7 @@ type TransferRequest = record { addresses : vec text; amounts : vec nat64}
 service : (InitArgument) -> {
 
     // Query
-    controller : () -> (ControllerResult) query;
+    owner : () -> (PrincipalResult) query;
     get_edcsa_key : () -> (StringResult) query;
     metadata : () -> (MetadataResult) query;
     network : () -> (NetworkResponse) query;
@@ -51,8 +51,6 @@ service : (InitArgument) -> {
     balance : (text) -> (StringResult) ;
     bulid_transaction : (TransferRequest) -> (RawTransactionInfoResult);
     get_or_create_wallet_address: () -> (StringResult);
-    register_ecdsa_key : (text) -> (BoolResult);
-    update_ecdsa_key: (UpdateKeyRequest) -> (BoolResult);
     issue_rgb20 : () -> (text);
     
 }   
