@@ -22,6 +22,9 @@ pub enum WalletError {
 
     #[error("Bitcoin Address error: {0:?}")]
     BitcoinAddressError(bitcoin::address::Error),
+
+    #[error("Base error: {0:?}")]
+    BaseError(String),
 }
 
 impl From<(ic_cdk::api::call::RejectionCode, String)> for WalletError {
@@ -39,5 +42,11 @@ impl From<bitcoin::secp256k1::Error> for WalletError {
 impl From<bitcoin::address::Error> for WalletError {
     fn from(e: bitcoin::address::Error) -> Self {
         WalletError::BitcoinAddressError(e)
+    }
+}
+
+impl From<base::error::Error> for WalletError {
+    fn from(e: base::error::Error) -> Self {
+        WalletError::BaseError(e.to_string())
     }
 }

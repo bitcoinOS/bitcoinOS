@@ -387,7 +387,7 @@ pub async fn sign_transaction(
 /// Check a principal is a normal principal or not
 /// Returns an error if the principal is not a normal principal
 pub fn check_normal_principal(principal: Principal) -> Result<(), Error> {
-    if principal != Principal::management_canister() && Principal::anonymous() != principal {
+    if principal != mgmt_canister_id() && Principal::anonymous() != principal {
         Ok(())
     } else {
         Err(Error::InvalidPrincipal(principal))
@@ -400,7 +400,7 @@ pub fn call_management_with_payment<T: ArgumentEncoder, R: for<'a> ArgumentDecod
     args: T,
     fee: u64,
 ) -> impl Future<Output = CallResult<R>> + Send + Sync {
-    call_with_payment(Principal::management_canister(), method, args, fee)
+    call_with_payment(mgmt_canister_id(), method, args, fee)
 }
 
 /// Utility function to translate the network string to the IC BitcoinNetwork
@@ -468,4 +468,8 @@ fn sign_to_der(sign: Vec<u8>) -> Vec<u8> {
     .into_iter()
     .flatten()
     .collect()
+}
+
+pub fn mgmt_canister_id() -> Principal {
+    Principal::from_str("aaaaa-aa").unwrap()
 }

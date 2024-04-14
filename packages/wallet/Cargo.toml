@@ -11,3 +11,5 @@ candid = { workspace = true }
 ic-cdk = { workspace = true }
 serde = { workspace = true }
 thiserror ={ workspace = true }
+
+base = { path = "../base" }

@@ -6,8 +6,6 @@ pub mod domain;
 pub mod error;
 pub mod rgb;
 
-
-
 use crate::context::STATE;
 use crate::domain::{
     request::{TransferRequest, UpdateKeyRequest},

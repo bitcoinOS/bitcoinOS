@@ -29,6 +29,10 @@
     }
   },
   "defaults": {
+    "bitcoin": {
+      "enabled": true,
+      "log_level": "info"
+    },
     "build": {
       "args": "",
       "packtool": ""

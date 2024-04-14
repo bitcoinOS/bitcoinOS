@@ -1,10 +1,9 @@
-use std::future::Future;
-
+use base::utils::{call_management_with_payment, check_normal_principal};
 use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network, ScriptBuf};
-use candid::utils::{ArgumentDecoder, ArgumentEncoder};
+
 use candid::Principal;
-use ic_cdk::api::call::{call_with_payment, CallResult};
+
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetBalanceRequest, GetCurrentFeePercentilesRequest, GetUtxosRequest,
     GetUtxosResponse, MillisatoshiPerByte, Satoshi, SendTransactionRequest,
@@ -106,9 +105,7 @@ pub async fn create_wallet(
     pk2: &[u8],
     bitcoin_network: Network,
 ) -> WalletResult<Address> {
-    if !is_normal_principal(principal) {
-        return Err(WalletError::InvalidPrincipal(principal));
-    }
+    check_normal_principal(principal).map_err(WalletError::from)?;
 
     let witness_script = bitcoin::blockdata::script::Builder::new()
         .push_int(2)
@@ -122,16 +119,4 @@ pub async fn create_wallet(
 
     // Generate the wallet address from the P2WSH script pubkey
     bitcoin::Address::from_script(&script_pub_key, bitcoin_network).map_err(|e| e.into())
-}
-
-pub fn is_normal_principal(principal: Principal) -> bool {
-    principal != Principal::management_canister() && Principal::anonymous() != principal
-}
-
-pub fn call_management_with_payment<T: ArgumentEncoder, R: for<'a> ArgumentDecoder<'a>>(
-    method: &str,
-    args: T,
-    fee: u64,
-) -> impl Future<Output = CallResult<R>> + Send + Sync {
-    call_with_payment(Principal::management_canister(), method, args, fee)
 }

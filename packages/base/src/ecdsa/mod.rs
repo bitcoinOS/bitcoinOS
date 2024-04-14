@@ -7,7 +7,7 @@ use crate::{
         SignWithEcdsaReply,
     },
     error::Error,
-    utils::call_management_with_payment,
+    utils::{call_management_with_payment, mgmt_canister_id},
 };
 
 /// Returns the ECDSA public key of this canister at the given derivation path.
@@ -18,7 +18,7 @@ pub async fn public_key(
 ) -> Result<Vec<u8>, Error> {
     // Retrieve public key of this canister with the given derivation path from ic management canister
     let resp: Result<(EcdsaPublicKeyReply,), _> = ic_cdk::call(
-        Principal::management_canister(),
+        mgmt_canister_id(),
         "ecdsa_public_key",
         (EcdsaPublicKey {
             canister_id,
