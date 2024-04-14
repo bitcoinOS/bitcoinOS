@@ -1,9 +1,14 @@
 type Action = variant { Delete; Create };
+type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type Error = variant {
   AlreadyExists;
   CreateCanisterFailed : record { msg : text };
   Unknown;
   WriteError : record { msg : text };
+};
+type Metadata = record {
+  network : BitcoinNetwork;
+  steward_canister : principal;
 };
 type Result = variant { Ok : principal; Err : Error };
 type Tokens = record { e8s : nat64 };
@@ -12,26 +17,16 @@ type WalletAction = record {
   operator : principal;
   op_time : nat64;
 };
-type InitArgument = record {
-  network : network;
-  steward_canister : principal;
-};
-
-type network = variant {
-    regtest;
-    testnet;
-    mainnet;
-};
-
 type WalletOwner = record {
   owner : principal;
   canister_id : principal;
   created_at : nat64;
 };
-service : (InitArgument) -> {
+service : (Metadata) -> {
   canister_balance : () -> (Tokens);
   count_wallet : () -> (nat64) query;
   create_wallet : () -> (Result);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
   list_wallet : () -> (vec WalletOwner) query;
+  metadata : () -> (Metadata) query;
 }

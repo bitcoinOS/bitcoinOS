@@ -16,31 +16,6 @@ pub struct Wallet {
     pub derivation_path: Vec<Vec<u8>>,
 }
 
-// #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-// pub struct EcdsaPublicKeyRequest {
-//     pub canister_id: Option<Principal>,
-//     pub derivation_path: Vec<Vec<u8>>,
-//     pub key_id: EcdsaKeyId,
-// }
-
-// #[derive(CandidType, Deserialize, Debug, Serialize)]
-// pub struct EcdsaPublicKeyResponse {
-//     pub public_key: Vec<u8>,
-//     pub chain_code: Vec<u8>,
-// }
-
-// #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-// pub struct EcdsaKeyId {
-//     pub curve: EcdsaCurve,
-//     pub name: String,
-// }
-
-// #[derive(CandidType, Clone, Deserialize, Debug, Serialize)]
-// pub enum EcdsaCurve {
-//     #[serde(rename = "secp256k1")]
-//     Secp256k1,
-// }
-
 pub enum EcdsaKeyIds {
     #[allow(unused)]
     TestKeyLocalDevelopment,

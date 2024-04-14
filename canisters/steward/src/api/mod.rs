@@ -1,14 +1,14 @@
-mod get_ecdsa_key;
+mod ecdsa_key;
+mod finalize_tx_and_send;
 mod public_key;
 
 use base::domain::EcdsaKeyIds;
 use base::tx::RawTransactionInfo;
 use base::utils::{principal_to_derivation_path, to_ic_bitcoin_network};
 use candid::Principal;
-use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use ic_cdk::{export_candid, init, query, update};
 
-use crate::context::{ECDSA_KEYS, METADATA};
+use crate::context::METADATA;
 use crate::domain::response::PublicKeyResponse;
 use crate::{domain::Metadata, error::StewardError};
 
@@ -28,28 +28,13 @@ pub async fn public_key() -> Result<PublicKeyResponse, StewardError> {
 /// Returns txid if success
 ///
 #[update]
-pub async fn finalize_tx_and_send(
-    network: BitcoinNetwork,
-    raw_tx_info: RawTransactionInfo,
-) -> Result<String, StewardError> {
-    let caller = ic_caller();
-    let key_name = ECDSA_KEYS
-        .with(|m| m.borrow().get(&caller))
-        .ok_or_else(|| StewardError::ECDSAKeyNotFound(caller.to_string()))?;
+pub async fn finalize_tx_and_send(raw_tx_info: RawTransactionInfo) -> Result<String, StewardError> {
+    let wallet_canister = ic_caller();
+    let metadata = METADATA.with(|m| m.borrow().get().clone());
+    let network = metadata.network;
+    let key_name = metadata.ecdsa_key_id.name;
 
-    let mut tx_info = base::tx::TransactionInfo::try_from(raw_tx_info)?;
-
-    tx_info = base::utils::sign_transaction(
-        tx_info,
-        &key_name.key,
-        &[caller.as_slice().to_vec()],
-        base::domain::MultiSigIndex::Second,
-    )
-    .await?;
-
-    base::utils::send_transaction(&tx_info, network).await?;
-
-    Ok(tx_info.tx.txid().to_string())
+    finalize_tx_and_send::serve(raw_tx_info, key_name, wallet_canister, network).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -58,8 +43,7 @@ pub async fn finalize_tx_and_send(
 /// otherwise retunrs ECDSAKeyNotFound
 #[query]
 pub fn ecdsa_key() -> Result<String, StewardError> {
-    let caller = ic_caller();
-    get_ecdsa_key::serve(&caller)
+    ecdsa_key::serve()
 }
 
 /// Returns this canister's metadata

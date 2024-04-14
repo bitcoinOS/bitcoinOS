@@ -11,6 +11,11 @@ pub(super) async fn serve(
 ) -> Result<RawTransactionInfo, WalletError> {
     let metadata = STATE.with(|s| s.borrow().metadata.get().clone());
 
+    // Check the caller is the owner
+    if caller != metadata.owner {
+        return Err(WalletError::UnAuthorized(caller.to_string()));
+    }
+
     let network = metadata.network;
     let key_name = metadata.ecdsa_key_id.name;
     let steward_canister = metadata.steward_canister;

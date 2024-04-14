@@ -21,6 +21,8 @@ use crate::{
     METADATA,
 };
 
+/// ---------------- Update interface of this canister ------------------
+///
 /// Create a smart wallet canister, log the action, and store the wallet owner info
 #[ic_cdk::update]
 pub async fn create_wallet() -> Result<Principal, Error> {
@@ -50,21 +52,7 @@ pub async fn create_wallet() -> Result<Principal, Error> {
     Ok(canister_id)
 }
 
-#[ic_cdk::query]
-pub fn count_wallet() -> u64 {
-    count_wallet::serve()
-}
-
-#[ic_cdk::query]
-pub fn list_wallet() -> Vec<WalletOwner> {
-    list_wallet::serve()
-}
-
-#[ic_cdk::query]
-pub fn get_wallet_action(idx: u64) -> Option<WalletAction> {
-    get_wallet_action::serve(idx)
-}
-
+/// Returns the btc balance of this canister
 #[ic_cdk::update]
 async fn canister_balance() -> Tokens {
     match ic_ledger_types::account_balance(
@@ -78,6 +66,32 @@ async fn canister_balance() -> Tokens {
         Ok(t) => t,
         _ => Tokens::from_e8s(0),
     }
+}
+
+/// --------------------- Queries interface of this canister -------------------
+///
+/// Returns the count of wallet created by os canister
+#[ic_cdk::query]
+pub fn count_wallet() -> u64 {
+    count_wallet::serve()
+}
+
+/// Returns the list of wallets created by os canister
+#[ic_cdk::query]
+pub fn list_wallet() -> Vec<WalletOwner> {
+    list_wallet::serve()
+}
+
+/// Returns the create wallet action for given index
+#[ic_cdk::query]
+pub fn get_wallet_action(idx: u64) -> Option<WalletAction> {
+    get_wallet_action::serve(idx)
+}
+
+#[ic_cdk::query]
+/// Returns metadata of os canister
+pub fn metadata() -> Metadata {
+    METADATA.with(|m| m.borrow().get().clone())
 }
 
 #[init]

@@ -6,7 +6,7 @@ CANISTERS=os,steward
 
 for canister in $(echo $CANISTERS | sed "s/,/ /g")
 do
-    generate_did "$canister" "agents/$canister"
+    generate_did "$canister" "canisters/$canister"
 done
 
 # Satellite specific code due to inheritance of the crate

@@ -43,7 +43,7 @@ service : (InitArgument) -> {
 
     // Query
     owner : () -> (PrincipalResult) query;
-    get_edcsa_key : () -> (StringResult) query;
+    edcsa_key : () -> (StringResult) query;
     metadata : () -> (MetadataResult) query;
     network : () -> (NetworkResponse) query;
     
@@ -52,5 +52,6 @@ service : (InitArgument) -> {
     bulid_transaction : (TransferRequest) -> (RawTransactionInfoResult);
     get_or_create_wallet_address: () -> (StringResult);
     issue_rgb20 : () -> (text);
+    public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });
     
 }   

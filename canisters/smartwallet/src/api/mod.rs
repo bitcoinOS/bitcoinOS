@@ -39,7 +39,8 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
 /// Returns the balance of the given bitcoin address
 #[update]
 pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
-    balance::serve(address).await
+    let caller = ic_caller();
+    balance::serve(address, caller).await
 }
 
 /// Build a transaction if the caller is controller,
@@ -52,10 +53,11 @@ pub async fn build_transaction(req: TransferRequest) -> Result<RawTransactionInf
 }
 
 /// --------------------- Queries interface of this canister -------------------
+///
 /// Returns ecdsa key of this canister if the caller is controller and the key exists
 /// otherwise return `EcdsaKeyNotFound` or `UnAuthorized`
 #[query]
-pub fn get_ecdsa_key() -> Result<String, WalletError> {
+pub fn ecdsa_key() -> Result<String, WalletError> {
     let caller = ic_caller();
     ecdsa_key::serve(&caller)
 }
@@ -77,7 +79,7 @@ fn metadata() -> Result<Metadata, WalletError> {
     })
 }
 
-/// Returns the controllers of this canister if the caller is controller
+/// Returns the owner of this canister if the caller is controller
 /// otherwise return `UnAuthorized`
 #[query]
 fn owner() -> Result<Principal, WalletError> {
@@ -101,6 +103,7 @@ where
     }
 }
 
+#[allow(unused)]
 fn validate_controller_mut<F, T>(
     state: &mut State,
     caller: &Principal,

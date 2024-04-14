@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(Debug, Clone, CandidType, Deserialize, Default)]
 pub struct EcdsaKey {
-    pub key: String,
+    pub key: EcdsaKeyId,
     pub updated_time: u64,
 }
 
