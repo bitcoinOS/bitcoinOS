@@ -7,10 +7,13 @@ edition = "2021"
 
 [dependencies]
 bitcoin = { workspace = true }
+bs58 = { workspace = true }
 candid = { workspace = true }
 ciborium = { workspace = true }
 hex = { workspace = true }
 ic-cdk = { workspace = true }
 ic-stable-structures = { workspace = true }
+ripemd ={ workspace = true }
 serde = { workspace = true }
+sha2 = { workspace = true }
 thiserror ={ workspace = true }

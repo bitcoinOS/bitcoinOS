@@ -1,3 +1,5 @@
+pub mod wallet;
+
 use ic_cdk::api::management_canister::bitcoin::{
     GetCurrentFeePercentilesRequest, GetUtxosRequest, GetUtxosResponse, MillisatoshiPerByte,
     SendTransactionRequest,

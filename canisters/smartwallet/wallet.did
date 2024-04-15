@@ -52,6 +52,7 @@ service : (InitArgument) -> {
     bulid_transaction : (TransferRequest) -> (RawTransactionInfoResult);
     get_or_create_wallet_address: () -> (StringResult);
     issue_rgb20 : () -> (text);
+    p2pkh_address : () -> (StringResult);
     public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });
     
 }   

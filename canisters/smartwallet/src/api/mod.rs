@@ -1,12 +1,15 @@
 mod balance;
 mod build_transaction;
 mod ecdsa_key;
+mod p2pkh_address;
 mod public_key;
+mod utxos;
 
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, principal_to_derivation_path};
+use bitcoin::network;
 use candid::Principal;
-use ic_cdk::api::management_canister::bitcoin::Satoshi;
+use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, Satoshi};
 use ic_cdk::{query, update};
 
 use crate::context::{State, STATE};
@@ -24,6 +27,25 @@ pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
     let caller = ic_caller();
 
     crate::bitcoin::get_or_create_wallet_address(caller).await
+}
+
+/// Returns the P2PKH address of this canister at a specific derivation path
+#[update]
+pub async fn p2pkh_address() -> Result<String, WalletError> {
+    let caller = ic_caller();
+    let derivation_path = principal_to_derivation_path(caller);
+    let metadata = STATE.with(|s| s.borrow().metadata.get().clone());
+
+    let key_name = metadata.ecdsa_key_id.name;
+    let network = metadata.network;
+
+    p2pkh_address::serve(network, &key_name, derivation_path).await
+}
+
+/// Returns the utxos of this canister address if the caller is controller
+pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
+    let network = STATE.with(|s| s.borrow().metadata.get().network);
+    utxos::serve(address, network).await
 }
 
 /// Returns this canister's public key with hex string
