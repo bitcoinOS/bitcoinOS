@@ -13,7 +13,7 @@ use ic_stable_structures::{storable::Bound, Storable};
 
 pub const SIG_HASH_TYPE: EcdsaSighashType = EcdsaSighashType::All;
 
-pub type ICBitcoinNetwork = ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+// pub type ICBitcoinNetwork = ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 
 #[derive(Default)]
 struct Cbor<T>(pub T)

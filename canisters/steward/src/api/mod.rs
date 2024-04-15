@@ -18,10 +18,10 @@ use crate::{domain::Metadata, error::StewardError};
 #[update]
 pub async fn public_key() -> Result<PublicKeyResponse, StewardError> {
     let caller = ic_caller();
-    let key_name = METADATA.with(|m| m.borrow().get().ecdsa_key_id.name.clone());
+    let key_id = METADATA.with(|m| m.borrow().get().ecdsa_key_id.clone());
     let derivation_path = principal_to_derivation_path(caller);
 
-    public_key::serve(&key_name, derivation_path).await
+    public_key::serve(derivation_path, key_id).await
 }
 
 /// Finalize the tx and send it to Bitcoin network
@@ -32,9 +32,9 @@ pub async fn finalize_tx_and_send(raw_tx_info: RawTransactionInfo) -> Result<Str
     let wallet_canister = ic_caller();
     let metadata = METADATA.with(|m| m.borrow().get().clone());
     let network = metadata.network;
-    let key_name = metadata.ecdsa_key_id.name;
+    let key_id = metadata.ecdsa_key_id;
 
-    finalize_tx_and_send::serve(raw_tx_info, key_name, wallet_canister, network).await
+    finalize_tx_and_send::serve(raw_tx_info, key_id, wallet_canister, network).await
 }
 
 /// --------------------- Queries interface of this canister -------------------

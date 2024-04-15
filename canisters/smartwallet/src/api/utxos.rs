@@ -6,7 +6,7 @@ pub async fn serve(
     address: String,
     network: BitcoinNetwork,
 ) -> Result<GetUtxosResponse, WalletError> {
-    base::bitcoins::wallet::get_utxos(address, network, None)
+    base::bitcoins::get_utxos(address, network, None)
         .await
         .map_err(|e| e.into())
 }

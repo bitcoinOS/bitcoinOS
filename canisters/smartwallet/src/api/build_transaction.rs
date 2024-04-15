@@ -1,15 +1,16 @@
 use base::tx::RawTransactionInfo;
 use candid::Principal;
 
-use crate::context::STATE;
 use crate::domain::SelfCustodyKey;
 use crate::{domain::request::TransferRequest, error::WalletError};
+
+use super::{get_metadata, get_raw_wallet};
 
 pub(super) async fn serve(
     caller: Principal,
     req: TransferRequest,
 ) -> Result<RawTransactionInfo, WalletError> {
-    let metadata = STATE.with(|s| s.borrow().metadata.get().clone());
+    let metadata = get_metadata();
 
     // Check the caller is the owner
     if caller != metadata.owner {
@@ -17,7 +18,7 @@ pub(super) async fn serve(
     }
 
     let network = metadata.network;
-    let key_name = metadata.ecdsa_key_id.name;
+    let key_id = metadata.ecdsa_key_id;
     let steward_canister = metadata.steward_canister;
     let wallet_key = SelfCustodyKey {
         network,
@@ -25,10 +26,7 @@ pub(super) async fn serve(
         steward_canister,
     };
 
-    let wallet_opt = STATE.with(|s| {
-        let state = s.borrow();
-        state.raw_wallet.get(&wallet_key)
-    });
+    let wallet_opt = get_raw_wallet(&wallet_key);
 
     let wallet = if let Some(wallet) = wallet_opt {
         wallet
@@ -53,8 +51,8 @@ pub(super) async fn serve(
 
     tx_info = base::utils::sign_transaction(
         tx_info?,
-        &key_name,
         &[caller.as_slice().to_vec()],
+        key_id,
         base::domain::MultiSigIndex::First,
     )
     .await;

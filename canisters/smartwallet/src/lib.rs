@@ -1,5 +1,5 @@
 pub mod api;
-pub mod bitcoin;
+// pub mod bitcoin;
 pub mod constants;
 pub mod context;
 pub mod domain;
@@ -15,9 +15,8 @@ use crate::error::WalletError;
 use base::domain::EcdsaKeyIds;
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, ic_time};
-use base::ICBitcoinNetwork;
 use candid::{CandidType, Principal};
-use ic_cdk::api::management_canister::bitcoin::Satoshi;
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use ic_cdk::export_candid;
 use serde::Deserialize;
 
@@ -59,7 +58,7 @@ export_candid!();
 
 #[derive(CandidType, Deserialize)]
 struct InitArgument {
-    network: ICBitcoinNetwork,
+    network: BitcoinNetwork,
     steward_canister: Principal,
 }
 

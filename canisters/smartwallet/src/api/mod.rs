@@ -1,13 +1,13 @@
 mod balance;
 mod build_transaction;
 mod ecdsa_key;
+mod get_or_create_wallet_address;
 mod p2pkh_address;
 mod public_key;
 mod utxos;
 
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, principal_to_derivation_path};
-use bitcoin::network;
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, Satoshi};
 use ic_cdk::{query, update};
@@ -15,7 +15,7 @@ use ic_cdk::{query, update};
 use crate::context::{State, STATE};
 use crate::domain::request::TransferRequest;
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::Metadata;
+use crate::domain::{Metadata, RawWallet, SelfCustodyKey};
 use crate::error::WalletError;
 
 /// ---------------- Update interface of this canister ------------------
@@ -26,7 +26,7 @@ use crate::error::WalletError;
 pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
     let caller = ic_caller();
 
-    crate::bitcoin::get_or_create_wallet_address(caller).await
+    get_or_create_wallet_address::serve(caller).await
 }
 
 /// Returns the P2PKH address of this canister at a specific derivation path
@@ -36,10 +36,10 @@ pub async fn p2pkh_address() -> Result<String, WalletError> {
     let derivation_path = principal_to_derivation_path(caller);
     let metadata = STATE.with(|s| s.borrow().metadata.get().clone());
 
-    let key_name = metadata.ecdsa_key_id.name;
+    let key_id = metadata.ecdsa_key_id;
     let network = metadata.network;
 
-    p2pkh_address::serve(network, &key_name, derivation_path).await
+    p2pkh_address::serve(network, derivation_path, key_id).await
 }
 
 /// Returns the utxos of this canister address if the caller is controller
@@ -52,10 +52,10 @@ pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
 #[update]
 pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
     let caller = ic_caller();
-    let key_name = STATE.with(|s| s.borrow().metadata.get().ecdsa_key_id.name.clone());
+    let key_id = get_metadata().ecdsa_key_id;
     let derivation_path = principal_to_derivation_path(caller);
 
-    public_key::serve(&key_name, derivation_path).await
+    public_key::serve(derivation_path, key_id).await
 }
 
 /// Returns the balance of the given bitcoin address
@@ -139,4 +139,12 @@ where
     } else {
         Err(WalletError::UnAuthorized(caller.to_string()))
     }
+}
+
+fn get_metadata() -> Metadata {
+    STATE.with(|s| s.borrow().metadata.get().clone())
+}
+
+fn get_raw_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
+    STATE.with(|s| s.borrow().raw_wallet.get(key).clone())
 }

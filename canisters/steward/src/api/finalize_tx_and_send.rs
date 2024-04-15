@@ -1,12 +1,12 @@
 use base::tx::RawTransactionInfo;
 use candid::Principal;
-use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 
 use crate::error::StewardError;
 
 pub async fn serve(
     raw_tx_info: RawTransactionInfo,
-    key_name: String,
+    key_id: EcdsaKeyId,
     wallet_canister: Principal,
     network: BitcoinNetwork,
 ) -> Result<String, StewardError> {
@@ -14,8 +14,8 @@ pub async fn serve(
 
     tx_info = base::utils::sign_transaction(
         tx_info,
-        &key_name,
         &[wallet_canister.as_slice().to_vec()],
+        key_id,
         base::domain::MultiSigIndex::Second,
     )
     .await?;
