@@ -49,6 +49,9 @@ To learn more before you start working with bitcoinOS, see the following documen
 - [ic-cdk](https://docs.rs/ic-cdk)
 - [ic-cdk-macros](https://docs.rs/ic-cdk-macros)
 - [Candid Introduction](https://internetcomputer.org/docs/current/developer-docs/backend/candid/)
+- [IC Bitcoin Integration](https://internetcomputer.org/how-it-works/bitcoin-integration/)
+- [Bitcoin Integration Wiki](https://wiki.internetcomputer.org/wiki/Bitcoin_Integration)
+- [Bitcoin Canister Source Code](https://github.com/dfinity/bitcoin-canister)
 
 If you want to start working on your project right away, you might want to try the following commands:
 
