@@ -255,7 +255,7 @@ fn build_transaction_sighashes(
         .collect()
 }
 
-/// Create wallet for a given Principal, steward_canister, bitcoin network and key_name
+/// Create wallet for a given Principal, steward_canister, bitcoin network and EcdsaKeyId
 pub async fn create_wallet(
     principal: Principal,
     steward_canister: Principal,

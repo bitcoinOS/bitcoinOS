@@ -1,5 +1,6 @@
 mod balance;
 mod build_transaction;
+mod current_fee_percentiles;
 mod ecdsa_key;
 mod get_or_create_wallet_address;
 mod p2pkh_address;
@@ -9,7 +10,7 @@ mod utxos;
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, principal_to_derivation_path};
 use candid::Principal;
-use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, Satoshi};
+use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
 use crate::context::{State, STATE};
@@ -34,7 +35,7 @@ pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
 pub async fn p2pkh_address() -> Result<String, WalletError> {
     let caller = ic_caller();
     let derivation_path = principal_to_derivation_path(caller);
-    let metadata = STATE.with(|s| s.borrow().metadata.get().clone());
+    let metadata = get_metadata();
 
     let key_id = metadata.ecdsa_key_id;
     let network = metadata.network;
@@ -44,7 +45,7 @@ pub async fn p2pkh_address() -> Result<String, WalletError> {
 
 /// Returns the utxos of this canister address if the caller is controller
 pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
-    let network = STATE.with(|s| s.borrow().metadata.get().network);
+    let network = get_metadata().network;
     utxos::serve(address, network).await
 }
 
@@ -63,6 +64,14 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
 pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
     let caller = ic_caller();
     balance::serve(address, caller).await
+}
+
+/// Returns the 100 fee percentiles measured in millisatoshi/byte.
+/// Percentiles are computed from the last 10,000 transactions (if available).
+#[update]
+pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, WalletError> {
+    let network = get_metadata().network;
+    current_fee_percentiles::serve(network).await
 }
 
 /// Build a transaction if the caller is controller,
@@ -87,7 +96,7 @@ pub fn ecdsa_key() -> Result<String, WalletError> {
 /// Returns the network of this canister
 #[query]
 fn network() -> NetworkResponse {
-    STATE.with(|s| s.borrow().metadata.get().network.into())
+    get_metadata().network.into()
 }
 
 /// Returns the metadata of this canister if the caller is controller

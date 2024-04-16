@@ -16,7 +16,7 @@ use base::domain::EcdsaKeyIds;
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, ic_time};
 use candid::{CandidType, Principal};
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::export_candid;
 use serde::Deserialize;
 
