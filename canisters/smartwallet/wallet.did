@@ -74,9 +74,9 @@ service : (InitArgument) -> {
     // Update
     balance : (text) -> (StringResult) ;
     bulid_transaction : (TransferRequest) -> (RawTransactionInfoResult);
-    create_single_wallet : () -> (StringResult);
     current_fee_percentiles : () -> (vec nat64);
     get_or_create_multisig22_wallet_address: () -> (StringResult);
+    get_or_create_single_p2wsh_wallet_address : () -> (StringResult);
     issue_rgb20 : () -> (text);
     p2pkh_address : () -> (StringResult);
     public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });

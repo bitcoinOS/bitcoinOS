@@ -26,7 +26,7 @@ use crate::error::WalletError;
 /// Returns an exists address for the caller,
 /// or create a new one if it doesn't exist, and returns it
 #[update]
-pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
+pub async fn get_or_create_multisig22_wallet_address() -> Result<String, WalletError> {
     let caller = ic_caller();
 
     get_or_create_multisig22_wallet_address::serve(caller).await
@@ -34,7 +34,7 @@ pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
 
 /// Returns the single signature wallet of this canister id as diravtion path
 #[update]
-pub async fn get_or_create_single_p2wsh_wallet() -> Result<String, WalletError> {
+pub async fn get_or_create_single_p2wsh_wallet_address() -> Result<String, WalletError> {
     let caller = ic_caller();
     let metadata = get_metadata();
     let key_id = metadata.ecdsa_key_id;
