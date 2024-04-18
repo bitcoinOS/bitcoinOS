@@ -2,11 +2,13 @@ mod balance;
 mod build_transaction;
 mod current_fee_percentiles;
 mod ecdsa_key;
-mod get_or_create_wallet_address;
+mod get_or_create_multisig22_wallet_address;
+mod get_or_create_single_p2wsh_wallet;
 mod p2pkh_address;
 mod public_key;
 mod utxos;
 
+use base::domain::Wallet;
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, principal_to_derivation_path};
 use candid::Principal;
@@ -27,7 +29,19 @@ use crate::error::WalletError;
 pub async fn get_or_create_wallet_address() -> Result<String, WalletError> {
     let caller = ic_caller();
 
-    get_or_create_wallet_address::serve(caller).await
+    get_or_create_multisig22_wallet_address::serve(caller).await
+}
+
+/// Returns the single signature wallet of this canister id as diravtion path
+#[update]
+pub async fn get_or_create_single_p2wsh_wallet() -> Result<String, WalletError> {
+    let caller = ic_caller();
+    let metadata = get_metadata();
+    let key_id = metadata.ecdsa_key_id;
+    let steward_canister = metadata.steward_canister;
+    let network = metadata.network;
+
+    get_or_create_single_p2wsh_wallet::serve(caller, key_id, steward_canister, network).await
 }
 
 /// Returns the P2PKH address of this canister at a specific derivation path
@@ -156,4 +170,8 @@ fn get_metadata() -> Metadata {
 
 fn get_raw_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
     STATE.with(|s| s.borrow().raw_wallet.get(key).clone())
+}
+
+fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Option<RawWallet> {
+    STATE.with(|s| s.borrow_mut().raw_wallet.insert(wallet_key, wallet.into()))
 }

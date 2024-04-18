@@ -14,6 +14,21 @@ pub struct Wallet {
     pub address: Address,
     // The derivation path of the wallet, derived from the user's principal.
     pub derivation_path: Vec<Vec<u8>>,
+    // The wallet type.
+    pub wallet_type: WalletType,
+}
+
+/// A wallet type of contains Single signature or 2-of-2 multisig.
+#[derive(CandidType, Deserialize, Debug, Clone)]
+pub enum WalletType {
+    Single,
+    MultiSig22,
+}
+
+impl Default for WalletType {
+    fn default() -> Self {
+        Self::Single
+    }
 }
 
 pub enum EcdsaKeyIds {

@@ -1,3 +1,6 @@
+use bitcoin::secp256k1::PublicKey;
+use bitcoin::ScriptBuf;
+
 use candid::Principal;
 use ic_cdk::api::management_canister::{
     bitcoin::{
@@ -10,7 +13,11 @@ use ic_cdk::api::management_canister::{
 };
 use sha2::Digest;
 
-use crate::{ecdsa, utils::BaseResult};
+use crate::{
+    domain::{Wallet, WalletType},
+    ecdsa,
+    utils::{to_bitcoin_network, BaseResult},
+};
 
 /// Returns the balance of the given bitcoin address from IC management canister
 ///
@@ -110,6 +117,35 @@ fn public_key_to_p2pkh_address(network: BitcoinNetwork, public_key: &[u8]) -> St
     full_address.extend(checksum);
 
     bs58::encode(full_address).into_string()
+}
+
+/// Create a wallet with p2wsh address from public key
+/// Returns Wallet
+pub async fn create_p2wsh_wallet(
+    derivation_path: Vec<Vec<u8>>,
+    public_key: &[u8],
+    network: BitcoinNetwork,
+) -> BaseResult<Wallet> {
+    let public_key = PublicKey::from_slice(public_key)?;
+
+    // let witness_script = ScriptBuf::new_p2pkh(&public_key.pubkey_hash());
+
+    // let script_pub_key = ScriptBuf::new_p2wsh(&witness_script.wscript_hash());
+    let witness_script = bitcoin::blockdata::script::Builder::new()
+        .push_int(1)
+        .push_slice(public_key.serialize())
+        .into_script();
+    let script_buf = ScriptBuf::new_p2wsh(&witness_script.wscript_hash());
+
+    let address =
+        bitcoin::Address::from_script(script_buf.as_script(), to_bitcoin_network(network))?;
+
+    Ok(Wallet {
+        witness_script,
+        address,
+        derivation_path,
+        wallet_type: WalletType::Single,
+    })
 }
 
 fn ripemd160(data: &[u8]) -> Vec<u8> {

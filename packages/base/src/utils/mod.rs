@@ -19,7 +19,7 @@ use hex::ToHex;
 use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 
 use crate::constants::{DEFAULT_FEE_MILLI_SATOSHI, DUST_AMOUNT_SATOSHI, SIG_HASH_TYPE};
-use crate::domain::{MultiSigIndex, Wallet};
+use crate::domain::{MultiSigIndex, Wallet, WalletType};
 use crate::error::Error;
 use crate::tx::TransactionInfo;
 use crate::{bitcoins, ecdsa};
@@ -255,8 +255,8 @@ fn build_transaction_sighashes(
         .collect()
 }
 
-/// Create wallet for a given Principal, steward_canister, bitcoin network and EcdsaKeyId
-pub async fn create_wallet(
+/// Create a 2-2 mutlisigwallet for a given Principal, steward_canister, bitcoin network and EcdsaKeyId
+pub async fn create_multisig22_wallet(
     principal: Principal,
     steward_canister: Principal,
     network: BitcoinNetwork,
@@ -298,6 +298,7 @@ pub async fn create_wallet(
         witness_script,
         derivation_path,
         address,
+        wallet_type: WalletType::MultiSig22,
     })
 }
 
@@ -393,7 +394,7 @@ pub fn to_ic_bitcoin_network(network: &str) -> BitcoinNetwork {
 
 /// Utility function to translate the bitcoin network from the IC cdk
 /// to the bitoin network of the rust-bitcoin library.
-fn to_bitcoin_network(bitcoin_network: BitcoinNetwork) -> Network {
+pub fn to_bitcoin_network(bitcoin_network: BitcoinNetwork) -> Network {
     match bitcoin_network {
         BitcoinNetwork::Mainnet => Network::Bitcoin,
         BitcoinNetwork::Testnet => Network::Testnet,

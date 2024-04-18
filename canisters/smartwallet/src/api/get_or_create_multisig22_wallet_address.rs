@@ -2,8 +2,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 
 use crate::{
-    context::STATE,
-    domain::{RawWallet, SelfCustodyKey, Wallet},
+    domain::{SelfCustodyKey, Wallet},
     error::WalletError,
 };
 
@@ -29,26 +28,24 @@ pub async fn serve(caller: Principal) -> Result<String, WalletError> {
     match raw_wallet {
         Some(wallet) => Ok(Wallet::from(wallet).address.to_string()),
         None => {
-            let wallet = create_wallet(caller, steward_canister, network, key_id).await?;
+            let wallet =
+                create_multisig22_wallet(caller, steward_canister, network, key_id).await?;
+            let address = wallet.address.to_string();
 
-            insert_wallet(wallet_key, wallet.clone().into());
+            super::insert_wallet(wallet_key, wallet);
 
-            Ok(wallet.address.to_string())
+            Ok(address)
         }
     }
 }
 
-fn insert_wallet(wallet_key: SelfCustodyKey, wallet: RawWallet) -> Option<RawWallet> {
-    STATE.with(|s| s.borrow_mut().raw_wallet.insert(wallet_key, wallet))
-}
-
-async fn create_wallet(
+async fn create_multisig22_wallet(
     caller: Principal,
     steward_canister: Principal,
     network: BitcoinNetwork,
     key_id: EcdsaKeyId,
 ) -> Result<Wallet, WalletError> {
-    base::utils::create_wallet(caller, steward_canister, network, key_id)
+    base::utils::create_multisig22_wallet(caller, steward_canister, network, key_id)
         .await
         .map_err(|e| WalletError::CreateWalletError(e.to_string()))
 }
