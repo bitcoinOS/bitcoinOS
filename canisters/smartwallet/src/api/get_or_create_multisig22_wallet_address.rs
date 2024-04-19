@@ -36,7 +36,7 @@ pub async fn serve(caller: Principal) -> Result<String, WalletError> {
                 create_multisig22_wallet(caller, steward_canister, network, key_id).await?;
             let address = wallet.address.to_string();
 
-            super::insert_wallet(wallet_key, wallet);
+            super::insert_wallet(wallet_key, wallet)?;
 
             Ok(address)
         }

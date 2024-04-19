@@ -21,24 +21,20 @@ use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 use crate::constants::{DEFAULT_FEE_MILLI_SATOSHI, DUST_AMOUNT_SATOSHI, SIG_HASH_TYPE};
 use crate::domain::{MultiSigIndex, Wallet, WalletType};
 use crate::error::Error;
-use crate::tx::TransactionInfo;
+use crate::tx::{TransactionInfo, TransactionRequest};
 use crate::{bitcoins, ecdsa};
 
 pub type BaseResult<T> = Result<T, Error>;
 
+/// Calculate the fee of a transaction and
 /// Build an unsigned transaction for the given amount, network, address
 /// Auto choose the utxos to spend
 pub async fn build_unsigned_transaction_auto(
     wallet: Wallet,
-    amounts: &[Satoshi],
-    receiver_addresses: &[&str],
+    tx_req: TransactionRequest,
     network: BitcoinNetwork,
 ) -> BaseResult<TransactionInfo> {
-    if amounts.len() != receiver_addresses.len() {
-        return Err(Error::AmountsAndAddressesMismatch);
-    }
-
-    if amounts.iter().any(|amount| *amount < DUST_AMOUNT_SATOSHI) {
+    if tx_req.iter().any(|req| req.amount < DUST_AMOUNT_SATOSHI) {
         return Err(Error::AmountLessThanDust);
     }
 
@@ -58,48 +54,25 @@ pub async fn build_unsigned_transaction_auto(
         .await?
         .utxos;
 
-    let receiver_addresses: Result<Vec<Address>, Error> = receiver_addresses
-        .iter()
-        .map(|address| {
-            Address::from_str(address)
-                .map_err(|e| Error::BitcoinAddressError(e.to_string()))
-                .and_then(|address| {
-                    address
-                        .require_network(to_bitcoin_network(network))
-                        .map_err(|e| e.into())
-                })
-        })
-        .collect();
-
-    let receiver_addresses = receiver_addresses?;
-
-    // Build transaction
-    build_transaction_auto(
-        &wallet,
-        &utxos,
-        receiver_addresses.as_slice(),
-        amounts,
-        fee_per_byte,
-    )
-    .await
+    // Build transaction with fee and utxos
+    calc_fee_and_build_transaction_with_utxos_fee_auto(&wallet, &utxos, &tx_req, fee_per_byte).await
 }
 
-/// Build a transaction with the given wallet, amount of `sathoshi`, utxos, receiver_address, fee_per_byte
+/// Build a transaction with the given wallet, utxos, transaction request, fee_per_byte
 /// Auto choose the utxos to spend
-async fn build_transaction_auto(
+async fn calc_fee_and_build_transaction_with_utxos_fee_auto(
     wallet: &Wallet,
     utxos: &[Utxo],
-    receiver_addresses: &[Address],
-    amounts: &[Satoshi],
+    tx_req: &TransactionRequest,
     fee_per_byte: MillisatoshiPerByte,
 ) -> BaseResult<TransactionInfo> {
     ic_cdk::print("Building transaction ... \n");
 
     let mut total_fee = 0;
 
+    // Calculate the total fees of the transaction
     loop {
-        let transaction_info =
-            build_transaction_with_fee_auto(wallet, utxos, receiver_addresses, amounts, total_fee)?;
+        let transaction_info = build_transaction_with_fee_auto(wallet, utxos, tx_req, total_fee)?;
 
         // Calc the transaction size and fee is match use fake signing the transaction.
         let signed_transaction = simulate_signatures(&transaction_info)?.tx;
@@ -115,19 +88,18 @@ async fn build_transaction_auto(
     }
 }
 
-/// Build a transaction with the given wallet, amount of `sathoshi`, utxos, receiver_address, fee
+/// Build a transaction with the given wallet,utxos, transaction request, fee
 /// auto choose utxos to spend
 fn build_transaction_with_fee_auto(
     wallet: &Wallet,
     utxos: &[Utxo],
-    receiver_addresses: &[Address],
-    amounts: &[Satoshi],
+    tx_req: &TransactionRequest,
     fee: u64,
 ) -> BaseResult<TransactionInfo> {
     let mut utxos_to_spend = vec![];
     let mut input_amounts = vec![];
     let mut total_spent = 0;
-    let total_amount: Satoshi = amounts.iter().sum();
+    let total_amount: Satoshi = tx_req.iter().map(|req| req.amount).sum();
 
     for utxo in utxos.iter().rev() {
         total_spent += utxo.value;
@@ -164,12 +136,11 @@ fn build_transaction_with_fee_auto(
         .collect();
 
     // build the tx outputs
-    let mut outputs: Vec<TxOut> = receiver_addresses
+    let mut outputs: Vec<TxOut> = tx_req
         .iter()
-        .zip(amounts)
-        .map(|(address, amount)| TxOut {
-            script_pubkey: address.script_pubkey(),
-            value: Amount::from_sat(*amount),
+        .map(|req| TxOut {
+            script_pubkey: req.recipient.script_pubkey(),
+            value: Amount::from_sat(req.amount),
         })
         .collect();
 
@@ -302,9 +273,9 @@ pub async fn create_multisig22_wallet(
     })
 }
 
-/// Signature a transaction with given key and derivation path
+/// Signature a transaction with given key and derivation path for multisig22
 /// Warning: this functions assumes that the sender is the P2WSH address.
-pub async fn sign_transaction(
+pub async fn sign_transaction_multisig22(
     tx_info: TransactionInfo,
     derivation_path: &[Vec<u8>],
     key_id: EcdsaKeyId,
@@ -343,11 +314,38 @@ pub async fn sign_transaction(
     TransactionInfo::new(tx, tx_info.witness_script.clone(), tx_info.sig_hashes)
 }
 
+/// Signature a transaction with given key and derivation path for single
+/// Warning: this functions assumes that the sender is the P2WSH address.
+pub async fn sign_transaction_single(
+    tx_info: TransactionInfo,
+    derivation_path: &[Vec<u8>],
+    key_id: EcdsaKeyId,
+) -> BaseResult<TransactionInfo> {
+    let (mut tx, sig_hashes) = (tx_info.tx, tx_info.sig_hashes.clone());
+
+    for (tx_in, sighash) in tx.input.iter_mut().zip(sig_hashes) {
+        let sign = ecdsa::sign_with_ecdsa(
+            derivation_path.to_owned(),
+            key_id.clone(),
+            sighash.to_byte_array().to_vec(),
+        )
+        .await;
+
+        // Convert signature to DER format
+        let mut der_signature = sign_to_der(sign?);
+        der_signature.push(SIG_HASH_TYPE.to_u32() as u8);
+
+        tx_in.witness.push(der_signature);
+    }
+
+    TransactionInfo::new(tx, tx_info.witness_script.clone(), tx_info.sig_hashes)
+}
+
 /// Send a transaction
 pub async fn send_transaction(
     tx_info: &TransactionInfo,
     network: BitcoinNetwork,
-) -> BaseResult<()> {
+) -> BaseResult<Txid> {
     let txid = tx_info.tx.txid();
     let tx_bytes = consensus::serialize(tx_info.tx());
     ic_cdk::print(format!(
@@ -359,7 +357,7 @@ pub async fn send_transaction(
     bitcoins::send_transaction(tx_bytes, network).await?;
 
     ic_cdk::print(format!("Transaction {:?} sent.", txid));
-    Ok(())
+    Ok(txid)
 }
 
 /// Check a principal is a normal principal or not
@@ -390,6 +388,17 @@ pub fn to_ic_bitcoin_network(network: &str) -> BitcoinNetwork {
     } else {
         BitcoinNetwork::Regtest
     }
+}
+
+/// A helper function to convert a string to a Address of ust-bitcoin library with network
+pub fn str_to_bitcoin_address(address: &str, network: BitcoinNetwork) -> Result<Address, Error> {
+    Address::from_str(address)
+        .map_err(|e| Error::BitcoinAddressError(e.to_string()))
+        .and_then(|address| {
+            address
+                .require_network(to_bitcoin_network(network))
+                .map_err(|e| e.into())
+        })
 }
 
 /// Utility function to translate the bitcoin network from the IC cdk

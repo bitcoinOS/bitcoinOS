@@ -12,7 +12,7 @@ pub async fn serve(
 ) -> Result<String, StewardError> {
     let mut tx_info = base::tx::TransactionInfo::try_from(raw_tx_info)?;
 
-    tx_info = base::utils::sign_transaction(
+    tx_info = base::utils::sign_transaction_multisig22(
         tx_info,
         &[wallet_canister.as_slice().to_vec()],
         key_id,
@@ -20,7 +20,7 @@ pub async fn serve(
     )
     .await?;
 
-    base::utils::send_transaction(&tx_info, network).await?;
+    let txid = base::utils::send_transaction(&tx_info, network).await?;
 
-    Ok(tx_info.tx.txid().to_string())
+    Ok(txid.to_string())
 }

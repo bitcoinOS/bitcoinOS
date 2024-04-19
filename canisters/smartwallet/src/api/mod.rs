@@ -1,4 +1,5 @@
 mod balance;
+mod build_transaction_with_multisig22_p2wsh;
 mod build_transaction_with_single_p2wsh;
 mod current_fee_percentiles;
 mod ecdsa_key;
@@ -11,14 +12,15 @@ mod utxos;
 use base::domain::Wallet;
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, principal_to_derivation_path};
+
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::context::{METADATA, RAW_WALLET};
+use crate::context::{METADATA, RAW_WALLET, TRANSACTION_LOG};
 use crate::domain::request::TransferRequest;
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, RawWallet, SelfCustodyKey};
+use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
 use crate::error::WalletError;
 
 /// ---------------- Update interface of this canister ------------------
@@ -89,13 +91,24 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
     current_fee_percentiles::serve(network).await
 }
 
-/// Build a transaction if the caller is controller,
+/// Send a transaction if the caller is controller, and return txid if success
 /// otherwise return `UnAuthorized`
 #[update]
-pub async fn build_transaction(req: TransferRequest) -> Result<RawTransactionInfo, WalletError> {
+pub async fn transfer_single(req: TransferRequest) -> Result<String, WalletError> {
     let caller = ic_caller();
 
     build_transaction_with_single_p2wsh::serve(caller, req).await
+}
+
+/// Build a transaction if the caller is controller,
+/// otherwise return `UnAuthorized`
+#[update]
+pub async fn build_transaction_multisig22(
+    req: TransferRequest,
+) -> Result<RawTransactionInfo, WalletError> {
+    let caller = ic_caller();
+
+    build_transaction_with_multisig22_p2wsh::serve(caller, req).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -118,12 +131,7 @@ fn network() -> NetworkResponse {
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, WalletError> {
-    // let caller = ic_caller();
-    // STATE.with(|s| {
-    //     let state = s.borrow();
-    //     validate_controller(&state, &caller, |s| Ok(s.metadata.get().clone()))
-    // })
-    Ok(get_metadata())
+    validate_owner(ic_caller())
 }
 
 /// Returns the owner of this canister if the caller is controller
@@ -132,10 +140,12 @@ fn metadata() -> Result<Metadata, WalletError> {
 fn owner() -> Result<Principal, WalletError> {
     let caller = ic_caller();
 
-    validate_controller(caller).map(|m| m.owner)
+    validate_owner(caller).map(|m| m.owner)
 }
 
-fn validate_controller(caller: Principal) -> Result<Metadata, WalletError> {
+/// Validate the caller if it is owner, return `Metadata` if true,
+/// otherwise return `UnAuthorized`
+fn validate_owner(caller: Principal) -> Result<Metadata, WalletError> {
     let metadata = get_metadata();
     if metadata.owner == caller {
         Ok(metadata)
@@ -143,33 +153,6 @@ fn validate_controller(caller: Principal) -> Result<Metadata, WalletError> {
         Err(WalletError::UnAuthorized(caller.to_string()))
     }
 }
-
-// fn validate_controller<F, T>(state: &State, caller: &Principal, f: F) -> Result<T, WalletError>
-// where
-//     F: FnOnce(&State) -> Result<T, WalletError>,
-// {
-//     if state.metadata.get().owner == *caller {
-//         f(state)
-//     } else {
-//         Err(WalletError::UnAuthorized(caller.to_string()))
-//     }
-// }
-
-// #[allow(unused)]
-// fn validate_controller_mut<F, T>(
-//     state: &mut State,
-//     caller: &Principal,
-//     mut f: F,
-// ) -> Result<T, WalletError>
-// where
-//     F: FnMut(&mut State) -> Result<T, WalletError>,
-// {
-//     if state.metadata.get().owner == *caller {
-//         f(state)
-//     } else {
-//         Err(WalletError::UnAuthorized(caller.to_string()))
-//     }
-// }
 
 fn get_metadata() -> Metadata {
     METADATA.with(|s| s.borrow().get().clone())
@@ -179,6 +162,26 @@ fn get_raw_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
     RAW_WALLET.with(|s| s.borrow().get(key).clone())
 }
 
-fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Option<RawWallet> {
-    RAW_WALLET.with(|s| s.borrow_mut().insert(wallet_key, wallet.into()))
+fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {
+    RAW_WALLET.with(|s| {
+        let mut raw_wallet = s.borrow_mut();
+
+        match raw_wallet.get(&wallet_key) {
+            Some(w) => Err(WalletError::WalletAlreadyExists(format!("{:?}", w))),
+            None => {
+                raw_wallet.insert(wallet_key, wallet.into());
+                Ok(())
+            }
+        }
+    })
+}
+
+fn append_transaction_log(log: TransactionLog) -> Result<(), WalletError> {
+    TRANSACTION_LOG.with(|s| {
+        s.borrow_mut()
+            .append(&log)
+            .map_err(|e| WalletError::AppendTransferLogError(format!("{:?}", e)))?;
+
+        Ok(())
+    })
 }

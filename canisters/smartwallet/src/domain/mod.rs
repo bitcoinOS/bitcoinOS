@@ -10,7 +10,9 @@ use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyI
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
-use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE};
+use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE};
+
+use self::request::TransferInfo;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
@@ -118,6 +120,28 @@ impl Storable for RawWallet {
 
     const BOUND: Bound = Bound::Bounded {
         max_size: SELF_CUSTODY_SIZE as u32,
+        is_fixed_size: false,
+    };
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TransactionLog {
+    pub txs: Vec<TransferInfo>,
+    pub sender: Principal,
+    pub send_time: u64,
+}
+
+impl Storable for TransactionLog {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        std::borrow::Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: TRANSACTION_LOG_SIZE as u32,
         is_fixed_size: false,
     };
 }

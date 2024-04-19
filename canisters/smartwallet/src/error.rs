@@ -28,6 +28,12 @@ pub enum WalletError {
 
     #[error("Wallet {0:?} not found")]
     WalletNotFound(String),
+
+    #[error("Wallet {0:?} already exists")]
+    WalletAlreadyExists(String),
+
+    #[error("Append transfer log error: {0:?}")]
+    AppendTransferLogError(String),
 }
 
 impl From<base::error::Error> for WalletError {

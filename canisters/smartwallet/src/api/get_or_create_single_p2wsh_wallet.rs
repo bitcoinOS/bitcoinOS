@@ -29,7 +29,7 @@ pub async fn serve(
 
             let address = wallet.address.to_string();
 
-            insert_wallet(wallet_key, wallet);
+            insert_wallet(wallet_key, wallet)?;
 
             Ok(address)
         }

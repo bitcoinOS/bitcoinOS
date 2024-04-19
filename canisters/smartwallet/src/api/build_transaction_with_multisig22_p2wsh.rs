@@ -1,3 +1,4 @@
+use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, ic_time};
 use candid::Principal;
 
@@ -6,39 +7,46 @@ use crate::{domain::request::TransferRequest, error::WalletError};
 
 use super::{append_transaction_log, get_raw_wallet, validate_owner};
 
-pub(super) async fn serve(caller: Principal, req: TransferRequest) -> Result<String, WalletError> {
+pub(super) async fn serve(
+    caller: Principal,
+    tx_req: TransferRequest,
+) -> Result<RawTransactionInfo, WalletError> {
     let metadata = validate_owner(caller)?;
 
     let wallet = get_raw_wallet_opt(&metadata, caller)?;
-    let network = metadata.network;
 
-    let tx_req = req.validate_address(network)?;
+    // build transaction
+    let network = metadata.network;
+    let key_id = metadata.ecdsa_key_id;
+
+    let mut tx_info = base::utils::build_unsigned_transaction_auto(
+        wallet.into(),
+        tx_req.validate_address(network)?,
+        network,
+    )
+    .await;
+
+    // Signature transaction
+    tx_info = base::utils::sign_transaction_multisig22(
+        tx_info?,
+        &[caller.as_slice().to_vec()],
+        key_id,
+        base::domain::MultiSigIndex::First,
+    )
+    .await;
 
     // Log transfer info
     let sender = ic_caller();
     let send_time = ic_time();
     let log = TransactionLog {
-        txs: req.txs,
+        txs: tx_req.txs,
         sender,
         send_time,
     };
 
     append_transaction_log(log)?;
 
-    // build transaction
-
-    let key_id = metadata.ecdsa_key_id;
-
-    let tx_info =
-        base::utils::build_unsigned_transaction_auto(wallet.into(), tx_req, network).await?;
-
-    let tx_info =
-        base::utils::sign_transaction_single(tx_info, &[caller.as_slice().to_vec()], key_id)
-            .await?;
-
-    let txid = base::utils::send_transaction(&tx_info, network).await?;
-
-    Ok(txid.to_string())
+    tx_info.map(RawTransactionInfo::from).map_err(|e| e.into())
 }
 
 fn get_raw_wallet_opt(metadata: &Metadata, caller: Principal) -> Result<RawWallet, WalletError> {
