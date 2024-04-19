@@ -3,7 +3,7 @@ pub mod response;
 
 use std::str::FromStr;
 
-use base::domain::{EcdsaKeyIds, WalletType};
+use base::domain::{AddressType, EcdsaKeyIds, WalletType};
 use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
@@ -88,6 +88,8 @@ pub struct SelfCustodyKey {
     pub network: BitcoinNetwork,
     pub owner: Principal,
     pub steward_canister: Principal,
+    pub wallet_type: WalletType,
+    pub address_type: AddressType,
 }
 
 impl Storable for SelfCustodyKey {

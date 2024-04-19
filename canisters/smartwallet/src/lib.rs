@@ -6,7 +6,7 @@ pub mod domain;
 pub mod error;
 pub mod rgb;
 
-use crate::context::STATE;
+use crate::context::METADATA;
 use crate::domain::{
     request::TransferRequest, response::NetworkResponse, response::PublicKeyResponse, Metadata,
 };
@@ -16,7 +16,9 @@ use base::domain::EcdsaKeyIds;
 use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, ic_time};
 use candid::{CandidType, Principal};
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
+use ic_cdk::api::management_canister::bitcoin::{
+    BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte, Satoshi,
+};
 use ic_cdk::export_candid;
 use serde::Deserialize;
 
@@ -26,16 +28,15 @@ async fn init(args: InitArgument) {
     ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
     let owner = ic_caller();
+
     let network = args.network;
     let steward_canister = args.steward_canister;
     let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
     let updated_time = ic_time();
 
-    STATE.with(|m| {
-        let mut state = m.borrow_mut();
-
-        state
-            .metadata
+    METADATA.with(|m| {
+        let mut metadata = m.borrow_mut();
+        metadata
             .set(Metadata {
                 owner,
                 network,
@@ -43,16 +44,14 @@ async fn init(args: InitArgument) {
                 ecdsa_key_id,
                 updated_time,
             })
-            .expect("Failed to init network");
-
-        // state.controllers.insert(ic_caller(), ic_time());
+            .expect("Failed to init metadata")
     });
 }
 
-#[ic_cdk::update]
-fn issue_rgb20() -> String {
-    rgb::issue_rgb20()
-}
+// #[ic_cdk::update]
+// fn issue_rgb20() -> String {
+//     rgb::issue_rgb20()
+// }
 
 export_candid!();
 

@@ -1,3 +1,4 @@
+use base::domain::{AddressType, WalletType};
 use candid::Principal;
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 
@@ -17,11 +18,14 @@ pub async fn serve(caller: Principal) -> Result<String, WalletError> {
     let steward_canister = metadata.steward_canister;
     let key_id = metadata.ecdsa_key_id;
 
-    let wallet_key = SelfCustodyKey {
+    let self_custody_key = SelfCustodyKey {
         network,
         owner: caller,
         steward_canister,
+        wallet_type: WalletType::MultiSig22,
+        address_type: AddressType::P2wsh,
     };
+    let wallet_key = self_custody_key;
 
     let raw_wallet = get_raw_wallet(&wallet_key);
 

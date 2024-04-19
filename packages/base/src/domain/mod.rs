@@ -6,6 +6,8 @@ use ic_cdk::api::management_canister::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
+
 #[derive(Clone, Debug)]
 pub struct Wallet {
     // The witness script of the 2-of-2 multisig wallet.
@@ -19,10 +21,39 @@ pub struct Wallet {
 }
 
 /// A wallet type of contains Single signature or 2-of-2 multisig.
-#[derive(CandidType, Deserialize, Debug, Clone)]
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WalletType {
     Single,
     MultiSig22,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AddressType {
+    /// Pay to pubkey hash.
+    P2pkh,
+    /// Pay to script hash.
+    P2sh,
+    /// Pay to witness pubkey hash.
+    P2wpkh,
+    /// Pay to witness script hash.
+    P2wsh,
+    /// Pay to taproot.
+    P2tr,
+}
+
+impl TryFrom<bitcoin::AddressType> for AddressType {
+    type Error = Error;
+
+    fn try_from(address_type: bitcoin::AddressType) -> Result<Self, Self::Error> {
+        match address_type {
+            bitcoin::AddressType::P2pkh => Ok(Self::P2pkh),
+            bitcoin::AddressType::P2sh => Ok(Self::P2sh),
+            bitcoin::AddressType::P2wpkh => Ok(Self::P2wpkh),
+            bitcoin::AddressType::P2wsh => Ok(Self::P2wsh),
+            bitcoin::AddressType::P2tr => Ok(Self::P2tr),
+            _ => Err(Error::BitcoinAddressError(address_type.to_string())),
+        }
+    }
 }
 
 impl Default for WalletType {

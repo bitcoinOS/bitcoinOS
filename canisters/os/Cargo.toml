@@ -14,7 +14,7 @@ candid = { workspace = true }
 ic-cdk = { workspace = true }
 ic-cdk-macros = { workspace = true }
 ic-cdk-timers = { workspace = true } # Feel free to remove this dependency if you don't need timers
-ic-ledger-types ={ worksapce = true }
+ic-ledger-types ={ workspace = true }
 ic-stable-structures = { workspace = true }
 
 ciborium = { workspace = true }

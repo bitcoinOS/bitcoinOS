@@ -1,4 +1,4 @@
-use base::domain::Wallet;
+use base::domain::{AddressType, Wallet};
 use candid::Principal;
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 
@@ -16,6 +16,8 @@ pub async fn serve(
         network,
         owner: caller,
         steward_canister,
+        wallet_type: base::domain::WalletType::Single,
+        address_type: AddressType::P2wsh,
     };
 
     let raw_wallet = get_raw_wallet(&wallet_key);

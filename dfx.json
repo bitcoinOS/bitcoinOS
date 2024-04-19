@@ -7,7 +7,7 @@
       "type": "rust"
     },
     "smartwallet": {
-      "candid": "canisters/smartwallet/wallet.did",
+      "candid": "canisters/smartwallet/smartwallet.did",
       "package": "smartwallet",
       "type": "rust"
     },
@@ -30,6 +30,12 @@
       "packtool": ""
     }
   },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943"
+    }
+  },
+  
   
   "output_env_file": ".env",
   "version": 1

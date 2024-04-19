@@ -45,14 +45,14 @@ zeroize = "1.7"
 zeroize_derive = "1.4"
 
 [patch.crates-io]
-bp-consensus = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-bp-dbc = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-bp-seals = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-bp-core = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-commit_verify = { git = "https://github.com/LNP-BP/client_side_validation", branch = "master" }
-rgb-core = { git = "https://github.com/RGB-WG/rgb-core",  branch = "master" }
-rgb-std = { git = "https://github.com/RGB-WG/rgb-std",  branch = "master" }
-rgb-schemata = { git = "https://github.com/RGB-WG/rgb-schemata", branch = "master" }
+# bp-consensus = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
+# bp-dbc = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
+# bp-seals = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
+# bp-core = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
+# commit_verify = { git = "https://github.com/LNP-BP/client_side_validation", branch = "master" }
+# rgb-core = { git = "https://github.com/RGB-WG/rgb-core",  branch = "master" }
+# rgb-std = { git = "https://github.com/RGB-WG/rgb-std",  branch = "master" }
+# rgb-schemata = { git = "https://github.com/RGB-WG/rgb-schemata", branch = "master" }
 
 [profile.release]
 debug = 0

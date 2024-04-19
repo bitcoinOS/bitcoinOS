@@ -22,5 +22,11 @@ install_wallet:
     # set -euxo pipefail
     STEWARD_CANISTER=$(dfx canister id steward)
     echo $STEWARD_CANISTER
-    dfx canister install --wasm smartwallet.wasm smartwallet --argument "(record { network = variant { regtest }; steward_canister = principal \"$STEWARD_CANISTER\" })"
+    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { network = variant { regtest }; steward_canister = principal \"$STEWARD_CANISTER\" })"
+
+deploy_wallet:
+    #!/usr/bin/env bash
+    # set -euxo pipefail
+    STEWARD_CANISTER=$(dfx canister id steward)
+    dfx deploy smartwallet --argument "(record { network = variant { regtest }; steward_canister = principal \"$STEWARD_CANISTER\" })"
 

@@ -24,6 +24,8 @@ pub(super) async fn serve(
         network,
         owner: caller,
         steward_canister,
+        wallet_type: base::domain::WalletType::Single,
+        address_type: base::domain::AddressType::P2wsh,
     };
 
     let wallet_opt = get_raw_wallet(&wallet_key);
