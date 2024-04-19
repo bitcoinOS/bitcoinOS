@@ -26,6 +26,9 @@ pub enum WalletError {
     #[error("Error {0:?} when use base function")]
     BaseError(String),
 
+    #[error("Error {0:?} when call Steward")]
+    StewardCallError(String),
+
     #[error("Wallet {0:?} not found")]
     WalletNotFound(String),
 

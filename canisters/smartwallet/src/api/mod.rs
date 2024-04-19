@@ -14,6 +14,7 @@ use base::tx::RawTransactionInfo;
 use base::utils::{ic_caller, principal_to_derivation_path};
 
 use candid::Principal;
+use ic_cdk::api::call::RejectionCode;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
@@ -100,6 +101,28 @@ pub async fn transfer_single(req: TransferRequest) -> Result<String, WalletError
     build_transaction_with_single_p2wsh::serve(caller, req).await
 }
 
+#[update]
+pub async fn transfer_multisig22(send_request: TransferRequest) -> Result<String, WalletError> {
+    let tx_info = build_transaction_multisig22(send_request).await.unwrap();
+    let metadata = get_metadata();
+    let key_id = metadata.ecdsa_key_id;
+    let network = metadata.network;
+    let steward_caninster = metadata.steward_canister;
+    let wallet_canister = ic_cdk::id();
+
+    ic_cdk::print(format!("{:?}", tx_info));
+
+    let resp: Result<(String,), (RejectionCode, String)> = ic_cdk::api::call::call(
+        steward_caninster,
+        "finalize_tx_and_send",
+        (tx_info, key_id, wallet_canister, network),
+    )
+    .await;
+
+    resp.map(|(txid,)| txid)
+        .map_err(|e| WalletError::StewardCallError(format!("{:?}", e)))
+}
+
 /// Build a transaction if the caller is controller,
 /// otherwise return `UnAuthorized`
 #[update]
@@ -131,7 +154,8 @@ fn network() -> NetworkResponse {
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, WalletError> {
-    validate_owner(ic_caller())
+    // validate_owner(ic_caller())
+    Ok(get_metadata())
 }
 
 /// Returns the owner of this canister if the caller is controller

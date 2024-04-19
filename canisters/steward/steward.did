@@ -6,14 +6,12 @@ type Metadata = record {
   network : BitcoinNetwork;
   updated_time : nat64;
 };
-type PublicKeyResponse = record { public_key_hex : text };
 type RawTransactionInfo = record {
   tx : blob;
   sig_hashes : vec blob;
   witness_script : blob;
 };
 type Result = variant { Ok : text; Err : StewardError };
-type Result_1 = variant { Ok : PublicKeyResponse; Err : StewardError };
 type StewardError = variant {
   NetworkAlreadyExists;
   BaseError : text;
@@ -23,7 +21,7 @@ type StewardError = variant {
 };
 service : (text) -> {
   ecdsa_key : () -> (Result) query;
-  finalize_tx_and_send : (RawTransactionInfo) -> (Result);
+  finalize_tx_and_send : (RawTransactionInfo) -> (text);
   metadata : () -> (Metadata) query;
-  public_key : () -> (Result_1);
+  public_key : () -> (blob);
 }

@@ -6,11 +6,11 @@ use crate::{domain::response::PublicKeyResponse, error::StewardError};
 pub async fn serve(
     derivation_path: Vec<Vec<u8>>,
     key_id: EcdsaKeyId,
-) -> Result<PublicKeyResponse, StewardError> {
+) -> Result<Vec<u8>, StewardError> {
     base::ecdsa::public_key(derivation_path, key_id, None)
         .await
         .map_err(|e| e.into())
-        .map(|res| PublicKeyResponse {
-            public_key_hex: hex(res),
-        })
+    // .map(|res| PublicKeyResponse {
+    //     public_key_hex: hex(res),
+    // })
 }

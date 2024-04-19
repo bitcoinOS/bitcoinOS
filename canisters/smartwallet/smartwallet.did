@@ -34,22 +34,26 @@ type Result_4 = variant { Ok : Metadata; Err : WalletError };
 type Result_5 = variant { Ok : principal; Err : WalletError };
 type Result_6 = variant { Ok : PublicKeyResponse; Err : WalletError };
 type Result_7 = variant { Ok : GetUtxosResponse; Err : WalletError };
-type TransferRequest = record { addresses : vec text; amounts : vec nat64 };
+type TransferInfo = record { recipient : text; amount : nat64 };
+type TransferRequest = record { txs : vec TransferInfo };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
 type WalletError = variant {
   NetworkAlreadyExists;
   BaseError : text;
   RegisterECDSAKeyError;
   ECDSAKeyUpdateError;
+  AppendTransferLogError : text;
+  StewardCallError : text;
   ECDSAKeyNotFound : text;
   ECDSAKeyAlreadyExists : text;
+  WalletAlreadyExists : text;
   UnAuthorized : text;
   WalletNotFound : text;
   CreateWalletError : text;
 };
 service : (InitArgument) -> {
   balance : (text) -> (Result);
-  build_transaction : (TransferRequest) -> (Result_1);
+  build_transaction_multisig22 : (TransferRequest) -> (Result_1);
   current_fee_percentiles : () -> (Result_2);
   ecdsa_key : () -> (Result_3) query;
   get_or_create_multisig22_wallet_p2wsh_address : () -> (Result_3);
@@ -59,5 +63,7 @@ service : (InitArgument) -> {
   owner : () -> (Result_5) query;
   p2pkh_address : () -> (Result_3);
   public_key : () -> (Result_6);
+  transfer_multisig22 : (TransferRequest) -> (Result_3);
+  transfer_single : (TransferRequest) -> (Result_3);
   utxos : (text) -> (Result_7);
 }

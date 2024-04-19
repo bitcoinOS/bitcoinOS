@@ -56,7 +56,7 @@ fn get_raw_wallet_opt(metadata: &Metadata, caller: Principal) -> Result<RawWalle
         network,
         owner: caller,
         steward_canister,
-        wallet_type: base::domain::WalletType::Single,
+        wallet_type: base::domain::WalletType::MultiSig22,
         address_type: base::domain::AddressType::P2wsh,
     };
 

@@ -74,36 +74,22 @@ pub struct RawTransactionInfo {
     pub sig_hashes: Vec<Vec<u8>>,
 }
 
-impl RawTransactionInfo {
-    pub fn validate_tx(&self) -> Result<(), Error> {
-        let tx_len = self.tx.len();
-
-        if tx_len > 0 && self.sig_hashes.len() == tx_len {
-            Ok(())
-        } else {
-            Err(Error::InvalidTransaction)
-        }
-    }
-}
-
 impl TryFrom<RawTransactionInfo> for TransactionInfo {
     type Error = Error;
 
     fn try_from(tx_info: RawTransactionInfo) -> Result<Self, Self::Error> {
-        tx_info.validate_tx().and_then(|_| {
-            let tx = consensus::deserialize(&tx_info.tx).map_err(|_| Error::DeserializeError)?;
-            let witness_script = ScriptBuf::from(tx_info.witness_script);
-            let sig_hashes: Vec<SegwitV0Sighash> = tx_info
-                .sig_hashes
-                .into_iter()
-                .map(|s| SegwitV0Sighash::from_byte_array(s.try_into().unwrap()))
-                .collect();
+        let tx = consensus::deserialize(&tx_info.tx).map_err(|_| Error::DeserializeError)?;
+        let witness_script = ScriptBuf::from(tx_info.witness_script);
+        let sig_hashes: Vec<SegwitV0Sighash> = tx_info
+            .sig_hashes
+            .into_iter()
+            .map(|s| SegwitV0Sighash::from_byte_array(s.try_into().unwrap()))
+            .collect();
 
-            Ok(Self {
-                tx,
-                witness_script,
-                sig_hashes,
-            })
+        Ok(Self {
+            tx,
+            witness_script,
+            sig_hashes,
         })
     }
 }
