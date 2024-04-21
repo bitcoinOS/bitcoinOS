@@ -8,8 +8,6 @@ deploy_steward:
 deploy_os:
     STEWARD_CANISTER=$(dfx canister id steward) && dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"$STEWARD_CANISTER\"; })"
 
-deploy_ii:
-    dfx canister install internet_identity
     
 build_wallet:   
     cargo build -p smartwallet --release --target wasm32-wasi

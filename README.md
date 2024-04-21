@@ -93,17 +93,8 @@ just deploy_steward
 # Deploy os canister
 just deploy_os
 
-# Install internet identity canister
-just install_ii
-
-# Compile the project with `wasm-wasi` inside the project folder
-just build_wallet
-
-# Translate `wasm32-wasi` target to wasm32-unknown-unknown` under the project directory
-just translate_wasm
-
 # If you want to deploy smartwall by manually, In normal, the smartwallet will be install by os canister
-just install_wallet
+just deploy_wallet
 ```
 
 Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
