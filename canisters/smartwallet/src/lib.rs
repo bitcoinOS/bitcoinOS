@@ -25,7 +25,7 @@ use serde::Deserialize;
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]
 async fn init(args: InitArgument) {
-    ic_wasi_polyfill::init(&[0u8; 32], &[]);
+    // ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
     let owner = ic_caller();
 

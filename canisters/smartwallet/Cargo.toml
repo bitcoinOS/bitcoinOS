@@ -36,7 +36,7 @@ thiserror = { workspace = true }
 zeroize = { workspace = true }
 zeroize_derive = { workspace = true }
 
-ic-wasi-polyfill = { git = "https://github.com/wasm-forge/ic-wasi-polyfill", version = "0.3.17" }
+# ic-wasi-polyfill = { git = "https://github.com/wasm-forge/ic-wasi-polyfill", version = "0.3.17" }
 
 base = { path = "../../packages/base" }
 
