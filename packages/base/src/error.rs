@@ -20,8 +20,8 @@ pub enum Error {
     #[error("Secp256k1 error: {0:?}")]
     Secp256k1Error(String),
 
-    #[error("Bitcoin Address error: {0:?}")]
-    BitcoinAddressError(String),
+    #[error("Invalid Bitcoin Address: {0:?}")]
+    InvalidBitcoinAddress(String),
 
     #[error("{0:?} ECDSA key already exists")]
     ECDSAKeyAlreadyExists(String),
@@ -65,6 +65,6 @@ impl From<bitcoin::secp256k1::Error> for Error {
 
 impl From<bitcoin::address::Error> for Error {
     fn from(e: bitcoin::address::Error) -> Self {
-        Error::BitcoinAddressError(e.to_string())
+        Error::InvalidBitcoinAddress(e.to_string())
     }
 }

@@ -37,6 +37,9 @@ pub enum WalletError {
 
     #[error("Append transfer log error: {0:?}")]
     AppendTransferLogError(String),
+
+    #[error("Insufficient funds")]
+    InsufficientFunds,
 }
 
 impl From<base::error::Error> for WalletError {

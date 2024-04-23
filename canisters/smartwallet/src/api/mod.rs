@@ -7,6 +7,7 @@ mod get_or_create_multisig22_wallet_address;
 mod get_or_create_single_p2wsh_wallet;
 mod p2pkh_address;
 mod public_key;
+mod transfer_to_p2pkh;
 mod utxos;
 
 use base::domain::Wallet;
@@ -19,7 +20,7 @@ use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPe
 use ic_cdk::{query, update};
 
 use crate::context::{METADATA, RAW_WALLET, TRANSACTION_LOG};
-use crate::domain::request::TransferRequest;
+use crate::domain::request::{TransferInfo, TransferRequest};
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
 use crate::error::WalletError;
@@ -99,6 +100,17 @@ pub async fn transfer_single(req: TransferRequest) -> Result<String, WalletError
     let caller = ic_caller();
 
     build_transaction_with_single_p2wsh::serve(caller, req).await
+}
+
+/// Transfer btc to a p2pkh address
+#[update]
+pub async fn transfer_to_p2pkh(req: TransferInfo) -> Result<String, WalletError> {
+    let metadata = get_metadata();
+    let network = metadata.network;
+    let key_id = metadata.ecdsa_key_id;
+    let derivation_path = vec![ic_cdk::id().as_slice().to_vec()];
+
+    transfer_to_p2pkh::serve(key_id, network, derivation_path, req.recipient, req.amount).await
 }
 
 #[update]

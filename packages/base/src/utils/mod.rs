@@ -393,7 +393,7 @@ pub fn to_ic_bitcoin_network(network: &str) -> BitcoinNetwork {
 /// A helper function to convert a string to a Address of ust-bitcoin library with network
 pub fn str_to_bitcoin_address(address: &str, network: BitcoinNetwork) -> Result<Address, Error> {
     Address::from_str(address)
-        .map_err(|e| Error::BitcoinAddressError(e.to_string()))
+        .map_err(|e| Error::InvalidBitcoinAddress(e.to_string()))
         .and_then(|address| {
             address
                 .require_network(to_bitcoin_network(network))

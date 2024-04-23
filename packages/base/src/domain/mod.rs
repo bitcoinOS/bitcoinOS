@@ -51,7 +51,7 @@ impl TryFrom<bitcoin::AddressType> for AddressType {
             bitcoin::AddressType::P2wpkh => Ok(Self::P2wpkh),
             bitcoin::AddressType::P2wsh => Ok(Self::P2wsh),
             bitcoin::AddressType::P2tr => Ok(Self::P2tr),
-            _ => Err(Error::BitcoinAddressError(address_type.to_string())),
+            _ => Err(Error::InvalidBitcoinAddress(address_type.to_string())),
         }
     }
 }

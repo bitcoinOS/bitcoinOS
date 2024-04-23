@@ -99,7 +99,7 @@ pub async fn get_p2pkh_address(
 }
 
 /// Convert public key to P2PKH address
-fn public_key_to_p2pkh_address(network: BitcoinNetwork, public_key: &[u8]) -> String {
+pub fn public_key_to_p2pkh_address(network: BitcoinNetwork, public_key: &[u8]) -> String {
     // SHA-256 & RIPEMD-160
     let res = ripemd160(&sha256(public_key));
 

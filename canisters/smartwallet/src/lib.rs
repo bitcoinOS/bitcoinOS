@@ -8,7 +8,10 @@ pub mod rgb;
 
 use crate::context::METADATA;
 use crate::domain::{
-    request::TransferRequest, response::NetworkResponse, response::PublicKeyResponse, Metadata,
+    request::{TransferInfo, TransferRequest},
+    response::NetworkResponse,
+    response::PublicKeyResponse,
+    Metadata,
 };
 use crate::error::WalletError;
 
