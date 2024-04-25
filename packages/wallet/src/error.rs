@@ -21,7 +21,7 @@ pub enum WalletError {
     Secp256k1Error(bitcoin::secp256k1::Error),
 
     #[error("Bitcoin Address error: {0:?}")]
-    BitcoinAddressError(bitcoin::address::Error),
+    BitcoinAddressError(String),
 
     #[error("Base error: {0:?}")]
     BaseError(String),
@@ -39,9 +39,9 @@ impl From<bitcoin::secp256k1::Error> for WalletError {
     }
 }
 
-impl From<bitcoin::address::Error> for WalletError {
-    fn from(e: bitcoin::address::Error) -> Self {
-        WalletError::BitcoinAddressError(e)
+impl From<bitcoin::address::error::FromScriptError> for WalletError {
+    fn from(e: bitcoin::address::error::FromScriptError) -> Self {
+        WalletError::BitcoinAddressError(e.to_string())
     }
 }
 

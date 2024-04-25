@@ -346,7 +346,7 @@ pub async fn send_transaction(
     tx_info: &TransactionInfo,
     network: BitcoinNetwork,
 ) -> BaseResult<Txid> {
-    let txid = tx_info.tx.txid();
+    let txid = tx_info.tx.compute_txid();
     let tx_bytes = consensus::serialize(tx_info.tx());
     ic_cdk::print(format!(
         "Signed {:?} transaction: {}",
@@ -424,7 +424,7 @@ pub fn check_tx_hashes_len(
 }
 
 /// Converts a SEC1 ECDSA signature to the DER format.
-fn sign_to_der(sign: Vec<u8>) -> Vec<u8> {
+pub fn sign_to_der(sign: Vec<u8>) -> Vec<u8> {
     let r: Vec<u8> = if sign[0] & 0x80 != 0 {
         // r is negative. Prepend a zero byte.
         let mut tmp = vec![0x00];

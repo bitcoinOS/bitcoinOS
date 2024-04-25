@@ -39,3 +39,20 @@ pub async fn sign_with_ecdsa(
 
     resp.map(|r| r.0.signature).map_err(|e| e.into())
 }
+
+/// Signs a message with IC ECDSA interfaces
+pub async fn sign_with_ecdsa_uncheck(
+    derivation_path: Vec<Vec<u8>>,
+    key_id: EcdsaKeyId,
+    message_hash: Vec<u8>,
+) -> Vec<u8> {
+    let arg = SignWithEcdsaArgument {
+        derivation_path,
+        key_id,
+        message_hash,
+    };
+
+    let resp = ic_cdk::api::management_canister::ecdsa::sign_with_ecdsa(arg).await;
+
+    resp.map(|r| r.0.signature).unwrap()
+}

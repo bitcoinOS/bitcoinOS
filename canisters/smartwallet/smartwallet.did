@@ -50,6 +50,8 @@ type WalletError = variant {
   UnAuthorized : text;
   WalletNotFound : text;
   CreateWalletError : text;
+  OnlySupportP2pkhSign;
+  InsufficientFunds;
 };
 service : (InitArgument) -> {
   balance : (text) -> (Result);
@@ -65,5 +67,6 @@ service : (InitArgument) -> {
   public_key : () -> (Result_6);
   transfer_multisig22 : (TransferRequest) -> (Result_3);
   transfer_single : (TransferRequest) -> (Result_3);
+  transfer_to_p2pkh : (TransferInfo) -> (Result_3);
   utxos : (text) -> (Result_7);
 }

@@ -23,6 +23,7 @@ bitcoin = { workspace = true }
 # core2 = { workspace = true }
 
 getrandom = { workspace = true }
+hex = { workspace = true }
 maybe-async ={ workspace = true }
 miniscript = { workspace = true }
 # rgb-schemata = { workspace = true }

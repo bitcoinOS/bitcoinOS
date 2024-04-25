@@ -1,9 +1,11 @@
+use base::utils::sign_to_der;
 use base::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
-use bitcoin::consensus;
+use bitcoin::script::{Builder, PushBytesBuf};
 use bitcoin::{
     absolute::LockTime, hashes::Hash, transaction::Version, Address, Amount, OutPoint, Script,
     Sequence, Transaction, TxIn, TxOut, Txid, Witness,
 };
+use bitcoin::{consensus, sighash, AddressType, EcdsaSighashType};
 use ic_cdk::api::management_canister::{
     bitcoin::{
         bitcoin_get_current_fee_percentiles, BitcoinNetwork, GetCurrentFeePercentilesRequest,
@@ -21,7 +23,9 @@ pub(super) async fn serve(
     recipient: String,
     amount: u64,
 ) -> Result<String, WalletError> {
-    todo!()
+    send_p2pkh_transaction(key_id, network, derivation_path, recipient, amount)
+        .await
+        .map(|txid| txid.to_string())
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient
@@ -32,7 +36,7 @@ async fn send_p2pkh_transaction(
     derivation_path: Vec<Vec<u8>>,
     recipient: String,
     amount: Satoshi,
-) -> Result<String, WalletError> {
+) -> Result<Txid, WalletError> {
     // Get fee percentiles from ic api
     let fee_percentiles =
         bitcoin_get_current_fee_percentiles(GetCurrentFeePercentilesRequest { network })
@@ -80,9 +84,34 @@ async fn send_p2pkh_transaction(
         &recipient,
         amount,
         fee_per_byte,
-    );
+    )
+    .await?;
 
-    todo!()
+    // let tx_bytes = consensus::serialize(&tx);
+
+    // Sign the transaction
+    let signed_tx = sign_transaction_p2pkh(
+        &sender_public_key,
+        &sender_address,
+        tx,
+        key_id,
+        derivation_path,
+        base::ecdsa::sign_with_ecdsa_uncheck,
+    )
+    .await?;
+
+    let signed_tx_bytes = consensus::serialize(&signed_tx);
+    ic_cdk::print(format!("Signed tx: {:?} \n", hex::encode(&signed_tx_bytes)));
+
+    let txid = signed_tx.compute_txid();
+
+    ic_cdk::print(format!("Sending transaction... {txid:?}\n"));
+
+    base::bitcoins::send_transaction(signed_tx_bytes, network).await?;
+
+    ic_cdk::print("Transaction sent! \n");
+
+    Ok(txid)
 }
 
 /// Build a transaction using given parameters
@@ -111,11 +140,11 @@ async fn build_transaction(
             public_key,
             sender,
             tx.clone(),
-            "".to_string(),
+            EcdsaKeyId::default(),
             vec![],
             mock_signer,
         )
-        .await;
+        .await?;
 
         let signed_tx_bytes_len = consensus::serialize(&signed_tx).len() as u64;
 
@@ -202,25 +231,69 @@ fn calc_fee_and_build_transaction(
     })
 }
 
+/// Sign a transaction with P2PKH address
+/// NOTE: Only support P2PKH
 async fn sign_transaction_p2pkh<SignFun, Fut>(
     public_key: &[u8],
     sender: &Address,
     mut tx: Transaction,
-    key_name: String,
+    key_id: EcdsaKeyId,
     derivation_path: Vec<Vec<u8>>,
     signer: SignFun,
-) -> Transaction
+) -> Result<Transaction, WalletError>
 where
-    SignFun: Fn(String, Vec<Vec<u8>>, Vec<u8>) -> Fut,
+    SignFun: Fn(Vec<Vec<u8>>, EcdsaKeyId, Vec<u8>) -> Fut,
     Fut: std::future::Future<Output = Vec<u8>>,
 {
-    todo!()
+    // Check if the sender is P2PKH
+    validate_p2pkh_address(sender)?;
+
+    let tx_clone = tx.clone();
+
+    // let sig_hashes = vec![];
+    let sig_cache = sighash::SighashCache::new(&tx_clone);
+
+    for (idx, tx_in) in tx.input.iter_mut().enumerate() {
+        let sighash = sig_cache
+            .legacy_signature_hash(idx, &sender.script_pubkey(), EcdsaSighashType::All.to_u32())
+            .unwrap();
+        let signature = signer(
+            derivation_path.clone(),
+            key_id.clone(),
+            sighash.as_byte_array().to_vec(),
+        )
+        .await;
+
+        let der_signature = sign_to_der(signature);
+
+        let mut sig_with_hashtype = der_signature;
+
+        sig_with_hashtype.push(EcdsaSighashType::All.to_u32() as u8);
+
+        let sig_push_bytes: PushBytesBuf = sig_with_hashtype.try_into().unwrap();
+        let public_key_push_bytes: PushBytesBuf = public_key.to_vec().try_into().unwrap();
+        tx_in.script_sig = Builder::new()
+            .push_slice(sig_push_bytes.as_ref())
+            .push_slice(public_key_push_bytes.as_ref())
+            .into_script();
+        tx_in.witness.clear();
+    }
+
+    Ok(tx)
 }
 
-// A mock for rubber-stamping ECDSA signatures.
+fn validate_p2pkh_address(address: &Address) -> Result<(), WalletError> {
+    if address.address_type() == Some(AddressType::P2pkh) {
+        Ok(())
+    } else {
+        Err(WalletError::OnlySupportP2pkhSign)
+    }
+}
+
+// A mock for rubber-stamping ECDSA signatures for P2PKH
 async fn mock_signer(
-    _key_name: String,
     _derivation_path: Vec<Vec<u8>>,
+    _key_id: EcdsaKeyId,
     _message_hash: Vec<u8>,
 ) -> Vec<u8> {
     vec![255; 64]

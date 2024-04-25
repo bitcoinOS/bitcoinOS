@@ -40,6 +40,9 @@ pub enum WalletError {
 
     #[error("Insufficient funds")]
     InsufficientFunds,
+
+    #[error("Only support p2pkh sign")]
+    OnlySupportP2pkhSign,
 }
 
 impl From<base::error::Error> for WalletError {

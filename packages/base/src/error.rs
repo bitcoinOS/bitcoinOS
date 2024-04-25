@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Invalid Bitcoin Address: {0:?}")]
     InvalidBitcoinAddress(String),
 
+    #[error("Bitcoin address unmatch network: {0:?}")]
+    BitcoinAddressUnmatchNetwork(String),
+
     #[error("{0:?} ECDSA key already exists")]
     ECDSAKeyAlreadyExists(String),
 
@@ -63,8 +66,14 @@ impl From<bitcoin::secp256k1::Error> for Error {
     }
 }
 
-impl From<bitcoin::address::Error> for Error {
-    fn from(e: bitcoin::address::Error) -> Self {
+impl From<bitcoin::address::FromScriptError> for Error {
+    fn from(e: bitcoin::address::FromScriptError) -> Self {
         Error::InvalidBitcoinAddress(e.to_string())
+    }
+}
+
+impl From<bitcoin::address::error::ParseError> for Error {
+    fn from(e: bitcoin::address::error::ParseError) -> Self {
+        Error::BitcoinAddressUnmatchNetwork(e.to_string())
     }
 }
