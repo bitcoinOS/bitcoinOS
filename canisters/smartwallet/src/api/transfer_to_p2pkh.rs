@@ -1,4 +1,4 @@
-use base::utils::sign_to_der;
+use base::utils::{principal_to_derivation_path, sign_to_der};
 use base::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 use bitcoin::script::{Builder, PushBytesBuf};
 use bitcoin::{
@@ -6,6 +6,7 @@ use bitcoin::{
     Sequence, Transaction, TxIn, TxOut, Txid, Witness,
 };
 use bitcoin::{consensus, sighash, AddressType, EcdsaSighashType};
+use candid::Principal;
 use ic_cdk::api::management_canister::{
     bitcoin::{
         bitcoin_get_current_fee_percentiles, BitcoinNetwork, GetCurrentFeePercentilesRequest,
@@ -14,18 +15,24 @@ use ic_cdk::api::management_canister::{
     ecdsa::EcdsaKeyId,
 };
 
+use crate::domain::Metadata;
 use crate::error::WalletError;
 
 pub(super) async fn serve(
-    key_id: EcdsaKeyId,
-    network: BitcoinNetwork,
-    derivation_path: Vec<Vec<u8>>,
+    owner: Principal,
+    metadata: Metadata,
     recipient: String,
     amount: u64,
 ) -> Result<String, WalletError> {
-    send_p2pkh_transaction(key_id, network, derivation_path, recipient, amount)
-        .await
-        .map(|txid| txid.to_string())
+    send_p2pkh_transaction(
+        metadata.ecdsa_key_id,
+        metadata.network,
+        principal_to_derivation_path(owner),
+        recipient,
+        amount,
+    )
+    .await
+    .map(|txid| txid.to_string())
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient
@@ -63,6 +70,9 @@ async fn send_p2pkh_transaction(
 
     // TODO: replace with stable store value
     let sender_address = base::bitcoins::public_key_to_p2pkh_address(network, &sender_public_key);
+    ic_cdk::print(format!(
+        "Sender address: {sender_address:?} ---------------------- \n"
+    ));
 
     // Fetching UTXOs
     ic_cdk::print("Fetching UTXOs... \n");
@@ -181,6 +191,7 @@ fn calc_fee_and_build_transaction(
     let output_amount_satoshi = amount + fee;
 
     for utxo in utxos.iter().rev() {
+        ic_cdk::print(format!("utxo value is: {:?} -------- \n", utxo.value));
         input_amount_satoshi += utxo.value;
         utxos_to_spend.push(utxo);
 
@@ -189,6 +200,8 @@ fn calc_fee_and_build_transaction(
             break;
         }
     }
+
+    ic_cdk::print(format!("The input amount in satoshi: {input_amount_satoshi:?}, the output amount in satoshi: {output_amount_satoshi:?}, the fee is {fee:?} -------- \n"));
 
     // Check input amount in utxos is greater than output amount
     if input_amount_satoshi < output_amount_satoshi {

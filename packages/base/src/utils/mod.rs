@@ -476,3 +476,7 @@ pub fn ic_caller() -> Principal {
 pub fn ic_time() -> u64 {
     ic_cdk::api::time()
 }
+
+pub fn canister_id() -> Principal {
+    ic_cdk::id()
+}

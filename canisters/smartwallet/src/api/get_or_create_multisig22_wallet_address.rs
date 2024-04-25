@@ -1,11 +1,8 @@
-use base::domain::{AddressType, WalletType};
+use base::domain::{AddressType, Wallet, WalletType};
 use candid::Principal;
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 
-use crate::{
-    domain::{SelfCustodyKey, Wallet},
-    error::WalletError,
-};
+use crate::{domain::SelfCustodyKey, error::WalletError};
 
 use super::{get_metadata, get_raw_wallet};
 

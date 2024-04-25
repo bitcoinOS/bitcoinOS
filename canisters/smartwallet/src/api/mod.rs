@@ -12,7 +12,7 @@ mod utxos;
 
 use base::domain::Wallet;
 use base::tx::RawTransactionInfo;
-use base::utils::{ic_caller, principal_to_derivation_path};
+use base::utils::ic_caller;
 
 use candid::Principal;
 use ic_cdk::api::call::RejectionCode;
@@ -31,58 +31,61 @@ use crate::error::WalletError;
 /// or create a new one if it doesn't exist, and returns it
 #[update]
 pub async fn get_or_create_multisig22_wallet_p2wsh_address() -> Result<String, WalletError> {
-    let caller = ic_caller();
+    let owner = ic_caller();
 
-    get_or_create_multisig22_wallet_address::serve(caller).await
+    // TODO: FIX validate owner
+    get_or_create_multisig22_wallet_address::serve(owner).await
 }
 
 /// Returns the single signature wallet of this canister id as diravtion path
 #[update]
 pub async fn get_or_create_single_wallet_p2wsh_address() -> Result<String, WalletError> {
-    let caller = ic_caller();
-    let metadata = get_metadata();
-    let key_id = metadata.ecdsa_key_id;
-    let steward_canister = metadata.steward_canister;
-    let network = metadata.network;
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
 
-    get_or_create_single_p2wsh_wallet::serve(caller, key_id, steward_canister, network).await
+    get_or_create_single_p2wsh_wallet::serve(owner, metadata).await
 }
 
 /// Returns the P2PKH address of this canister at a specific derivation path
 #[update]
 pub async fn p2pkh_address() -> Result<String, WalletError> {
-    let caller = ic_caller();
-    let derivation_path = principal_to_derivation_path(caller);
-    let metadata = get_metadata();
+    let owner = ic_caller();
 
-    let key_id = metadata.ecdsa_key_id;
-    let network = metadata.network;
+    let metadata = validate_owner(owner)?;
 
-    p2pkh_address::serve(network, derivation_path, key_id).await
+    p2pkh_address::serve(owner, metadata).await
 }
 
-/// Returns the utxos of this canister address if the caller is controller
+/// Returns the utxos of this canister address
 #[update]
 pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
     let network = get_metadata().network;
     utxos::serve(address, network).await
 }
 
-/// Returns this canister's public key with hex string
+/// Returns all utxos of this canister's address
+/// TODO:
+#[update]
+pub async fn self_utxos() -> Result<Vec<GetUtxosResponse>, WalletError> {
+    todo!()
+}
+
+/// Returns this canister's public key with hex string if the caller is the owner
 #[update]
 pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
-    let caller = ic_caller();
-    let key_id = get_metadata().ecdsa_key_id;
-    let derivation_path = principal_to_derivation_path(caller);
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
 
-    public_key::serve(derivation_path, key_id).await
+    public_key::serve(owner, metadata).await
 }
 
 /// Returns the balance of the given bitcoin address
 #[update]
 pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
-    let caller = ic_caller();
-    balance::serve(address, caller).await
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+
+    balance::serve(address, metadata).await
 }
 
 /// Returns the 100 fee percentiles measured in millisatoshi/byte.
@@ -97,22 +100,23 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
 /// otherwise return `UnAuthorized`
 #[update]
 pub async fn transfer_single(req: TransferRequest) -> Result<String, WalletError> {
-    let caller = ic_caller();
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
 
-    build_transaction_with_single_p2wsh::serve(caller, req).await
+    build_transaction_with_single_p2wsh::serve(owner, req, metadata).await
 }
 
 /// Transfer btc to a p2pkh address
 #[update]
 pub async fn transfer_to_p2pkh(req: TransferInfo) -> Result<String, WalletError> {
-    let metadata = get_metadata();
-    let network = metadata.network;
-    let key_id = metadata.ecdsa_key_id;
-    let derivation_path = vec![ic_cdk::id().as_slice().to_vec()];
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
 
-    transfer_to_p2pkh::serve(key_id, network, derivation_path, req.recipient, req.amount).await
+    transfer_to_p2pkh::serve(owner, metadata, req.recipient, req.amount).await
 }
 
+/// Transfer btc with multisig22 wallet
+/// TODO: FIX validate owner
 #[update]
 pub async fn transfer_multisig22(send_request: TransferRequest) -> Result<String, WalletError> {
     let tx_info = build_transaction_multisig22(send_request).await.unwrap();
@@ -137,6 +141,7 @@ pub async fn transfer_multisig22(send_request: TransferRequest) -> Result<String
 
 /// Build a transaction if the caller is controller,
 /// otherwise return `UnAuthorized`
+/// TODO: FIX validate owner
 #[update]
 pub async fn build_transaction_multisig22(
     req: TransferRequest,
@@ -152,8 +157,8 @@ pub async fn build_transaction_multisig22(
 /// otherwise return `EcdsaKeyNotFound` or `UnAuthorized`
 #[query]
 pub fn ecdsa_key() -> Result<String, WalletError> {
-    let caller = ic_caller();
-    ecdsa_key::serve(caller)
+    let owner = ic_caller();
+    ecdsa_key::serve(owner)
 }
 
 /// Returns the network of this canister
@@ -166,27 +171,27 @@ fn network() -> NetworkResponse {
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, WalletError> {
-    // validate_owner(ic_caller())
-    Ok(get_metadata())
+    validate_owner(ic_caller())
+    // Ok(get_metadata())
 }
 
 /// Returns the owner of this canister if the caller is controller
 /// otherwise return `UnAuthorized`
 #[query]
 fn owner() -> Result<Principal, WalletError> {
-    let caller = ic_caller();
+    let owner = ic_caller();
 
-    validate_owner(caller).map(|m| m.owner)
+    validate_owner(owner).map(|m| m.owner)
 }
 
-/// Validate the caller if it is owner, return `Metadata` if true,
+/// Validate the given ownerr if it is owner of canister, return `Metadata` if true,
 /// otherwise return `UnAuthorized`
-fn validate_owner(caller: Principal) -> Result<Metadata, WalletError> {
+fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
     let metadata = get_metadata();
-    if metadata.owner == caller {
+    if metadata.owner == owner {
         Ok(metadata)
     } else {
-        Err(WalletError::UnAuthorized(caller.to_string()))
+        Err(WalletError::UnAuthorized(owner.to_string()))
     }
 }
 

@@ -3,7 +3,7 @@ pub mod response;
 
 use std::str::FromStr;
 
-use base::domain::{AddressType, EcdsaKeyIds, WalletType};
+use base::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
@@ -53,8 +53,6 @@ impl Storable for Metadata {
     };
 }
 
-pub type Wallet = base::domain::Wallet;
-
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct RawWallet {
     pub witness_script: Vec<u8>,
@@ -92,6 +90,23 @@ pub struct SelfCustodyKey {
     pub steward_canister: Principal,
     pub wallet_type: WalletType,
     pub address_type: AddressType,
+}
+
+impl SelfCustodyKey {
+    pub fn new(
+        owner: Principal,
+        metadata: &Metadata,
+        wallet_type: WalletType,
+        address_type: AddressType,
+    ) -> Self {
+        Self {
+            network: metadata.network,
+            owner,
+            steward_canister: metadata.steward_canister,
+            wallet_type,
+            address_type,
+        }
+    }
 }
 
 impl Storable for SelfCustodyKey {

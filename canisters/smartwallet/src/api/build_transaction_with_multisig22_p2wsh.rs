@@ -8,12 +8,12 @@ use crate::{domain::request::TransferRequest, error::WalletError};
 use super::{append_transaction_log, get_raw_wallet, validate_owner};
 
 pub(super) async fn serve(
-    caller: Principal,
+    owner: Principal,
     tx_req: TransferRequest,
 ) -> Result<RawTransactionInfo, WalletError> {
-    let metadata = validate_owner(caller)?;
+    let metadata = validate_owner(owner)?;
 
-    let wallet = get_raw_wallet_opt(&metadata, caller)?;
+    let wallet = get_raw_wallet_opt(&metadata, owner)?;
 
     // build transaction
     let network = metadata.network;
@@ -29,7 +29,7 @@ pub(super) async fn serve(
     // Signature transaction
     tx_info = base::utils::sign_transaction_multisig22(
         tx_info?,
-        &[caller.as_slice().to_vec()],
+        &[owner.as_slice().to_vec()],
         key_id,
         base::domain::MultiSigIndex::First,
     )
