@@ -5,14 +5,14 @@ use crate::{
     error::WalletError,
 };
 
-use super::build_transaction_with_multisig22_p2wsh;
+use super::build_transaction_multisig22;
 
 pub(super) async fn serve(
     owner: Principal,
     metadata: Metadata,
     req: TransferRequest,
 ) -> Result<String, WalletError> {
-    let tx_info = build_transaction_with_multisig22_p2wsh::serve(owner, metadata.clone(), req)
+    let tx_info = build_transaction_multisig22::serve(owner, metadata.clone(), req)
         .await
         .unwrap();
 

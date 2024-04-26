@@ -27,7 +27,7 @@ pub async fn public_key() -> Vec<u8> {
 /// Returns txid if success
 ///
 #[update]
-pub async fn finalize_tx_and_send(raw_tx_info: RawTransactionInfo) -> String {
+pub async fn finalize_tx_and_send(raw_tx_info: RawTransactionInfo) -> Result<String, StewardError> {
     let wallet_canister = ic_caller();
     let metadata = METADATA.with(|m| m.borrow().get().clone());
     let network = metadata.network;
@@ -36,7 +36,7 @@ pub async fn finalize_tx_and_send(raw_tx_info: RawTransactionInfo) -> String {
     let txid = finalize_tx_and_send::serve(raw_tx_info, key_id, wallet_canister, network).await;
 
     println!("{:?}", txid);
-    txid.unwrap()
+    txid
 }
 
 /// --------------------- Queries interface of this canister -------------------

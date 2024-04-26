@@ -21,7 +21,7 @@ type StewardError = variant {
 };
 service : (text) -> {
   ecdsa_key : () -> (Result) query;
-  finalize_tx_and_send : (RawTransactionInfo) -> (text);
+  finalize_tx_and_send : (RawTransactionInfo) -> (Result);
   metadata : () -> (Metadata) query;
   public_key : () -> (blob);
 }

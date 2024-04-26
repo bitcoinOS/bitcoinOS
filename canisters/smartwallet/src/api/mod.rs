@@ -1,11 +1,12 @@
+mod all_addresses;
 mod balance;
-mod build_transaction_with_multisig22_p2wsh;
-mod build_transaction_with_single_p2wsh;
+mod build_transaction_multisig22;
+mod build_transaction_single;
 mod current_fee_percentiles;
 mod ecdsa_key;
-mod get_or_create_single_p2wsh_wallet;
 mod p2pkh_address;
 mod p2wsh_multisig22_address;
+mod p2wsh_single_address;
 mod public_key;
 mod transfer_multisig22;
 mod transfer_to_p2pkh;
@@ -43,7 +44,7 @@ pub async fn p2wsh_single_address() -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    get_or_create_single_p2wsh_wallet::serve(owner, metadata).await
+    p2wsh_single_address::serve(owner, metadata).await
 }
 
 /// Returns the P2PKH address of this canister at a specific derivation path
@@ -104,7 +105,7 @@ pub async fn transfer_single(req: TransferRequest) -> Result<String, WalletError
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    build_transaction_with_single_p2wsh::serve(owner, metadata, req).await
+    build_transaction_single::serve(owner, metadata, req).await
 }
 
 /// Transfer btc to a p2pkh address
@@ -134,7 +135,7 @@ pub async fn build_transaction_multisig22(
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    build_transaction_with_multisig22_p2wsh::serve(owner, metadata, req).await
+    build_transaction_multisig22::serve(owner, metadata, req).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -168,6 +169,16 @@ fn owner() -> Result<Principal, WalletError> {
     let owner = ic_caller();
 
     validate_owner(owner).map(|m| m.owner)
+}
+
+/// Returns all the addresses of this canister if the caller is controller
+/// otherwise return `UnAuthorized`
+#[query]
+async fn addresses() -> Result<Vec<String>, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+
+    Ok(all_addresses::serve(owner, metadata).await)
 }
 
 /// Validate the given ownerr if it is owner of canister, return `Metadata` if true,
