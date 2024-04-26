@@ -5,14 +5,13 @@ use candid::Principal;
 use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
 use crate::{domain::request::TransferRequest, error::WalletError};
 
-use super::{append_transaction_log, get_raw_wallet, validate_owner};
+use super::{append_transaction_log, get_raw_wallet};
 
 pub(super) async fn serve(
     owner: Principal,
+    metadata: Metadata,
     tx_req: TransferRequest,
 ) -> Result<RawTransactionInfo, WalletError> {
-    let metadata = validate_owner(owner)?;
-
     let wallet = get_raw_wallet_opt(&metadata, owner)?;
 
     // build transaction

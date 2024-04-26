@@ -9,7 +9,6 @@ use candid::Principal;
 use ic_cdk::{export_candid, init, query, update};
 
 use crate::context::METADATA;
-use crate::domain::response::PublicKeyResponse;
 use crate::{domain::Metadata, error::StewardError};
 
 /// --------------------- Update interface of this Canister ----------------------

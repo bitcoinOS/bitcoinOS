@@ -1,36 +1,37 @@
-use base::domain::{AddressType, Wallet, WalletType};
+use base::domain::{AddressType, Wallet};
 use candid::Principal;
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 
-use crate::{domain::SelfCustodyKey, error::WalletError};
+use crate::{
+    domain::{Metadata, SelfCustodyKey},
+    error::WalletError,
+};
 
-use super::{get_metadata, get_raw_wallet};
+use super::get_raw_wallet;
 
 /// Get an exist address, or generate a new address by caller
 /// Returns a address if success, or returns `CreateWalletFailed`
 /// TODO: support multiple addresses for different diravation path
-pub async fn serve(caller: Principal) -> Result<String, WalletError> {
-    let metadata = get_metadata();
-    let network = metadata.network;
-    let steward_canister = metadata.steward_canister;
-    let key_id = metadata.ecdsa_key_id;
-
-    let self_custody_key = SelfCustodyKey {
-        network,
-        owner: caller,
-        steward_canister,
-        wallet_type: WalletType::MultiSig22,
-        address_type: AddressType::P2wsh,
-    };
-    let wallet_key = self_custody_key;
+pub async fn serve(owner: Principal, metadata: Metadata) -> Result<String, WalletError> {
+    let wallet_key = SelfCustodyKey::new(
+        owner,
+        &metadata,
+        base::domain::WalletType::MultiSig22,
+        AddressType::P2wsh,
+    );
 
     let raw_wallet = get_raw_wallet(&wallet_key);
 
     match raw_wallet {
         Some(wallet) => Ok(Wallet::from(wallet).address.to_string()),
         None => {
-            let wallet =
-                create_multisig22_wallet(caller, steward_canister, network, key_id).await?;
+            let wallet = create_multisig22_wallet(
+                owner,
+                metadata.steward_canister,
+                metadata.network,
+                metadata.ecdsa_key_id,
+            )
+            .await?;
             let address = wallet.address.to_string();
 
             super::insert_wallet(wallet_key, wallet)?;

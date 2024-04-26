@@ -33,6 +33,8 @@ pub(super) async fn serve(
     )
     .await
     .map(|txid| txid.to_string())
+
+    // TODO: Save the transaction in ledger
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient

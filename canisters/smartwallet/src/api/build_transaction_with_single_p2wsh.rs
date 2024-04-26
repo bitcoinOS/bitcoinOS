@@ -8,8 +8,8 @@ use super::{append_transaction_log, get_raw_wallet};
 
 pub(super) async fn serve(
     caller: Principal,
-    req: TransferRequest,
     metadata: Metadata,
+    req: TransferRequest,
 ) -> Result<String, WalletError> {
     let wallet = get_raw_wallet_opt(&metadata, caller)?;
     let network = metadata.network;

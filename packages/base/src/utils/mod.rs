@@ -226,6 +226,7 @@ fn build_transaction_sighashes(
         .collect()
 }
 
+/// Create a p2pkh address
 /// Create a 2-2 mutlisigwallet for a given Principal, steward_canister, bitcoin network and EcdsaKeyId
 pub async fn create_multisig22_wallet(
     principal: Principal,
@@ -238,7 +239,7 @@ pub async fn create_multisig22_wallet(
     // Create a new wallet for this principal.
     // Right now there is only one wallet for each principal,
     // so the it is derived from the principal itself.
-    let derivation_path = vec![principal.as_slice().to_vec()];
+    let derivation_path = principal_to_derivation_path(principal);
 
     // First public key is from the Wallet canister(this canister).
     let pk1 = ecdsa::public_key(derivation_path.clone(), key_id, None).await?;
