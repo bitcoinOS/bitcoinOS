@@ -1,29 +1,29 @@
-use bitcoin::{consensus, hashes::Hash, Address, ScriptBuf, SegwitV0Sighash, Transaction};
+use bitcoin::{consensus, hashes::Hash, Address, Amount, ScriptBuf, SegwitV0Sighash, Transaction};
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
 use crate::{error::Error, utils::check_tx_hashes_len};
 
 #[derive(Debug, Clone)]
-pub struct TransactionInnerRequest {
+pub struct RecipientAmount {
     // A bitcoin address
     pub recipient: Address,
-    pub amount: u64,
+    pub amount: Amount,
 }
 
 #[derive(Debug, Clone)]
-pub struct TransactionRequest {
-    pub txs: Vec<TransactionInnerRequest>,
+pub struct RecipientAmountVec {
+    pub txs: Vec<RecipientAmount>,
 }
 
-impl TransactionRequest {
-    pub fn iter(&self) -> impl Iterator<Item = &TransactionInnerRequest> {
+impl RecipientAmountVec {
+    pub fn iter(&self) -> impl Iterator<Item = &RecipientAmount> {
         self.txs.iter()
     }
 }
 
-impl IntoIterator for TransactionRequest {
-    type Item = TransactionInnerRequest;
+impl IntoIterator for RecipientAmountVec {
+    type Item = RecipientAmount;
     type IntoIter = std::vec::IntoIter<Self::Item>;
     fn into_iter(self) -> Self::IntoIter {
         self.txs.into_iter()

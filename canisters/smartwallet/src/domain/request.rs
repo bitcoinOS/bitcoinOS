@@ -1,9 +1,10 @@
 use base::{
-    tx::{TransactionInnerRequest, TransactionRequest},
+    tx::{RecipientAmount, RecipientAmountVec},
     utils::str_to_bitcoin_address,
 };
+use bitcoin::{Address, Amount};
 use candid::CandidType;
-use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use serde::Deserialize;
 
 use crate::error::WalletError;
@@ -49,10 +50,10 @@ impl TransferRequest {
     pub fn validate_address(
         &self,
         network: BitcoinNetwork,
-    ) -> Result<TransactionRequest, WalletError> {
-        let res: Result<Vec<TransactionInnerRequest>, WalletError> =
+    ) -> Result<RecipientAmountVec, WalletError> {
+        let res: Result<Vec<RecipientAmount>, WalletError> =
             self.iter().map(|t| t.validate_address(network)).collect();
-        res.map(|r| TransactionRequest { txs: r })
+        res.map(|r| RecipientAmountVec { txs: r })
     }
 }
 
@@ -60,11 +61,11 @@ impl TransferInfo {
     pub fn validate_address(
         &self,
         network: BitcoinNetwork,
-    ) -> Result<TransactionInnerRequest, WalletError> {
+    ) -> Result<RecipientAmount, WalletError> {
         let recipient = str_to_bitcoin_address(&self.recipient, network).map_err(|e| e.into());
-        recipient.map(|r| TransactionInnerRequest {
+        recipient.map(|r| RecipientAmount {
             recipient: r,
-            amount: self.amount,
+            amount: Amount::from_sat(self.amount),
         })
     }
 }

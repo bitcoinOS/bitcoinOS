@@ -1,11 +1,10 @@
 use base::tx::RawTransactionInfo;
-use base::utils::{ic_caller, ic_time};
 use candid::Principal;
 
-use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
+use crate::domain::{Metadata, RawWallet, SelfCustodyKey};
 use crate::{domain::request::TransferRequest, error::WalletError};
 
-use super::{append_transaction_log, get_raw_wallet};
+use super::{build_and_append_transaction_log, get_raw_wallet};
 
 pub(super) async fn serve(
     owner: Principal,
@@ -35,15 +34,7 @@ pub(super) async fn serve(
     .await;
 
     // Log transfer info
-    let sender = ic_caller();
-    let send_time = ic_time();
-    let log = TransactionLog {
-        txs: tx_req.txs,
-        sender,
-        send_time,
-    };
-
-    append_transaction_log(log)?;
+    build_and_append_transaction_log(tx_req.txs)?;
 
     tx_info.map(RawTransactionInfo::from).map_err(|e| e.into())
 }

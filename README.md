@@ -87,6 +87,12 @@ dfx start --background
 # Create all canisters
 just create_all_canisters
 
+# Compile the project with `wasm-wasi` inside the project folder
+just build_wallet
+
+# Translate `wasm32-wasi` target to wasm32-unknown-unknown` under the project directory
+just translate_wasm
+
 # Deploy steward canister
 just deploy_steward
 

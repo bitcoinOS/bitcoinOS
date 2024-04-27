@@ -26,5 +26,5 @@ deploy_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
     STEWARD_CANISTER=$(dfx canister id steward)
-    dfx deploy smartwallet --argument "(record { network = variant { regtest }; steward_canister = principal \"$STEWARD_CANISTER\" })" 
+    dfx deploy smartwallet --argument "(record { network = variant { regtest }; steward_canister = principal \"$STEWARD_CANISTER\" })" --mode reinstall
 

@@ -69,8 +69,8 @@ service : (InitArgument) -> {
   p2wsh_single_address : () -> (Result_4);
   public_key : () -> (Result_7);
   self_utxos : () -> (Result_8);
-  transfer_multisig22 : (TransferRequest) -> (Result_4);
-  transfer_single : (TransferRequest) -> (Result_4);
-  transfer_to_p2pkh : (TransferInfo) -> (Result_4);
+  transfer_from_multisig22 : (TransferRequest) -> (Result_4);
+  transfer_from_p2pkh : (TransferRequest) -> (Result_4);
+  transfer_from_p2wsh : (TransferRequest) -> (Result_4);
   utxos : (text) -> (Result_9);
 }

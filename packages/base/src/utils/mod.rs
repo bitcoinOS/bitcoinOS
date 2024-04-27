@@ -21,7 +21,7 @@ use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 use crate::constants::{DEFAULT_FEE_MILLI_SATOSHI, DUST_AMOUNT_SATOSHI, SIG_HASH_TYPE};
 use crate::domain::{MultiSigIndex, Wallet, WalletType};
 use crate::error::Error;
-use crate::tx::{TransactionInfo, TransactionRequest};
+use crate::tx::{RecipientAmountVec, TransactionInfo};
 use crate::{bitcoins, ecdsa};
 
 pub type BaseResult<T> = Result<T, Error>;
@@ -31,10 +31,13 @@ pub type BaseResult<T> = Result<T, Error>;
 /// Auto choose the utxos to spend
 pub async fn build_unsigned_transaction_auto(
     wallet: Wallet,
-    tx_req: TransactionRequest,
+    tx_req: RecipientAmountVec,
     network: BitcoinNetwork,
 ) -> BaseResult<TransactionInfo> {
-    if tx_req.iter().any(|req| req.amount < DUST_AMOUNT_SATOSHI) {
+    if tx_req
+        .iter()
+        .any(|req| req.amount.to_sat() < DUST_AMOUNT_SATOSHI)
+    {
         return Err(Error::AmountLessThanDust);
     }
 
@@ -63,7 +66,7 @@ pub async fn build_unsigned_transaction_auto(
 async fn calc_fee_and_build_transaction_with_utxos_fee_auto(
     wallet: &Wallet,
     utxos: &[Utxo],
-    tx_req: &TransactionRequest,
+    tx_req: &RecipientAmountVec,
     fee_per_byte: MillisatoshiPerByte,
 ) -> BaseResult<TransactionInfo> {
     ic_cdk::print("Building transaction ... \n");
@@ -93,13 +96,13 @@ async fn calc_fee_and_build_transaction_with_utxos_fee_auto(
 fn build_transaction_with_fee_auto(
     wallet: &Wallet,
     utxos: &[Utxo],
-    tx_req: &TransactionRequest,
+    tx_req: &RecipientAmountVec,
     fee: u64,
 ) -> BaseResult<TransactionInfo> {
     let mut utxos_to_spend = vec![];
     let mut input_amounts = vec![];
     let mut total_spent = 0;
-    let total_amount: Satoshi = tx_req.iter().map(|req| req.amount).sum();
+    let total_amount: Satoshi = tx_req.iter().map(|req| req.amount.to_sat()).sum();
 
     for utxo in utxos.iter().rev() {
         total_spent += utxo.value;
@@ -140,7 +143,7 @@ fn build_transaction_with_fee_auto(
         .iter()
         .map(|req| TxOut {
             script_pubkey: req.recipient.script_pubkey(),
-            value: Amount::from_sat(req.amount),
+            value: req.amount,
         })
         .collect();
 
@@ -337,6 +340,9 @@ pub async fn sign_transaction_single(
         der_signature.push(SIG_HASH_TYPE.to_u32() as u8);
 
         tx_in.witness.push(der_signature);
+        tx_in
+            .witness
+            .push(tx_info.witness_script.clone().into_bytes());
     }
 
     TransactionInfo::new(tx, tx_info.witness_script.clone(), tx_info.sig_hashes)

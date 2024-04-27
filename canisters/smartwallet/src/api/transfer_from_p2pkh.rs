@@ -1,3 +1,4 @@
+use base::tx::RecipientAmount;
 use base::utils::{principal_to_derivation_path, sign_to_der};
 use base::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 use bitcoin::script::{Builder, PushBytesBuf};
@@ -15,36 +16,41 @@ use ic_cdk::api::management_canister::{
     ecdsa::EcdsaKeyId,
 };
 
+use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
+
+use super::build_and_append_transaction_log;
 
 pub(super) async fn serve(
     owner: Principal,
     metadata: Metadata,
-    recipient: String,
-    amount: u64,
+    req: TransferRequest,
 ) -> Result<String, WalletError> {
+    let txs = req.validate_address(metadata.network)?;
+
+    // let amount = req.amount;
+    // let recipient = req.recipient.clone();
+    // Log transfer info
+    build_and_append_transaction_log(req.txs)?;
+
     send_p2pkh_transaction(
         metadata.ecdsa_key_id,
         metadata.network,
         principal_to_derivation_path(owner),
-        recipient,
-        amount,
+        &txs.txs,
     )
     .await
     .map(|txid| txid.to_string())
-
-    // TODO: Save the transaction in ledger
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient
 /// and the sender is the canister itself
-async fn send_p2pkh_transaction(
+pub async fn send_p2pkh_transaction(
     key_id: EcdsaKeyId,
     network: BitcoinNetwork,
     derivation_path: Vec<Vec<u8>>,
-    recipient: String,
-    amount: Satoshi,
+    txs: &[RecipientAmount],
 ) -> Result<Txid, WalletError> {
     // Get fee percentiles from ic api
     let fee_percentiles =
@@ -86,15 +92,14 @@ async fn send_p2pkh_transaction(
         .await?
         .utxos;
 
-    let recipient = str_to_bitcoin_address(&recipient, network)?;
+    // let recipient = str_to_bitcoin_address(&recipient, network)?;
 
     // Build transaction
     let tx = build_transaction(
         &sender_public_key,
         &sender_address,
         &utxos,
-        &recipient,
-        amount,
+        txs,
         fee_per_byte,
     )
     .await?;
@@ -136,8 +141,7 @@ async fn build_transaction(
     public_key: &[u8],
     sender: &Address,
     utxos: &[Utxo],
-    recipient: &Address,
-    amount: Satoshi,
+    txs: &[RecipientAmount],
     fee_per_byte: MillisatoshiPerByte,
 ) -> Result<Transaction, WalletError> {
     ic_cdk::print("Building transaction ... \n");
@@ -145,7 +149,7 @@ async fn build_transaction(
     let mut total_fee = 0;
 
     loop {
-        let tx = calc_fee_and_build_transaction(sender, utxos, recipient, amount, total_fee)?;
+        let tx = calc_fee_and_build_transaction(sender, utxos, txs, total_fee)?;
 
         // Sign the transaction with mock value
         let signed_tx = sign_transaction_p2pkh(
@@ -174,8 +178,7 @@ async fn build_transaction(
 fn calc_fee_and_build_transaction(
     sender: &Address,
     utxos: &[Utxo],
-    recipient: &Address,
-    amount: Satoshi,
+    txs: &[RecipientAmount],
     fee: Satoshi,
 ) -> Result<Transaction, WalletError> {
     // Assume that any amount below this threshold is dust.
@@ -190,6 +193,7 @@ fn calc_fee_and_build_transaction(
 
     // The total spent amount is included fee
     let mut input_amount_satoshi = 0;
+    let amount: u64 = txs.iter().map(|r| r.amount.to_sat()).sum();
     let output_amount_satoshi = amount + fee;
 
     for utxo in utxos.iter().rev() {
@@ -223,10 +227,17 @@ fn calc_fee_and_build_transaction(
         })
         .collect();
 
-    let mut output = vec![TxOut {
-        script_pubkey: recipient.script_pubkey(),
-        value: Amount::from_sat(amount),
-    }];
+    // let mut output = vec![TxOut {
+    //     script_pubkey: recipient.script_pubkey(),
+    //     value: Amount::from_sat(amount),
+    // }];
+    let mut output: Vec<TxOut> = txs
+        .iter()
+        .map(|r| TxOut {
+            script_pubkey: r.recipient.script_pubkey(),
+            value: r.amount,
+        })
+        .collect();
 
     // Handle the change
     let remaining_amount = input_amount_satoshi - output_amount_satoshi;

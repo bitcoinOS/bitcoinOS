@@ -1,20 +1,20 @@
 mod all_addresses;
 mod balance;
 mod build_transaction_multisig22;
-mod build_transaction_single;
 mod current_fee_percentiles;
 mod ecdsa_key;
 mod p2pkh_address;
 mod p2wsh_multisig22_address;
 mod p2wsh_single_address;
 mod public_key;
-mod transfer_multisig22;
-mod transfer_to_p2pkh;
+mod transfer_from_multisig22;
+mod transfer_from_p2pkh;
+mod transfer_from_p2wsh;
 mod utxos;
 
 use base::domain::Wallet;
 use base::tx::RawTransactionInfo;
-use base::utils::{check_normal_principal, ic_caller};
+use base::utils::{check_normal_principal, ic_caller, ic_time};
 
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
@@ -101,29 +101,31 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
 /// Send a transaction if the caller is controller, and return txid if success
 /// otherwise return `UnAuthorized`
 #[update]
-pub async fn transfer_single(req: TransferRequest) -> Result<String, WalletError> {
+pub async fn transfer_from_p2wsh(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    build_transaction_single::serve(owner, metadata, req).await
+    transfer_from_p2wsh::serve(owner, metadata, req).await
 }
 
 /// Transfer btc to a p2pkh address
 #[update]
-pub async fn transfer_to_p2pkh(req: TransferInfo) -> Result<String, WalletError> {
+pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    transfer_to_p2pkh::serve(owner, metadata, req.recipient, req.amount).await
+    transfer_from_p2pkh::serve(owner, metadata, req).await
 }
 
 /// Transfer btc with multisig22 wallet if the caller is owner
 #[update]
-pub async fn transfer_multisig22(send_request: TransferRequest) -> Result<String, WalletError> {
+pub async fn transfer_from_multisig22(
+    send_request: TransferRequest,
+) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    transfer_multisig22::serve(owner, metadata, send_request).await
+    transfer_from_multisig22::serve(owner, metadata, send_request).await
 }
 
 /// Build a transaction if the caller is controller,
@@ -158,8 +160,8 @@ fn network() -> NetworkResponse {
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, WalletError> {
-    validate_owner(ic_caller())
-    // Ok(get_metadata())
+    // validate_owner(ic_caller())
+    Ok(get_metadata())
 }
 
 /// Returns the owner of this canister if the caller is controller
@@ -216,12 +218,24 @@ fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), Walle
     })
 }
 
-fn append_transaction_log(log: TransactionLog) -> Result<(), WalletError> {
+pub fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
     TRANSACTION_LOG.with(|s| {
         s.borrow_mut()
-            .append(&log)
+            .append(log)
             .map_err(|e| WalletError::AppendTransferLogError(format!("{:?}", e)))?;
 
         Ok(())
     })
+}
+
+pub fn build_and_append_transaction_log(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
+    let sender = ic_caller();
+    let send_time = ic_time();
+    let log = TransactionLog {
+        txs,
+        sender,
+        send_time,
+    };
+
+    append_transaction_log(&log)
 }
