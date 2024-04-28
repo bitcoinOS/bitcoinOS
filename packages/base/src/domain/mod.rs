@@ -10,7 +10,7 @@ use crate::error::Error;
 
 #[derive(Clone, Debug)]
 pub struct Wallet {
-    // The witness script of the 2-of-2 multisig wallet.
+    // The witness script of the wallet.
     pub witness_script: ScriptBuf,
     // The wallet address.
     pub address: Address,

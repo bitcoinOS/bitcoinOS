@@ -92,12 +92,6 @@ pub async fn create_p2pkh_wallet(
 
     let witness_script = ScriptBuf::new_p2pkh(&public_key.pubkey_hash());
 
-    // let script_pub_key = ScriptBuf::new_p2wsh(&witness_script.wscript_hash());
-    // let witness_script = bitcoin::blockdata::script::Builder::new()
-    //     .push_slice(public_key.serialize())
-    //     .into_script();
-    // let script_buf = ScriptBuf::new_p2pkh(&witness_script.wscript_hash());
-
     let address = bitcoin::Address::p2pkh(public_key, to_bitcoin_network(network));
 
     Ok(Wallet {

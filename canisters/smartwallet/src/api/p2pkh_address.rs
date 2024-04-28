@@ -15,27 +15,9 @@ use super::get_raw_wallet;
 /// Returns the P2PKH address of this canister
 /// if P2PKH address not exist, create a new one and and save it to stable storage
 pub(super) async fn serve(owner: Principal, metadata: Metadata) -> Result<String, WalletError> {
-    let wallet_key = SelfCustodyKey::new(
-        owner,
-        &metadata,
-        base::domain::WalletType::Single,
-        AddressType::P2pkh,
-    );
-
-    let raw_wallet = get_raw_wallet(&wallet_key);
-
-    match raw_wallet {
-        Some(wallet) => Ok(Wallet::from(wallet).address.to_string()),
-        None => {
-            let wallet =
-                create_p2pkh_wallet(owner, metadata.ecdsa_key_id, metadata.network).await?;
-            let address = wallet.address.to_string();
-
-            super::insert_wallet(wallet_key, wallet)?;
-
-            Ok(address)
-        }
-    }
+    get_or_create_p2pkh_wallet(owner, metadata)
+        .await
+        .map(|w| w.address.to_string())
 }
 
 async fn create_p2pkh_wallet(
@@ -49,4 +31,30 @@ async fn create_p2pkh_wallet(
     base::bitcoins::create_p2pkh_wallet(derivation_path, &public_key, network)
         .await
         .map_err(|e| e.into())
+}
+
+pub async fn get_or_create_p2pkh_wallet(
+    owner: Principal,
+    metadata: Metadata,
+) -> Result<Wallet, WalletError> {
+    let wallet_key = SelfCustodyKey::new(
+        owner,
+        &metadata,
+        base::domain::WalletType::Single,
+        AddressType::P2pkh,
+    );
+
+    let raw_wallet = get_raw_wallet(&wallet_key);
+
+    match raw_wallet {
+        Some(wallet) => Ok(Wallet::from(wallet)),
+        None => {
+            let wallet =
+                create_p2pkh_wallet(owner, metadata.ecdsa_key_id, metadata.network).await?;
+
+            super::insert_wallet(wallet_key, wallet.clone())?;
+
+            Ok(wallet)
+        }
+    }
 }

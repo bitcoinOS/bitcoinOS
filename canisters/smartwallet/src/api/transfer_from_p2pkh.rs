@@ -29,8 +29,6 @@ pub(super) async fn serve(
 ) -> Result<String, WalletError> {
     let txs = req.validate_address(metadata.network)?;
 
-    // let amount = req.amount;
-    // let recipient = req.recipient.clone();
     // Log transfer info
     build_and_append_transaction_log(req.txs)?;
 
@@ -72,7 +70,6 @@ pub async fn send_p2pkh_transaction(
     };
 
     // Fetch public key, p2pkh address, and utxos
-    // TODO: replace with stable store value
     let sender_public_key =
         base::ecdsa::public_key(derivation_path.clone(), key_id.clone(), None).await?;
 
@@ -227,10 +224,6 @@ fn calc_fee_and_build_transaction(
         })
         .collect();
 
-    // let mut output = vec![TxOut {
-    //     script_pubkey: recipient.script_pubkey(),
-    //     value: Amount::from_sat(amount),
-    // }];
     let mut output: Vec<TxOut> = txs
         .iter()
         .map(|r| TxOut {
@@ -302,6 +295,7 @@ where
             .push_slice(sig_push_bytes.as_ref())
             .push_slice(public_key_push_bytes.as_ref())
             .into_script();
+
         tx_in.witness.clear();
     }
 
