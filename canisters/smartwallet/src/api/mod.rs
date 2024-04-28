@@ -16,7 +16,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::context::{METADATA, RAW_WALLET, TRANSACTION_LOG};
+use crate::context::STATE;
 use crate::domain::request::{TransferInfo, TransferRequest};
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
@@ -142,16 +142,16 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
 }
 
 fn get_metadata() -> Metadata {
-    METADATA.with(|s| s.borrow().get().clone())
+    STATE.with(|s| s.borrow().metadata.get().clone())
 }
 
-fn get_raw_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
-    RAW_WALLET.with(|s| s.borrow().get(key).clone())
+fn get_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
+    STATE.with(|s| s.borrow().wallets.get(key).clone())
 }
 
 fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {
-    RAW_WALLET.with(|s| {
-        let mut raw_wallet = s.borrow_mut();
+    STATE.with(|s| {
+        let raw_wallet = &mut s.borrow_mut().wallets;
 
         match raw_wallet.get(&wallet_key) {
             Some(w) => Err(WalletError::WalletAlreadyExists(format!("{:?}", w))),
@@ -164,8 +164,9 @@ fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), Walle
 }
 
 pub fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
-    TRANSACTION_LOG.with(|s| {
+    STATE.with(|s| {
         s.borrow_mut()
+            .transaction_ledger
             .append(log)
             .map_err(|e| WalletError::AppendTransferLogError(format!("{:?}", e)))?;
 
@@ -173,7 +174,7 @@ pub fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
     })
 }
 
-pub fn build_and_append_transaction_log(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
+pub fn append_transaction_ledger(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
     let sender = ic_caller();
     let send_time = ic_time();
     let log = TransactionLog {

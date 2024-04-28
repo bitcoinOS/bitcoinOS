@@ -46,13 +46,7 @@ pub async fn sign_with_ecdsa_uncheck(
     key_id: EcdsaKeyId,
     message_hash: Vec<u8>,
 ) -> Vec<u8> {
-    let arg = SignWithEcdsaArgument {
-        derivation_path,
-        key_id,
-        message_hash,
-    };
-
-    let resp = ic_cdk::api::management_canister::ecdsa::sign_with_ecdsa(arg).await;
-
-    resp.map(|r| r.0.signature).unwrap()
+    sign_with_ecdsa(derivation_path, key_id, message_hash)
+        .await
+        .unwrap()
 }

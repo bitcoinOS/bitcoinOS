@@ -1,6 +1,6 @@
-use bitcoin::{Address, Amount};
+use bitcoin::Amount;
 use candid::CandidType;
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use serde::Deserialize;
 use wallet::{
     tx::{RecipientAmount, RecipientAmountVec},
@@ -33,18 +33,6 @@ impl IntoIterator for TransferRequest {
         self.txs.into_iter()
     }
 }
-
-// impl TryFrom<TransferRequest> for TransactionRequest {
-//     type Error = WalletError;
-
-//     fn try_from(req: TransferRequest) -> Result<Self, Self::Error> {
-//         let txs: Result<Vec<TransactionInnerRequest>, WalletError> = req
-//             .into_iter()
-//             .map(TransactionInnerRequest::try_from)
-//             .collect();
-//         txs.map(|t| TransactionRequest { txs: t })
-//     }
-// }
 
 impl TransferRequest {
     pub fn validate_address(

@@ -7,14 +7,14 @@ use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
 use ic_stable_structures::{storable::Bound, Storable};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 
 use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE};
 
 use self::request::TransferInfo;
 
-#[derive(Debug, Clone, CandidType, Deserialize)]
+#[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
     pub owner: Principal,
     pub network: BitcoinNetwork,

@@ -1,6 +1,12 @@
-use crate::context::RAW_WALLET;
+use crate::context::STATE;
 
 /// Returns all addresses of this canister
 pub(super) async fn serve() -> Vec<String> {
-    RAW_WALLET.with(|w| w.borrow().iter().map(|(_, ra)| ra.address).collect())
+    STATE.with(|s| {
+        s.borrow()
+            .wallets
+            .iter()
+            .map(|(_, ra)| ra.address)
+            .collect()
+    })
 }

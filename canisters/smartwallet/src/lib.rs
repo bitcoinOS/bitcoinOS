@@ -6,7 +6,7 @@ pub mod domain;
 pub mod error;
 pub mod rgb;
 
-use crate::context::METADATA;
+use crate::context::STATE;
 use crate::domain::{
     request::TransferRequest, response::NetworkResponse, response::PublicKeyResponse, Metadata,
 };
@@ -24,7 +24,7 @@ use wallet::utils::{ic_caller, ic_time};
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]
 async fn init(args: InitArgument) {
-    // ic_wasi_polyfill::init(&[0u8; 32], &[]);
+    ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
     let owner = ic_caller();
 
@@ -33,8 +33,8 @@ async fn init(args: InitArgument) {
     let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
     let updated_time = ic_time();
 
-    METADATA.with(|m| {
-        let mut metadata = m.borrow_mut();
+    STATE.with(|s| {
+        let metadata = &mut s.borrow_mut().metadata;
         metadata
             .set(Metadata {
                 owner,
