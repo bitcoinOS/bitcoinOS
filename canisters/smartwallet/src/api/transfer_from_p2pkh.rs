@@ -12,19 +12,19 @@ use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address
 use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
+use crate::repositories::counter;
+use crate::repositories::tx_log;
 
-use super::build_and_append_transaction_ledger;
-use super::counter_increment_one;
 use super::public_key;
 
 pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<String, WalletError> {
     let txs = req.validate_address(metadata.network)?;
 
     // Log transfer info
-    build_and_append_transaction_ledger(req.txs)?;
+    tx_log::build_and_append_transaction_log(req.txs)?;
 
     // Transaction counter increment one
-    counter_increment_one();
+    counter::increment_one();
 
     send_p2pkh_transaction(metadata, &txs.txs)
         .await

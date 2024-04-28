@@ -1,24 +1,26 @@
 pub mod append_wallet_action;
 pub mod count_wallet;
+pub mod counter_increment_one;
 pub mod create_wallet_canister;
 pub mod create_wallet_owner;
 pub mod get_wallet_action;
 pub mod list_wallet;
 
 use candid::{Encode, Principal};
-use ic_cdk::{api::management_canister::bitcoin::BitcoinNetwork, export_candid, init};
+use ic_cdk::{export_candid, init};
 use ic_ledger_types::{
     AccountBalanceArgs, AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT, MAINNET_LEDGER_CANISTER_ID,
 };
 
 use crate::{
     constants::WALLET_WASM,
+    context::STATE,
     domain::{
         request::{InitArgument, InitWalletArgument},
         Action, Metadata, WalletAction, WalletOwner,
     },
     error::Error,
-    METADATA,
+    repositories,
 };
 
 /// ---------------- Update interface of this canister ------------------
@@ -30,7 +32,7 @@ pub async fn create_wallet() -> Result<Principal, Error> {
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
 
-    let metadata = METADATA.with(|m| m.borrow().get().clone());
+    let metadata = repositories::metadata::get_metadata();
     let network = metadata.network;
 
     let init_wallet = InitWalletArgument {
@@ -48,6 +50,8 @@ pub async fn create_wallet() -> Result<Principal, Error> {
     append_wallet_action::serve(owner, Action::Create, created_at)?;
 
     create_wallet_owner::serve(owner, canister_id, created_at)?;
+
+    counter_increment_one::serve();
 
     Ok(canister_id)
 }
@@ -91,30 +95,26 @@ pub fn get_wallet_action(idx: u64) -> Option<WalletAction> {
 #[ic_cdk::query]
 /// Returns metadata of os canister
 pub fn metadata() -> Metadata {
-    METADATA.with(|m| m.borrow().get().clone())
+    repositories::metadata::get_metadata()
+}
+
+#[ic_cdk::query]
+pub fn counter() -> u128 {
+    repositories::counter::get_counter()
 }
 
 #[init]
 fn init(args: InitArgument) {
-    METADATA.with(|m| {
-        let mut metadata = m.borrow_mut();
-        metadata
+    STATE.with(|s| {
+        let state = &mut s.borrow_mut();
+        state
+            .metadata
             .set(Metadata {
                 network: args.network,
                 steward_canister: args.steward_canister,
             })
-            .expect("Failed to init network")
+            .expect("Failed to init metadata of os canister");
     });
-}
-
-pub fn to_ic_bitcoin_network(network: &str) -> BitcoinNetwork {
-    if network == "mainnet" {
-        BitcoinNetwork::Mainnet
-    } else if network == "testnet" {
-        BitcoinNetwork::Testnet
-    } else {
-        BitcoinNetwork::Regtest
-    }
 }
 
 export_candid!();

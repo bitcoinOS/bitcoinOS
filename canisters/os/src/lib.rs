@@ -1,77 +1,13 @@
 pub mod api;
 pub mod constants;
+pub mod context;
 pub mod domain;
 pub mod error;
-pub mod repoistories;
-pub mod services;
+pub mod repositories;
 
-use std::{borrow::Cow, cell::RefCell};
+use std::borrow::Cow;
 
-use candid::Principal;
-use domain::{Metadata, WalletAction, WalletOwner};
-use ic_stable_structures::{
-    memory_manager::{MemoryId, MemoryManager as MM, VirtualMemory},
-    storable::Bound,
-    Cell as StableCell, DefaultMemoryImpl, Log as StableLog, RestrictedMemory, StableBTreeMap,
-    Storable,
-};
-
-// const WASM_PAGE_SIZE: u64 = 65536;
-
-// const GIB: usize = 1024 * 1024 * 1024;
-
-// NOTE: we allocate the first 16 pages (about 2 MiB) of the
-// canister memory for the metadata.
-// const METADATA_PAGES: u64 = 16;
-
-/// The maximum number of Wasm pages that we allow to use for the stable storage.
-// const NUM_WASM_PAGES: u64 = 4 * (GIB as u64) / WASM_PAGE_SIZE;
-
-// NOTE: ensure that all memory ids are unique and
-// do not change across upgrades!
-const WALLET_MEM_ID: MemoryId = MemoryId::new(0);
-const WALLET_LOG_IDX_MEM_ID: MemoryId = MemoryId::new(1);
-const WALLET_LOG_DATA_MEM_ID: MemoryId = MemoryId::new(2);
-
-pub type DefMem = DefaultMemoryImpl;
-pub type RM = RestrictedMemory<DefMem>;
-pub type VM = VirtualMemory<RM>;
-
-type Memory = VirtualMemory<DefMem>;
-
-pub type WalletOwnerStable = StableBTreeMap<Principal, WalletOwner, Memory>;
-
-pub type WalletActionStable = StableLog<WalletAction, Memory, Memory>;
-
-const METADATA_PAGES: u64 = 64;
-
-thread_local! {
-
-    pub static METADATA: RefCell<StableCell<Metadata, RM>> =
-    RefCell::new(StableCell::init(
-        RM::new(DefMem::default(), 0..METADATA_PAGES),
-        Metadata::default(),
-      ).expect("failed to initialize the metadata cell")
-    );
-
-    static MEMORY_MANAGER: RefCell<MM<DefaultMemoryImpl>> = RefCell::new(
-        MM::init(DefaultMemoryImpl::default())
-    );
-
-    static WALLET_OWNER: RefCell<WalletOwnerStable> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(WALLET_MEM_ID))
-        )
-    );
-
-    static WALLET_ACTION: RefCell<WalletActionStable> = RefCell::new(
-        StableLog::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(WALLET_LOG_IDX_MEM_ID)),
-            MEMORY_MANAGER.with(|m| m.borrow().get(WALLET_LOG_DATA_MEM_ID))
-        ).expect("failed to init wallet log")
-    )
-
-}
+use ic_stable_structures::{storable::Bound, Storable};
 
 /// A helper type implementing Storable for all
 /// serde-serializable types using the CBOR encoding.

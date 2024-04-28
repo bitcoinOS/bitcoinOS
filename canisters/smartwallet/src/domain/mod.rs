@@ -162,4 +162,3 @@ pub struct TransactionLedger {
     pub sender: Principal,
     pub send_time: u64,
 }
-

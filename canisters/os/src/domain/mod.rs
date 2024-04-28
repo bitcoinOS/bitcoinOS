@@ -44,7 +44,7 @@ impl Storable for Metadata {
 
 /// The `State` will store the canister info when a user create a wallet.
 /// A wallet is also a canister, call `SmartWallet`
-#[derive(Debug, CandidType, Deserialize)]
+#[derive(Debug, CandidType, Deserialize, Clone)]
 pub struct WalletOwner {
     pub canister_id: Principal,
     pub owner: Principal,

@@ -1,5 +1,5 @@
-use crate::{domain::WalletAction, services, WALLET_ACTION};
+use crate::{domain::WalletAction, repositories};
 
 pub fn serve(idx: u64) -> Option<WalletAction> {
-    WALLET_ACTION.with(|w| services::get_wallet_action::execute(w.into(), idx))
+    repositories::wallet_log::get_wallet_action(idx)
 }

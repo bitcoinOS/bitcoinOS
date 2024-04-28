@@ -1,5 +1,5 @@
-use crate::{domain::WalletOwner, services, WALLET_OWNER};
+use crate::{domain::WalletOwner, repositories};
 
 pub fn serve() -> Vec<WalletOwner> {
-    WALLET_OWNER.with(|w| services::list_wallet::execute(&w.into()))
+    repositories::wallet_owner::list_wallet()
 }

@@ -1,6 +1,6 @@
 mod all_addresses;
-mod logs;
 mod balance;
+mod logs;
 
 mod current_fee_percentiles;
 mod ecdsa_key;
@@ -10,18 +10,17 @@ mod public_key;
 mod transfer_from_p2pkh;
 mod utxos;
 
-use wallet::domain::{AddressType, Wallet, WalletType};
-use wallet::utils::{self, check_normal_principal, hex, ic_caller, ic_time};
+use wallet::utils::{check_normal_principal, hex, ic_caller};
 
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::context::STATE;
-use crate::domain::request::{TransferInfo, TransferRequest};
+use crate::domain::request::TransferRequest;
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
+use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
+use crate::repositories::{self, counter, metadata};
 
 /// ---------------- Update interface of this canister ------------------
 ///
@@ -39,7 +38,7 @@ pub async fn p2pkh_address() -> Result<String, WalletError> {
 /// Returns the utxos of this canister address
 #[update]
 pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
-    let network = get_metadata().network;
+    let network = metadata::get_metadata().network;
     utxos::serve(address, network).await
 }
 
@@ -77,7 +76,7 @@ pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
 /// Percentiles are computed from the last 10,000 transactions (if available).
 #[update]
 pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, WalletError> {
-    let network = get_metadata().network;
+    let network = metadata::get_metadata().network;
     current_fee_percentiles::serve(network).await
 }
 
@@ -103,7 +102,7 @@ pub fn ecdsa_key() -> Result<String, WalletError> {
 /// Returns the network of this canister
 #[query]
 fn network() -> NetworkResponse {
-    get_metadata().network.into()
+    metadata::get_metadata().network.into()
 }
 
 /// Returns the metadata of this canister if the caller is controller
@@ -146,7 +145,7 @@ async fn logs() -> Result<Vec<TransactionLog>, WalletError> {
 /// Returns the counter of this canister
 #[query]
 fn counter() -> u128 {
-    get_counter()
+    counter::get_counter()
 }
 
 /// Validate the given ownerr if it is owner of canister, return `Metadata` if true,
@@ -154,91 +153,10 @@ fn counter() -> u128 {
 fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
     check_normal_principal(owner)?;
 
-    let metadata = get_metadata();
+    let metadata = repositories::metadata::get_metadata();
     if metadata.owner == owner {
         Ok(metadata)
     } else {
         Err(WalletError::UnAuthorized(owner.to_string()))
     }
-}
-
-fn get_metadata() -> Metadata {
-    STATE.with(|s| s.borrow().metadata.get().clone())
-}
-
-fn get_counter() -> u128 {
-    STATE.with(|s| *s.borrow().counter.get())
-}
-
-fn counter_increment_one() {
-    STATE.with(|s| {
-        let mut state = s.borrow_mut();
-        let current_counter = *state.counter.get();
-        let _ = state.counter.set(current_counter + 1);
-    })
-}
-
-fn get_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
-    STATE.with(|s| s.borrow().wallets.get(key).clone())
-}
-
-fn get_p2pkh_wallet(metadata: &Metadata) -> Option<RawWallet> {
-    let key = SelfCustodyKey::new(metadata, WalletType::Single, AddressType::P2pkh);
-    get_wallet(&key)
-}
-
-pub async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wallet, WalletError> {
-    let raw_wallet = get_p2pkh_wallet(&metadata);
-
-    match raw_wallet {
-        Some(wallet) => Ok(Wallet::from(wallet)),
-        None => {
-            let wallet_key = SelfCustodyKey::new(&metadata, WalletType::Single, AddressType::P2pkh);
-
-            let wallet =
-                utils::create_p2pkh_wallet(metadata.owner, metadata.ecdsa_key_id, metadata.network)
-                    .await?;
-
-            insert_wallet(wallet_key, wallet.clone())?;
-
-            Ok(wallet)
-        }
-    }
-}
-
-fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {
-    STATE.with(|s| {
-        let raw_wallet = &mut s.borrow_mut().wallets;
-
-        match raw_wallet.get(&wallet_key) {
-            Some(w) => Err(WalletError::WalletAlreadyExists(format!("{:?}", w))),
-            None => {
-                raw_wallet.insert(wallet_key, wallet.into());
-                Ok(())
-            }
-        }
-    })
-}
-
-fn append_transaction_ledger(log: &TransactionLog) -> Result<(), WalletError> {
-    STATE.with(|s| {
-        s.borrow_mut()
-            .logs
-            .append(log)
-            .map_err(|e| WalletError::AppendTransferLogError(format!("{:?}", e)))?;
-
-        Ok(())
-    })
-}
-
-fn build_and_append_transaction_ledger(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
-    let sender = ic_caller();
-    let send_time = ic_time();
-    let log = TransactionLog {
-        txs,
-        sender,
-        send_time,
-    };
-
-    append_transaction_ledger(&log)
 }
