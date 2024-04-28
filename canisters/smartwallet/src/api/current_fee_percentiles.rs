@@ -5,7 +5,7 @@ use crate::error::WalletError;
 pub(super) async fn serve(
     network: BitcoinNetwork,
 ) -> Result<Vec<MillisatoshiPerByte>, WalletError> {
-    base::bitcoins::get_current_fee_percentiles(network)
+    wallet::bitcoins::get_current_fee_percentiles(network)
         .await
         .map_err(|e| e.into())
 }

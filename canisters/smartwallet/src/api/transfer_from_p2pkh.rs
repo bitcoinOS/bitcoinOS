@@ -1,6 +1,3 @@
-use base::tx::RecipientAmount;
-use base::utils::{principal_to_derivation_path, sign_to_der};
-use base::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 use bitcoin::script::{Builder, PushBytesBuf};
 use bitcoin::{
     absolute::LockTime, hashes::Hash, transaction::Version, Address, Amount, OutPoint, Script,
@@ -15,6 +12,9 @@ use ic_cdk::api::management_canister::{
     },
     ecdsa::EcdsaKeyId,
 };
+use wallet::tx::RecipientAmount;
+use wallet::utils::{principal_to_derivation_path, sign_to_der};
+use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 
 use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
@@ -71,10 +71,10 @@ pub async fn send_p2pkh_transaction(
 
     // Fetch public key, p2pkh address, and utxos
     let sender_public_key =
-        base::ecdsa::public_key(derivation_path.clone(), key_id.clone(), None).await?;
+        wallet::ecdsa::public_key(derivation_path.clone(), key_id.clone(), None).await?;
 
     // TODO: replace with stable store value
-    let sender_address = base::bitcoins::public_key_to_p2pkh_address(network, &sender_public_key);
+    let sender_address = wallet::bitcoins::public_key_to_p2pkh_address(network, &sender_public_key);
     ic_cdk::print(format!(
         "Sender address: {sender_address:?} ---------------------- \n"
     ));
@@ -85,7 +85,7 @@ pub async fn send_p2pkh_transaction(
     let sender_address = str_to_bitcoin_address(&sender_address, network)?;
 
     // TODO: UTXOs maybe very large, need to paginate
-    let utxos = base::bitcoins::get_utxos(sender_address.to_string(), network, None)
+    let utxos = wallet::bitcoins::get_utxos(sender_address.to_string(), network, None)
         .await?
         .utxos;
 
@@ -110,7 +110,7 @@ pub async fn send_p2pkh_transaction(
         tx,
         key_id,
         derivation_path,
-        base::ecdsa::sign_with_ecdsa_uncheck,
+        wallet::ecdsa::sign_with_ecdsa_uncheck,
     )
     .await?;
 
@@ -121,7 +121,7 @@ pub async fn send_p2pkh_transaction(
 
     ic_cdk::print(format!("Sending transaction... {txid:?}\n"));
 
-    base::bitcoins::send_transaction(signed_tx_bytes, network).await?;
+    wallet::bitcoins::send_transaction(signed_tx_bytes, network).await?;
 
     ic_cdk::print("Transaction sent! \n");
 

@@ -45,8 +45,8 @@ pub enum WalletError {
     OnlySupportP2pkhSign,
 }
 
-impl From<base::error::Error> for WalletError {
-    fn from(value: base::error::Error) -> Self {
+impl From<wallet::error::Error> for WalletError {
+    fn from(value: wallet::error::Error) -> Self {
         WalletError::CreateWalletError(value.to_string())
     }
 }

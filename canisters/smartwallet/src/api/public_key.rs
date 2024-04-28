@@ -1,5 +1,8 @@
-use base::utils::{hex, principal_to_derivation_path};
 use candid::Principal;
+use wallet::{
+    ecdsa,
+    utils::{hex, principal_to_derivation_path},
+};
 
 use crate::{
     domain::{response::PublicKeyResponse, Metadata},
@@ -7,7 +10,7 @@ use crate::{
 };
 
 pub async fn serve(owner: Principal, metadata: Metadata) -> Result<PublicKeyResponse, WalletError> {
-    base::ecdsa::public_key(
+    ecdsa::public_key(
         principal_to_derivation_path(owner),
         metadata.ecdsa_key_id,
         None,

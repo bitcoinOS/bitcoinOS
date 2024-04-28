@@ -1,20 +1,16 @@
 mod all_addresses;
 mod balance;
-mod build_transaction_multisig22;
+
 mod current_fee_percentiles;
 mod ecdsa_key;
 mod p2pkh_address;
-mod p2wsh_multisig22_address;
-mod p2wsh_single_address;
+
 mod public_key;
-mod transfer_from_multisig22;
 mod transfer_from_p2pkh;
-mod transfer_from_p2wsh;
 mod utxos;
 
-use base::domain::Wallet;
-use base::tx::RawTransactionInfo;
-use base::utils::{check_normal_principal, ic_caller, ic_time};
+use wallet::domain::Wallet;
+use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
@@ -28,24 +24,6 @@ use crate::error::WalletError;
 
 /// ---------------- Update interface of this canister ------------------
 ///
-/// Returns an exists address for the caller,
-/// or create a new one if it doesn't exist, and returns it
-#[update]
-pub async fn p2wsh_multisig22_address() -> Result<String, WalletError> {
-    let owner = ic_caller();
-    let metadata = validate_owner(owner)?;
-
-    p2wsh_multisig22_address::serve(owner, metadata).await
-}
-
-/// Returns the single signature wallet of this canister id as diravtion path
-#[update]
-pub async fn p2wsh_single_address() -> Result<String, WalletError> {
-    let owner = ic_caller();
-    let metadata = validate_owner(owner)?;
-
-    p2wsh_single_address::serve(owner, metadata).await
-}
 
 /// Returns the P2PKH address of this canister at a specific derivation path
 #[update]
@@ -98,16 +76,6 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
     current_fee_percentiles::serve(network).await
 }
 
-/// Send a transaction if the caller is controller, and return txid if success
-/// otherwise return `UnAuthorized`
-#[update]
-pub async fn transfer_from_p2wsh(req: TransferRequest) -> Result<String, WalletError> {
-    let owner = ic_caller();
-    let metadata = validate_owner(owner)?;
-
-    transfer_from_p2wsh::serve(owner, metadata, req).await
-}
-
 /// Transfer btc to a p2pkh address
 #[update]
 pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletError> {
@@ -115,29 +83,6 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     let metadata = validate_owner(owner)?;
 
     transfer_from_p2pkh::serve(owner, metadata, req).await
-}
-
-/// Transfer btc with multisig22 wallet if the caller is owner
-#[update]
-pub async fn transfer_from_multisig22(
-    send_request: TransferRequest,
-) -> Result<String, WalletError> {
-    let owner = ic_caller();
-    let metadata = validate_owner(owner)?;
-
-    transfer_from_multisig22::serve(owner, metadata, send_request).await
-}
-
-/// Build a transaction if the caller is controller,
-/// otherwise return `UnAuthorized`
-#[update]
-pub async fn build_transaction_multisig22(
-    req: TransferRequest,
-) -> Result<RawTransactionInfo, WalletError> {
-    let owner = ic_caller();
-    let metadata = validate_owner(owner)?;
-
-    build_transaction_multisig22::serve(owner, metadata, req).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -178,9 +123,9 @@ fn owner() -> Result<Principal, WalletError> {
 #[query]
 async fn addresses() -> Result<Vec<String>, WalletError> {
     let owner = ic_caller();
-    let metadata = validate_owner(owner)?;
+    let _metadata = validate_owner(owner)?;
 
-    Ok(all_addresses::serve(owner, metadata).await)
+    Ok(all_addresses::serve().await)
 }
 
 /// Validate the given ownerr if it is owner of canister, return `Metadata` if true,

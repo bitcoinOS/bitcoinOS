@@ -8,22 +8,18 @@ pub mod rgb;
 
 use crate::context::METADATA;
 use crate::domain::{
-    request::{TransferInfo, TransferRequest},
-    response::NetworkResponse,
-    response::PublicKeyResponse,
-    Metadata,
+    request::TransferRequest, response::NetworkResponse, response::PublicKeyResponse, Metadata,
 };
 use crate::error::WalletError;
 
-use base::domain::EcdsaKeyIds;
-use base::tx::RawTransactionInfo;
-use base::utils::{ic_caller, ic_time};
 use candid::{CandidType, Principal};
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte, Satoshi,
 };
 use ic_cdk::export_candid;
 use serde::Deserialize;
+use wallet::domain::EcdsaKeyIds;
+use wallet::utils::{ic_caller, ic_time};
 
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]

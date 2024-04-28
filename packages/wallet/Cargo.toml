@@ -7,9 +7,11 @@ edition = "2021"
 
 [dependencies]
 bitcoin = { workspace = true }
+bs58 = { workspace = true }
 candid = { workspace = true }
+hex = { workspace = true }
 ic-cdk = { workspace = true }
+ripemd ={ workspace = true }
 serde = { workspace = true }
 thiserror ={ workspace = true }
-
-base = { path = "../base" }
+sha2 = { workspace = true }

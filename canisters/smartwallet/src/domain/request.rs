@@ -1,11 +1,11 @@
-use base::{
-    tx::{RecipientAmount, RecipientAmountVec},
-    utils::str_to_bitcoin_address,
-};
 use bitcoin::{Address, Amount};
 use candid::CandidType;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use serde::Deserialize;
+use wallet::{
+    tx::{RecipientAmount, RecipientAmountVec},
+    utils::str_to_bitcoin_address,
+};
 
 use crate::error::WalletError;
 

@@ -1,8 +1,34 @@
-use bitcoin::{consensus, hashes::Hash, ScriptBuf, SegwitV0Sighash, Transaction};
+use bitcoin::{consensus, hashes::Hash, Address, Amount, ScriptBuf, SegwitV0Sighash, Transaction};
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
-use crate::error::WalletError;
+use crate::{error::Error, utils::check_tx_hashes_len};
+
+#[derive(Debug, Clone)]
+pub struct RecipientAmount {
+    // A bitcoin address
+    pub recipient: Address,
+    pub amount: Amount,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecipientAmountVec {
+    pub txs: Vec<RecipientAmount>,
+}
+
+impl RecipientAmountVec {
+    pub fn iter(&self) -> impl Iterator<Item = &RecipientAmount> {
+        self.txs.iter()
+    }
+}
+
+impl IntoIterator for RecipientAmountVec {
+    type Item = RecipientAmount;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.txs.into_iter()
+    }
+}
 
 pub struct TransactionInfo {
     pub tx: Transaction,
@@ -11,6 +37,20 @@ pub struct TransactionInfo {
 }
 
 impl TransactionInfo {
+    pub fn new(
+        tx: Transaction,
+        witness_script: ScriptBuf,
+        sig_hashes: Vec<SegwitV0Sighash>,
+    ) -> Result<Self, Error> {
+        check_tx_hashes_len(&tx, &sig_hashes)?;
+
+        Ok(TransactionInfo {
+            tx,
+            witness_script,
+            sig_hashes,
+        })
+    }
+
     // Get the transaction
     pub fn tx(&self) -> &Transaction {
         &self.tx
@@ -34,37 +74,22 @@ pub struct RawTransactionInfo {
     pub sig_hashes: Vec<Vec<u8>>,
 }
 
-impl RawTransactionInfo {
-    pub fn validate_tx(&self) -> Result<(), WalletError> {
-        let tx_len = self.tx.len();
-
-        if tx_len > 0 && self.sig_hashes.len() == tx_len {
-            Ok(())
-        } else {
-            Err(WalletError::InvalidTransaction)
-        }
-    }
-}
-
 impl TryFrom<RawTransactionInfo> for TransactionInfo {
-    type Error = WalletError;
+    type Error = Error;
 
     fn try_from(tx_info: RawTransactionInfo) -> Result<Self, Self::Error> {
-        tx_info.validate_tx().and_then(|_| {
-            let tx =
-                consensus::deserialize(&tx_info.tx).map_err(|_| WalletError::DeserializeError)?;
-            let witness_script = ScriptBuf::from(tx_info.witness_script);
-            let sig_hashes: Vec<SegwitV0Sighash> = tx_info
-                .sig_hashes
-                .into_iter()
-                .map(|s| SegwitV0Sighash::from_byte_array(s.try_into().unwrap()))
-                .collect();
+        let tx = consensus::deserialize(&tx_info.tx).map_err(|_| Error::DeserializeError)?;
+        let witness_script = ScriptBuf::from(tx_info.witness_script);
+        let sig_hashes: Vec<SegwitV0Sighash> = tx_info
+            .sig_hashes
+            .into_iter()
+            .map(|s| SegwitV0Sighash::from_byte_array(s.try_into().unwrap()))
+            .collect();
 
-            Ok(Self {
-                tx,
-                witness_script,
-                sig_hashes,
-            })
+        Ok(Self {
+            tx,
+            witness_script,
+            sig_hashes,
         })
     }
 }

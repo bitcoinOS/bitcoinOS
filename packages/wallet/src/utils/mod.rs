@@ -1,99 +1,36 @@
-use base::utils::{call_management_with_payment, check_normal_principal};
-use bitcoin::secp256k1::PublicKey;
-use bitcoin::{Address, Network, ScriptBuf};
+use std::future::Future;
+use std::str::FromStr;
 
+use bitcoin::secp256k1::PublicKey;
+use bitcoin::{Address, Network, ScriptBuf, SegwitV0Sighash, Transaction};
+use hex::ToHex;
+
+use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::Principal;
+use ic_cdk::api::call::{call_with_payment, CallResult};
 
 use ic_cdk::api::management_canister::bitcoin::{
-    BitcoinNetwork, GetBalanceRequest, GetCurrentFeePercentilesRequest, GetUtxosRequest,
-    GetUtxosResponse, MillisatoshiPerByte, Satoshi, SendTransactionRequest,
+    bitcoin_get_balance, BitcoinNetwork, GetBalanceRequest, Satoshi,
 };
 
-use crate::constants::{
-    GET_CURRENT_FEE_PERCENTILES_CYCLES, GET_UTXOS_COST_CYCLES, SEND_TRANSACTION_BASE_CYCLES,
-    SEND_TRANSACTION_PER_BYTE_CYCLES,
-};
-use crate::{constants::GET_BALANCE_COST_CYCLES, error::WalletError};
+use crate::error::Error;
 
-pub type WalletResult<T> = Result<T, WalletError>;
+pub type WalletResult<T> = Result<T, Error>;
 
 /// Returns the balance of the given bitcoin address from IC management canister
 ///
 /// NOTE: Relies on the `bitcoin_get_balance` endpoint.
 /// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_get_balance
-pub async fn get_balance(
-    address: impl Into<String>,
-    network: BitcoinNetwork,
-) -> Result<Satoshi, WalletError> {
-    let args = (GetBalanceRequest {
+pub async fn balance(address: impl Into<String>, network: BitcoinNetwork) -> WalletResult<Satoshi> {
+    let arg = GetBalanceRequest {
         address: address.into(),
         network,
         min_confirmations: None,
-    },);
+    };
 
-    let fee = GET_BALANCE_COST_CYCLES;
-
-    call_management_with_payment("bitcoin_get_balance", args, fee)
+    bitcoin_get_balance(arg)
         .await
         .map(|(balance,)| balance)
-        .map_err(|e| e.into())
-}
-
-/// Returns UTXOs of the given bitcoin address
-///
-/// NOTE: Relies on the `bitcoin_get_utxos` endpoint.
-/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_get_utxos
-pub async fn get_utxos(
-    address: impl Into<String>,
-    network: BitcoinNetwork,
-) -> Result<GetUtxosResponse, WalletError> {
-    let args = (GetUtxosRequest {
-        address: address.into(),
-        network,
-        filter: None,
-    },);
-
-    let fee = GET_UTXOS_COST_CYCLES;
-
-    call_management_with_payment("bitcion_get_utxos", args, fee)
-        .await
-        .map(|(utxo,)| utxo)
-        .map_err(|e| e.into())
-}
-
-/// Returns the current fee percentiles measured in millisatoshi per byte
-/// Percentiles are computed from the last 10,000 transactions (if available).
-///
-/// NOTE: Relies on the `bitcoin_get_current_fee_percentiles` endpoint.
-/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-
-pub async fn get_current_fee_percentiles(
-    network: BitcoinNetwork,
-) -> WalletResult<MillisatoshiPerByte> {
-    let args = (GetCurrentFeePercentilesRequest { network },);
-    let fee = GET_CURRENT_FEE_PERCENTILES_CYCLES;
-
-    call_management_with_payment("bitcoin_get_current_fee_percentiles", args, fee)
-        .await
-        .map(|(percentiles,)| percentiles)
-        .map_err(|e| e.into())
-}
-
-/// Sends a transaction to bitcoin network
-///
-/// NOTE: Relies on the `bitcoin_send_transaction` endpoint.
-/// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_send_transaction
-pub async fn send_transaction(transaction: Vec<u8>, network: BitcoinNetwork) -> WalletResult<()> {
-    let fee = SEND_TRANSACTION_BASE_CYCLES
-        + (transaction.len() as u64) * SEND_TRANSACTION_PER_BYTE_CYCLES;
-
-    let args = (SendTransactionRequest {
-        transaction,
-        network,
-    },);
-
-    call_management_with_payment("bitcoin_send_transaction", args, fee)
-        .await
-        .map(|((),)| ())
         .map_err(|e| e.into())
 }
 
@@ -105,7 +42,7 @@ pub async fn create_wallet(
     pk2: &[u8],
     bitcoin_network: Network,
 ) -> WalletResult<Address> {
-    check_normal_principal(principal).map_err(WalletError::from)?;
+    check_normal_principal(principal).map_err(Error::from)?;
 
     let witness_script = bitcoin::blockdata::script::Builder::new()
         .push_int(2)
@@ -119,4 +56,125 @@ pub async fn create_wallet(
 
     // Generate the wallet address from the P2WSH script pubkey
     bitcoin::Address::from_script(&script_pub_key, bitcoin_network).map_err(|e| e.into())
+}
+
+/// Check a principal is a normal principal or not
+/// Returns an error if the principal is not a normal principal
+pub fn check_normal_principal(principal: Principal) -> Result<(), Error> {
+    if principal != mgmt_canister_id() && Principal::anonymous() != principal {
+        Ok(())
+    } else {
+        Err(Error::InvalidPrincipal(principal))
+    }
+}
+
+/// A helper function to call management canister with payment
+pub fn call_management_with_payment<T: ArgumentEncoder, R: for<'a> ArgumentDecoder<'a>>(
+    method: &str,
+    args: T,
+    fee: u64,
+) -> impl Future<Output = CallResult<R>> + Send + Sync {
+    call_with_payment(mgmt_canister_id(), method, args, fee)
+}
+
+/// Utility function to translate the network string to the IC BitcoinNetwork
+pub fn to_ic_bitcoin_network(network: &str) -> BitcoinNetwork {
+    if network == "mainnet" {
+        BitcoinNetwork::Mainnet
+    } else if network == "testnet" {
+        BitcoinNetwork::Testnet
+    } else {
+        BitcoinNetwork::Regtest
+    }
+}
+
+/// A helper function to convert a string to a Address of ust-bitcoin library with network
+pub fn str_to_bitcoin_address(address: &str, network: BitcoinNetwork) -> Result<Address, Error> {
+    Address::from_str(address)
+        .map_err(|e| Error::InvalidBitcoinAddress(e.to_string()))
+        .and_then(|address| {
+            address
+                .require_network(to_bitcoin_network(network))
+                .map_err(|e| e.into())
+        })
+}
+
+/// Utility function to translate the bitcoin network from the IC cdk
+/// to the bitoin network of the rust-bitcoin library.
+pub fn to_bitcoin_network(bitcoin_network: BitcoinNetwork) -> Network {
+    match bitcoin_network {
+        BitcoinNetwork::Mainnet => Network::Bitcoin,
+        BitcoinNetwork::Testnet => Network::Testnet,
+        BitcoinNetwork::Regtest => Network::Regtest,
+    }
+}
+
+/// Check the length of the transaction and the signatures
+pub fn check_tx_hashes_len(
+    transaction: &Transaction,
+    sig_hashes: &[SegwitV0Sighash],
+) -> Result<(), Error> {
+    if transaction.input.len() != sig_hashes.len() {
+        Err(Error::TransactionAndSignaturesMismatch)
+    } else {
+        Ok(())
+    }
+}
+
+/// Converts a SEC1 ECDSA signature to the DER format.
+pub fn sign_to_der(sign: Vec<u8>) -> Vec<u8> {
+    let r: Vec<u8> = if sign[0] & 0x80 != 0 {
+        // r is negative. Prepend a zero byte.
+        let mut tmp = vec![0x00];
+        tmp.extend(sign[..32].to_vec());
+        tmp
+    } else {
+        // r is positive.
+        sign[..32].to_vec()
+    };
+
+    let s: Vec<u8> = if sign[32] & 0x80 != 0 {
+        // s is negative. Prepend a zero byte.
+        let mut tmp = vec![0x00];
+        tmp.extend(sign[32..].to_vec());
+        tmp
+    } else {
+        // s is positive.
+        sign[32..].to_vec()
+    };
+
+    // Convert signature to DER.
+    vec![
+        vec![0x30, 4 + r.len() as u8 + s.len() as u8, 0x02, r.len() as u8],
+        r,
+        vec![0x02, s.len() as u8],
+        s,
+    ]
+    .into_iter()
+    .flatten()
+    .collect()
+}
+
+pub fn mgmt_canister_id() -> Principal {
+    Principal::from_str("aaaaa-aa").unwrap()
+}
+
+pub fn principal_to_derivation_path(principal: Principal) -> Vec<Vec<u8>> {
+    vec![principal.as_slice().to_vec()]
+}
+
+pub fn hex<T: AsRef<[u8]>>(data: T) -> String {
+    data.encode_hex()
+}
+
+pub fn ic_caller() -> Principal {
+    ic_cdk::caller()
+}
+
+pub fn ic_time() -> u64 {
+    ic_cdk::api::time()
+}
+
+pub fn canister_id() -> Principal {
+    ic_cdk::id()
 }

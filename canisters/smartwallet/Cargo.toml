@@ -39,5 +39,5 @@ zeroize_derive = { workspace = true }
 
 # ic-wasi-polyfill = { git = "https://github.com/wasm-forge/ic-wasi-polyfill", version = "0.3.17" }
 
-base = { path = "../../packages/base" }
+wallet = { path = "../../packages/wallet" }
 

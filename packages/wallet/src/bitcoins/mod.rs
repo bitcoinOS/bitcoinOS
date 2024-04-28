@@ -11,14 +11,14 @@ use sha2::Digest;
 use crate::{
     domain::{Wallet, WalletType},
     error::Error,
-    utils::{to_bitcoin_network, BaseResult},
+    utils::{to_bitcoin_network, WalletResult},
 };
 
 /// Returns the balance of the given bitcoin address from IC management canister
 ///
 /// NOTE: Relies on the `bitcoin_get_balance` endpoint.
 /// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_get_balance
-pub async fn balance(address: impl Into<String>, network: BitcoinNetwork) -> BaseResult<Satoshi> {
+pub async fn balance(address: impl Into<String>, network: BitcoinNetwork) -> WalletResult<Satoshi> {
     let arg = GetBalanceRequest {
         address: address.into(),
         network,
@@ -38,7 +38,7 @@ pub async fn balance(address: impl Into<String>, network: BitcoinNetwork) -> Bas
 /// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-
 pub async fn get_current_fee_percentiles(
     network: BitcoinNetwork,
-) -> BaseResult<Vec<MillisatoshiPerByte>> {
+) -> WalletResult<Vec<MillisatoshiPerByte>> {
     let arg = GetCurrentFeePercentilesRequest { network };
 
     bitcoin_get_current_fee_percentiles(arg)
@@ -55,7 +55,7 @@ pub async fn get_utxos(
     address: impl Into<String>,
     network: BitcoinNetwork,
     filter: Option<UtxoFilter>,
-) -> BaseResult<GetUtxosResponse> {
+) -> WalletResult<GetUtxosResponse> {
     let arg = GetUtxosRequest {
         address: address.into(),
         network,
@@ -72,7 +72,7 @@ pub async fn get_utxos(
 ///
 /// NOTE: Relies on the `bitcoin_send_transaction` endpoint.
 /// See https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-bitcoin_send_transaction
-pub async fn send_transaction(transaction: Vec<u8>, network: BitcoinNetwork) -> BaseResult<()> {
+pub async fn send_transaction(transaction: Vec<u8>, network: BitcoinNetwork) -> WalletResult<()> {
     let arg = SendTransactionRequest {
         transaction,
         network,
@@ -86,7 +86,7 @@ pub async fn create_p2pkh_wallet(
     derivation_path: Vec<Vec<u8>>,
     public_key: &[u8],
     network: BitcoinNetwork,
-) -> BaseResult<Wallet> {
+) -> WalletResult<Wallet> {
     let public_key =
         PublicKey::from_slice(public_key).map_err(|e| Error::Secp256k1Error(e.to_string()))?;
 
@@ -109,7 +109,7 @@ pub async fn create_p2wsh_wallet(
     derivation_path: Vec<Vec<u8>>,
     public_key: &[u8],
     network: BitcoinNetwork,
-) -> BaseResult<Wallet> {
+) -> WalletResult<Wallet> {
     let public_key =
         PublicKey::from_slice(public_key).map_err(|e| Error::Secp256k1Error(e.to_string()))?;
 
