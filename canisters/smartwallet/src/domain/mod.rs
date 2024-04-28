@@ -93,15 +93,10 @@ pub struct SelfCustodyKey {
 }
 
 impl SelfCustodyKey {
-    pub fn new(
-        owner: Principal,
-        metadata: &Metadata,
-        wallet_type: WalletType,
-        address_type: AddressType,
-    ) -> Self {
+    pub fn new(metadata: &Metadata, wallet_type: WalletType, address_type: AddressType) -> Self {
         Self {
             network: metadata.network,
-            owner,
+            owner: metadata.owner,
             steward_canister: metadata.steward_canister,
             wallet_type,
             address_type,
@@ -160,3 +155,11 @@ impl Storable for TransactionLog {
         is_fixed_size: false,
     };
 }
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TransactionLedger {
+    pub txs: Vec<TransferInfo>,
+    pub sender: Principal,
+    pub send_time: u64,
+}
+

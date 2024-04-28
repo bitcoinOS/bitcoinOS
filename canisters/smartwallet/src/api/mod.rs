@@ -1,4 +1,5 @@
 mod all_addresses;
+mod logs;
 mod balance;
 
 mod current_fee_percentiles;
@@ -9,8 +10,8 @@ mod public_key;
 mod transfer_from_p2pkh;
 mod utxos;
 
-use wallet::domain::Wallet;
-use wallet::utils::{check_normal_principal, ic_caller, ic_time};
+use wallet::domain::{AddressType, Wallet, WalletType};
+use wallet::utils::{self, check_normal_principal, hex, ic_caller, ic_time};
 
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
@@ -32,7 +33,7 @@ pub async fn p2pkh_address() -> Result<String, WalletError> {
 
     let metadata = validate_owner(owner)?;
 
-    p2pkh_address::serve(owner, metadata).await
+    p2pkh_address::serve(metadata).await
 }
 
 /// Returns the utxos of this canister address
@@ -45,10 +46,10 @@ pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
 /// Returns all utxos of this canister's address
 /// There're multiple address in a canister
 /// TODO:
-#[update]
-pub async fn self_utxos() -> Result<Vec<GetUtxosResponse>, WalletError> {
-    todo!()
-}
+// #[update]
+// pub async fn self_utxos() -> Result<Vec<GetUtxosResponse>, WalletError> {
+//     todo!()
+// }
 
 /// Returns this canister's public key with hex string if the caller is the owner
 #[update]
@@ -56,7 +57,11 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    public_key::serve(owner, metadata).await
+    public_key::serve(metadata)
+        .await
+        .map(|res| PublicKeyResponse {
+            public_key_hex: hex(res),
+        })
 }
 
 /// Returns the balance of the given bitcoin address if the caller is the owner
@@ -82,7 +87,7 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    transfer_from_p2pkh::serve(owner, metadata, req).await
+    transfer_from_p2pkh::serve(metadata, req).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -105,8 +110,8 @@ fn network() -> NetworkResponse {
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, WalletError> {
-    // validate_owner(ic_caller())
-    Ok(get_metadata())
+    validate_owner(ic_caller())
+    // Ok(get_metadata())
 }
 
 /// Returns the owner of this canister if the caller is controller
@@ -128,6 +133,22 @@ async fn addresses() -> Result<Vec<String>, WalletError> {
     Ok(all_addresses::serve().await)
 }
 
+/// Returns all ledger records of this canister if the caller is controller
+/// otherwise return `UnAuthorized`
+#[query]
+async fn logs() -> Result<Vec<TransactionLog>, WalletError> {
+    let owner = ic_caller();
+    let _metadata = validate_owner(owner)?;
+
+    Ok(logs::serve().await)
+}
+
+/// Returns the counter of this canister
+#[query]
+fn counter() -> u128 {
+    get_counter()
+}
+
 /// Validate the given ownerr if it is owner of canister, return `Metadata` if true,
 /// otherwise return `UnAuthorized`
 fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
@@ -145,8 +166,44 @@ fn get_metadata() -> Metadata {
     STATE.with(|s| s.borrow().metadata.get().clone())
 }
 
+fn get_counter() -> u128 {
+    STATE.with(|s| *s.borrow().counter.get())
+}
+
+fn counter_increment_one() {
+    STATE.with(|s| {
+        let mut state = s.borrow_mut();
+        let current_counter = *state.counter.get();
+        let _ = state.counter.set(current_counter + 1);
+    })
+}
+
 fn get_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
     STATE.with(|s| s.borrow().wallets.get(key).clone())
+}
+
+fn get_p2pkh_wallet(metadata: &Metadata) -> Option<RawWallet> {
+    let key = SelfCustodyKey::new(metadata, WalletType::Single, AddressType::P2pkh);
+    get_wallet(&key)
+}
+
+pub async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wallet, WalletError> {
+    let raw_wallet = get_p2pkh_wallet(&metadata);
+
+    match raw_wallet {
+        Some(wallet) => Ok(Wallet::from(wallet)),
+        None => {
+            let wallet_key = SelfCustodyKey::new(&metadata, WalletType::Single, AddressType::P2pkh);
+
+            let wallet =
+                utils::create_p2pkh_wallet(metadata.owner, metadata.ecdsa_key_id, metadata.network)
+                    .await?;
+
+            insert_wallet(wallet_key, wallet.clone())?;
+
+            Ok(wallet)
+        }
+    }
 }
 
 fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {
@@ -163,10 +220,10 @@ fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), Walle
     })
 }
 
-pub fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
+fn append_transaction_ledger(log: &TransactionLog) -> Result<(), WalletError> {
     STATE.with(|s| {
         s.borrow_mut()
-            .transaction_ledger
+            .logs
             .append(log)
             .map_err(|e| WalletError::AppendTransferLogError(format!("{:?}", e)))?;
 
@@ -174,7 +231,7 @@ pub fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
     })
 }
 
-pub fn append_transaction_ledger(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
+fn build_and_append_transaction_ledger(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
     let sender = ic_caller();
     let send_time = ic_time();
     let log = TransactionLog {
@@ -183,5 +240,5 @@ pub fn append_transaction_ledger(txs: Vec<TransferInfo>) -> Result<(), WalletErr
         send_time,
     };
 
-    append_transaction_log(&log)
+    append_transaction_ledger(&log)
 }

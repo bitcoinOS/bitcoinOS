@@ -21,21 +21,20 @@ type Metadata = record {
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : blob; vout : nat32 };
 type PublicKeyResponse = record { public_key_hex : text };
-type RawTransactionInfo = record {
-  tx : blob;
-  sig_hashes : vec blob;
-  witness_script : blob;
-};
 type Result = variant { Ok : vec text; Err : WalletError };
 type Result_1 = variant { Ok : nat64; Err : WalletError };
-type Result_2 = variant { Ok : RawTransactionInfo; Err : WalletError };
-type Result_3 = variant { Ok : vec nat64; Err : WalletError };
-type Result_4 = variant { Ok : text; Err : WalletError };
+type Result_2 = variant { Ok : vec nat64; Err : WalletError };
+type Result_3 = variant { Ok : text; Err : WalletError };
+type Result_4 = variant { Ok : vec TransactionLog; Err : WalletError };
 type Result_5 = variant { Ok : Metadata; Err : WalletError };
 type Result_6 = variant { Ok : principal; Err : WalletError };
 type Result_7 = variant { Ok : PublicKeyResponse; Err : WalletError };
-type Result_8 = variant { Ok : vec GetUtxosResponse; Err : WalletError };
-type Result_9 = variant { Ok : GetUtxosResponse; Err : WalletError };
+type Result_8 = variant { Ok : GetUtxosResponse; Err : WalletError };
+type TransactionLog = record {
+  txs : vec TransferInfo;
+  send_time : nat64;
+  sender : principal;
+};
 type TransferInfo = record { recipient : text; amount : nat64 };
 type TransferRequest = record { txs : vec TransferInfo };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
@@ -58,19 +57,15 @@ type WalletError = variant {
 service : (InitArgument) -> {
   addresses : () -> (Result) query;
   balance : (text) -> (Result_1);
-  build_transaction_multisig22 : (TransferRequest) -> (Result_2);
-  current_fee_percentiles : () -> (Result_3);
-  ecdsa_key : () -> (Result_4) query;
+  counter : () -> (nat) query;
+  current_fee_percentiles : () -> (Result_2);
+  ecdsa_key : () -> (Result_3) query;
+  logs : () -> (Result_4) query;
   metadata : () -> (Result_5) query;
   network : () -> (NetworkResponse) query;
   owner : () -> (Result_6) query;
-  p2pkh_address : () -> (Result_4);
-  p2wsh_multisig22_address : () -> (Result_4);
-  p2wsh_single_address : () -> (Result_4);
+  p2pkh_address : () -> (Result_3);
   public_key : () -> (Result_7);
-  self_utxos : () -> (Result_8);
-  transfer_from_multisig22 : (TransferRequest) -> (Result_4);
-  transfer_from_p2pkh : (TransferRequest) -> (Result_4);
-  transfer_from_p2wsh : (TransferRequest) -> (Result_4);
-  utxos : (text) -> (Result_9);
+  transfer_from_p2pkh : (TransferRequest) -> (Result_3);
+  utxos : (text) -> (Result_8);
 }

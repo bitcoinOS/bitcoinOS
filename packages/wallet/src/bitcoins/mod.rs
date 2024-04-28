@@ -47,6 +47,26 @@ pub async fn get_current_fee_percentiles(
         .map_err(|e| e.into())
 }
 
+/// Returns the fee or the default value if the fee is not available
+pub async fn get_fee_per_byte(
+    network: BitcoinNetwork,
+    default: Satoshi,
+) -> WalletResult<MillisatoshiPerByte> {
+    let fee_percentiles = get_current_fee_percentiles(network).await?;
+
+    if fee_percentiles.is_empty() {
+        // There are no fee percentiles if network is regtest. use default fee
+        Ok(default)
+    } else {
+        // Choose the 50th percentile if len > 50
+        if fee_percentiles.len() >= 50 {
+            Ok(fee_percentiles[50])
+        } else {
+            Ok(*fee_percentiles.last().unwrap())
+        }
+    }
+}
+
 /// Returns UTXOs of the given bitcoin address
 ///
 /// NOTE: Relies on the `bitcoin_get_utxos` endpoint.
