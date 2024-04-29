@@ -25,6 +25,7 @@ type WalletOwner = record {
 service : (Metadata) -> {
   canister_balance : () -> (Tokens);
   count_wallet : () -> (nat64) query;
+  counter : () -> (nat) query;
   create_wallet : () -> (Result);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
   list_wallet : () -> (vec WalletOwner) query;
