@@ -14,6 +14,7 @@ use crate::domain::{
 use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
+use constants::DAILY_LIMIET_SATOSHI;
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte, Satoshi,
 };
@@ -28,7 +29,7 @@ async fn init(args: InitArgument) {
     ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
     let owner = ic_caller();
-
+    let name = args.name;
     let network = args.network;
     let steward_canister = args.steward_canister;
     let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
@@ -38,10 +39,12 @@ async fn init(args: InitArgument) {
         let metadata = &mut s.borrow_mut().metadata;
         metadata
             .set(Metadata {
+                name,
                 owner,
                 network,
                 steward_canister,
                 ecdsa_key_id,
+                daily_limit_satoshi: DAILY_LIMIET_SATOSHI,
                 updated_time,
             })
             .expect("Failed to init metadata")
@@ -57,6 +60,7 @@ export_candid!();
 
 #[derive(CandidType, Deserialize)]
 struct InitArgument {
+    name: String,
     network: BitcoinNetwork,
     steward_canister: Principal,
 }

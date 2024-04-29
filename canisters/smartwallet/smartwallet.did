@@ -8,12 +8,14 @@ type GetUtxosResponse = record {
   utxos : vec Utxo;
 };
 type InitArgument = record {
+  name : text;
   network : BitcoinNetwork;
   steward_canister : principal;
 };
 type Metadata = record {
   ecdsa_key_id : EcdsaKeyId;
   owner : principal;
+  name : text;
   network : BitcoinNetwork;
   steward_canister : principal;
   updated_time : nat64;

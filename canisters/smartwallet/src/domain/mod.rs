@@ -5,21 +5,28 @@ use std::str::FromStr;
 
 use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
-use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
+use ic_cdk::api::management_canister::{
+    bitcoin::{BitcoinNetwork, Satoshi},
+    ecdsa::EcdsaKeyId,
+};
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
 use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 
-use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE};
+use crate::constants::{
+    DAILY_LIMIET_SATOSHI, METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE,
+};
 
 use self::request::TransferInfo;
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
+    pub name: String,
     pub owner: Principal,
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
     pub ecdsa_key_id: EcdsaKeyId,
+    pub daily_limit_satoshi: Satoshi,
     pub updated_time: u64,
 }
 
@@ -29,10 +36,12 @@ impl Default for Metadata {
         let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
 
         Self {
+            name: "SmartWallet".to_string(),
             owner: Principal::anonymous(),
             steward_canister: Principal::anonymous(),
             network,
             ecdsa_key_id,
+            daily_limit_satoshi: DAILY_LIMIET_SATOSHI,
             updated_time: 0,
         }
     }

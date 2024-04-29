@@ -2,9 +2,9 @@ pub mod append_wallet_action;
 pub mod count_wallet;
 pub mod counter_increment_one;
 pub mod create_wallet_canister;
-pub mod create_wallet_owner;
 pub mod get_wallet_action;
 pub mod list_wallet;
+pub mod registry_wallet;
 
 use candid::{Encode, Principal};
 use ic_cdk::{export_candid, init};
@@ -27,8 +27,7 @@ use crate::{
 ///
 /// Create a smart wallet canister, log the action, and store the wallet owner info
 #[ic_cdk::update]
-pub async fn create_wallet() -> Result<Principal, Error> {
-    // let os = ic_cdk::api::id();
+pub async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
 
@@ -36,6 +35,7 @@ pub async fn create_wallet() -> Result<Principal, Error> {
     let network = metadata.network;
 
     let init_wallet = InitWalletArgument {
+        name,
         network,
         steward_canister: metadata.steward_canister,
     };
@@ -49,14 +49,14 @@ pub async fn create_wallet() -> Result<Principal, Error> {
 
     append_wallet_action::serve(owner, Action::Create, created_at)?;
 
-    create_wallet_owner::serve(owner, canister_id, created_at)?;
+    registry_wallet::serve(owner, canister_id, created_at)?;
 
     counter_increment_one::serve();
 
     Ok(canister_id)
 }
 
-/// Returns the btc balance of this canister
+/// Returns the ICP balance of  this canister
 #[ic_cdk::update]
 async fn canister_balance() -> Tokens {
     match ic_ledger_types::account_balance(

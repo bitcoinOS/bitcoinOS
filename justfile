@@ -16,10 +16,10 @@ translate_wasm:
 install_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { network = variant { regtest }; steward_canister = principal \"2vxsx-fae\" })"
+    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { name = "smartwallet";  network = variant { regtest }; steward_canister = principal \"2vxsx-fae\" })"
 
 deploy_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx deploy smartwallet --argument "(record { network = variant { regtest }; steward_canister = principal \"2vxsx-fae\" })"
+    dfx deploy smartwallet --argument "(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal \"2vxsx-fae\" })"
 
