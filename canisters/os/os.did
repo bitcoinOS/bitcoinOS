@@ -1,16 +1,34 @@
 type Action = variant { Delete; Create };
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type CreateStakingPoolRequest = record {
+  duration_in_month : nat16;
+  name : text;
+  description : text;
+  annual_interest_rate : nat64;
+};
 type Error = variant {
-  AlreadyExists;
+  StableWriteError : record { msg : text };
+  WalletAlreadyExists : record { wallet_id : text };
+  UnAuthorized : text;
   CreateCanisterFailed : record { msg : text };
+  StableSetError : record { msg : text };
   Unknown;
-  WriteError : record { msg : text };
+  StakingPoolAlreadyExists : record { staking_pool_id : text };
 };
 type Metadata = record {
   network : BitcoinNetwork;
   steward_canister : principal;
 };
 type Result = variant { Ok : principal; Err : Error };
+type StakingPoolInfo = record {
+  os_canister : principal;
+  name : text;
+  network : BitcoinNetwork;
+  description : text;
+  created_at : nat64;
+  staking_pool_canister : principal;
+  annual_interest_rate : nat64;
+};
 type Tokens = record { e8s : nat64 };
 type WalletAction = record {
   action : Action;
@@ -24,10 +42,14 @@ type WalletOwner = record {
 };
 service : (Metadata) -> {
   canister_balance : () -> (Tokens);
+  count_staking_pool : () -> (nat) query;
   count_wallet : () -> (nat64) query;
-  counter : () -> (nat) query;
+  create_staking_pool_canister : (CreateStakingPoolRequest) -> (Result);
   create_wallet_canister : (text) -> (Result);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
+  list_staking_pool : () -> (vec StakingPoolInfo) query;
   list_wallet : () -> (vec WalletOwner) query;
+  list_wallet_types : () -> (vec text) query;
   metadata : () -> (Metadata) query;
+  wallet_counter : () -> (nat) query;
 }

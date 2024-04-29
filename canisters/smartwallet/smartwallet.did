@@ -19,6 +19,7 @@ type Metadata = record {
   network : BitcoinNetwork;
   steward_canister : principal;
   updated_time : nat64;
+  daily_limit_satoshi : nat64;
 };
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : blob; vout : nat32 };

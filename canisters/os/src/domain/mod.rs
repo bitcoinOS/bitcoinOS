@@ -111,12 +111,12 @@ impl WalletType {
 /// Staking pool info will be stored in stable storage
 #[derive(Debug, CandidType, Deserialize, Clone)]
 pub struct StakingPoolInfo {
-    pub canister_id: CanisterId,
+    pub staking_pool_canister: CanisterId,
     pub name: String,
     pub description: String,
     pub network: BitcoinNetwork,
     pub annual_interest_rate: u64,
-    pub os_id: CanisterId,
+    pub os_canister: CanisterId,
     pub created_at: u64,
 }
 

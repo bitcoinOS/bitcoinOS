@@ -6,6 +6,11 @@
       "package": "os",
       "type": "rust"
     },
+    "staking_pool": {
+      "candid": "canisters/stakingpool/stakingpool.did",
+      "package": "stakingpool",
+      "type": "rust"
+    },
     "smartwallet": {
       "candid": "canisters/smartwallet/smartwallet.did",
       "package": "smartwallet",

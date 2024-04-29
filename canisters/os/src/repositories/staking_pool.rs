@@ -19,7 +19,7 @@ pub(crate) fn list_staking_pool() -> Vec<StakingPoolInfo> {
 pub(crate) fn create_staking_pool(
     canister_id: CanisterId,
     network: BitcoinNetwork,
-    os_id: CanisterId,
+    os_canister: CanisterId,
     created_at: u64,
     arg: InitStakingPoolArgument,
 ) -> Result<Option<StakingPoolInfo>, Error> {
@@ -34,11 +34,11 @@ pub(crate) fn create_staking_pool(
         } else {
             let staking_pool = StakingPoolInfo {
                 name: arg.name,
-                canister_id,
+                staking_pool_canister: canister_id,
                 description: arg.description,
                 network,
                 annual_interest_rate: arg.annual_interest_rate,
-                os_id,
+                os_canister,
                 created_at,
             };
 

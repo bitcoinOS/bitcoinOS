@@ -1,5 +1,5 @@
 use candid::{CandidType, Principal};
-use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId};
 use serde::Deserialize;
 
 #[derive(Debug, CandidType, Deserialize)]
@@ -16,8 +16,19 @@ pub struct InitWalletArgument {
 }
 
 #[derive(CandidType, Deserialize, Clone)]
-pub struct InitStakingPoolArgument {
+pub struct CreateStakingPoolRequest {
     pub name: String,
     pub description: String,
     pub annual_interest_rate: u64,
+    pub duration_in_month: u16,
+}
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct InitStakingPoolArgument {
+    pub name: String,
+    pub description: String,
+    pub network: BitcoinNetwork,
+    pub annual_interest_rate: u64,
+    pub duration_in_month: u16,
+    pub os_canister: CanisterId,
 }

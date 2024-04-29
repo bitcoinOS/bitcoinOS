@@ -22,10 +22,10 @@ use ic_ledger_types::{
 };
 
 use crate::{
-    constants::WALLET_WASM,
+    constants::{STAKING_POOL_WASM, WALLET_WASM},
     context::STATE,
     domain::{
-        request::{InitArgument, InitStakingPoolArgument},
+        request::{CreateStakingPoolRequest, InitArgument, InitStakingPoolArgument},
         Action, Metadata, StakingPoolInfo, WalletAction, WalletOwner,
     },
     error::Error,
@@ -57,21 +57,37 @@ pub async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
 
 /// Create a Staking Pool with given annualized interest rate and duration, name and description
 #[ic_cdk::update]
-async fn create_staking_pool_canister(arg: InitStakingPoolArgument) -> Result<CanisterId, Error> {
+async fn create_staking_pool_canister(arg: CreateStakingPoolRequest) -> Result<CanisterId, Error> {
     let owner = ic_cdk::caller();
 
     if is_controller(&owner) {
         return Err(Error::UnAuthorized(owner.to_string()));
     }
 
-    let os_id = ic_cdk::id();
+    let os_canister = ic_cdk::id();
     let created_at = ic_cdk::api::time();
     let metadata = repositories::metadata::get_metadata();
+    let init_arg = InitStakingPoolArgument {
+        name: arg.name,
+        description: arg.description,
+        annual_interest_rate: arg.annual_interest_rate,
+        duration_in_month: arg.duration_in_month,
+        network: metadata.network,
+        os_canister,
+    };
 
     let staking_pool_id =
-        create_staking_pool::serve(metadata.clone(), os_id, created_at, arg.clone()).await?;
+        create_staking_pool::serve(init_arg.clone(), STAKING_POOL_WASM.to_owned())
+            .await
+            .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
-    registry_staking_pool::serve(staking_pool_id, metadata.network, os_id, created_at, arg)?;
+    registry_staking_pool::serve(
+        staking_pool_id,
+        metadata.network,
+        os_canister,
+        created_at,
+        init_arg,
+    )?;
 
     staking_pool_increment_one::serve()?;
 

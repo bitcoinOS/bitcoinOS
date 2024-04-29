@@ -5,7 +5,7 @@ use ic_cdk::api::management_canister::main::{
 };
 
 use crate::{
-    constants::CYCLES_PER_WALLET_CANISTER,
+    constants::DEFAULT_CYCLES_PER_CANISTER,
     domain::{request::InitWalletArgument, Metadata},
 };
 
@@ -47,7 +47,7 @@ async fn create_new_wallet_canister(owners: Vec<Principal>) -> Result<Principal,
         }),
     };
 
-    create_canister(create_args, CYCLES_PER_WALLET_CANISTER)
+    create_canister(create_args, DEFAULT_CYCLES_PER_CANISTER)
         .await
         .map_err(|(code, msg)| format!("Created failed: code: {code:?}, msg: {msg:?}"))
         .map(|(c,)| c.canister_id)
