@@ -15,7 +15,7 @@ pub(crate) fn append_wallet_action(
         s.borrow_mut()
             .logs
             .append(&wallet_action)
-            .map_err(|e| Error::WriteError {
+            .map_err(|e| Error::StableWriteError {
                 msg: format!("{e:?}"),
             })
     })

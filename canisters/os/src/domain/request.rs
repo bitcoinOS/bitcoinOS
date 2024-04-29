@@ -8,9 +8,16 @@ pub struct InitArgument {
     pub steward_canister: Principal,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub struct InitWalletArgument {
     pub name: String,
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
+}
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct InitStakingPoolArgument {
+    pub name: String,
+    pub description: String,
+    pub annual_interest_rate: u64,
 }

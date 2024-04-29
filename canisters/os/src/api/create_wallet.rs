@@ -1,18 +1,29 @@
-use candid::Principal;
+use candid::{Encode, Principal};
 use ic_cdk::api::management_canister::main::{
-    create_canister, install_code, CanisterInstallMode, CanisterSettings, CreateCanisterArgument,
-    InstallCodeArgument, WasmModule,
+    create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
+    CreateCanisterArgument, InstallCodeArgument, WasmModule,
 };
 
-use crate::constants::CYCLES_PER_WALLET_CANISTER;
+use crate::{
+    constants::CYCLES_PER_WALLET_CANISTER,
+    domain::{request::InitWalletArgument, Metadata},
+};
 
 pub async fn serve(
-    owners: Vec<Principal>,
+    name: String,
+    owner: Principal,
+    metadata: Metadata,
     wallet_wasm: WasmModule,
-    args: Vec<u8>,
-) -> Result<Principal, String> {
+) -> Result<CanisterId, String> {
+    let init_wallet = InitWalletArgument {
+        name,
+        network: metadata.network,
+        steward_canister: metadata.steward_canister,
+    };
+
+    let arg = Encode!(&init_wallet).unwrap();
     // create wallet canister id
-    let wallet_canister_id = create_new_wallet_canister(owners).await?;
+    let wallet_canister_id = create_new_wallet_canister(vec![owner]).await?;
 
     ic_cdk::println!(
         "created wallet canister id: {:?}",
@@ -20,7 +31,7 @@ pub async fn serve(
     );
 
     // install wallet wasm module
-    install_wallet_canister_code(wallet_canister_id, wallet_wasm, args).await?;
+    install_wallet_canister_code(wallet_canister_id, wallet_wasm, arg).await?;
 
     Ok(wallet_canister_id)
 }

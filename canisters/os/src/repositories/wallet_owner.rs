@@ -20,7 +20,9 @@ pub(crate) fn create_wallet_owner(
         let wallets = &mut state.wallets;
 
         if wallets.contains_key(&canister_id) {
-            Err(Error::AlreadyExists)
+            Err(Error::WalletAlreadyExists {
+                wallet_id: canister_id.to_string(),
+            })
         } else {
             let wallet_owner = WalletOwner {
                 canister_id,
