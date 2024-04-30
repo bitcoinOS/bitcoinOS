@@ -22,7 +22,8 @@ pub(crate) fn create_staking_pool(
     os_canister: CanisterId,
     created_at: u64,
     arg: InitStakingPoolArgument,
-) -> Result<Option<StakingPoolInfo>, Error> {
+    bitcoin_address: String,
+) -> Result<StakingPoolInfo, Error> {
     STATE.with(|s| {
         let state = &mut s.borrow_mut();
         let staking_pools = &mut state.staking_pools;
@@ -40,10 +41,11 @@ pub(crate) fn create_staking_pool(
                 annual_interest_rate: arg.annual_interest_rate,
                 os_canister,
                 created_at,
+                bitcoin_address,
             };
 
             staking_pools.insert(canister_id, staking_pool.clone());
-            Ok(Some(staking_pool))
+            Ok(staking_pool)
         }
     })
 }

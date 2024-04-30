@@ -57,7 +57,9 @@ pub async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
 
 /// Create a Staking Pool with given annualized interest rate and duration, name and description
 #[ic_cdk::update]
-async fn create_staking_pool_canister(arg: CreateStakingPoolRequest) -> Result<CanisterId, Error> {
+async fn create_staking_pool_canister(
+    arg: CreateStakingPoolRequest,
+) -> Result<StakingPoolInfo, Error> {
     let owner = ic_cdk::caller();
 
     if is_controller(&owner) {
@@ -81,17 +83,19 @@ async fn create_staking_pool_canister(arg: CreateStakingPoolRequest) -> Result<C
             .await
             .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
-    registry_staking_pool::serve(
+    let staking_pool_address = staking_pool_address(staking_pool_id).await?;
+    let info = registry_staking_pool::serve(
         staking_pool_id,
         metadata.network,
         os_canister,
         created_at,
         init_arg,
+        staking_pool_address,
     )?;
 
     staking_pool_increment_one::serve()?;
 
-    Ok(staking_pool_id)
+    Ok(info)
 }
 
 /// Returns the ICP balance of  this canister
@@ -175,3 +179,13 @@ fn init(args: InitArgument) {
 }
 
 export_candid!();
+
+async fn staking_pool_address(staking_pool_canister: CanisterId) -> Result<String, Error> {
+    let resp: Result<(String,), _> = ic_cdk::call(staking_pool_canister, "p2pkh_address", ())
+        .await
+        .map_err(|msg| Error::CreateCanisterFailed {
+            msg: format!("{msg:?}"),
+        });
+
+    resp.map(|(address,)| address)
+}

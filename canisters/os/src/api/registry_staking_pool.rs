@@ -12,12 +12,14 @@ pub(crate) fn serve(
     os_canister: CanisterId,
     created_at: u64,
     arg: InitStakingPoolArgument,
-) -> Result<Option<StakingPoolInfo>, Error> {
+    bitcoin_address: String,
+) -> Result<StakingPoolInfo, Error> {
     repositories::staking_pool::create_staking_pool(
         staking_pool_id,
         network,
         os_canister,
         created_at,
         arg,
+        bitcoin_address,
     )
 }

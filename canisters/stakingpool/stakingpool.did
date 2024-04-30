@@ -1,0 +1,79 @@
+type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type EcdsaCurve = variant { secp256k1 };
+type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
+type GetUtxosResponse = record {
+  next_page : opt blob;
+  tip_height : nat32;
+  tip_block_hash : blob;
+  utxos : vec Utxo;
+};
+type InitArgument = record {
+  duration_in_month : nat16;
+  os_canister : principal;
+  name : text;
+  network : BitcoinNetwork;
+  description : text;
+  annual_interest_rate : nat64;
+};
+type Metadata = record {
+  ecdsa_key_id : EcdsaKeyId;
+  duration_in_month : nat16;
+  os_canister : principal;
+  owner : principal;
+  name : text;
+  network : BitcoinNetwork;
+  description : text;
+  updated_time : nat64;
+  annual_interest_rate : nat64;
+};
+type NetworkResponse = record { network : text };
+type Outpoint = record { txid : blob; vout : nat32 };
+type PublicKeyResponse = record { public_key_hex : text };
+type Result = variant { Ok : vec text; Err : WalletError };
+type Result_1 = variant { Ok : nat64; Err : WalletError };
+type Result_2 = variant { Ok : vec nat64; Err : WalletError };
+type Result_3 = variant { Ok : text; Err : WalletError };
+type Result_4 = variant { Ok : vec TransactionLog; Err : WalletError };
+type Result_5 = variant { Ok : Metadata; Err : WalletError };
+type Result_6 = variant { Ok : principal; Err : WalletError };
+type Result_7 = variant { Ok : PublicKeyResponse; Err : WalletError };
+type Result_8 = variant { Ok : GetUtxosResponse; Err : WalletError };
+type TransactionLog = record {
+  txs : vec TransferInfo;
+  send_time : nat64;
+  sender : principal;
+};
+type TransferInfo = record { recipient : text; amount : nat64 };
+type TransferRequest = record { txs : vec TransferInfo };
+type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
+type WalletError = variant {
+  NetworkAlreadyExists;
+  BaseError : text;
+  RegisterECDSAKeyError;
+  ECDSAKeyUpdateError;
+  AppendTransferLogError : text;
+  StewardCallError : text;
+  ECDSAKeyNotFound : text;
+  ECDSAKeyAlreadyExists : text;
+  WalletAlreadyExists : text;
+  UnAuthorized : text;
+  WalletNotFound : text;
+  CreateWalletError : text;
+  OnlySupportP2pkhSign;
+  InsufficientFunds;
+};
+service : (InitArgument) -> {
+  addresses : () -> (Result) query;
+  balance : (text) -> (Result_1);
+  counter : () -> (nat) query;
+  current_fee_percentiles : () -> (Result_2);
+  ecdsa_key : () -> (Result_3) query;
+  logs : () -> (Result_4) query;
+  metadata : () -> (Result_5) query;
+  network : () -> (NetworkResponse) query;
+  owner : () -> (Result_6) query;
+  p2pkh_address : () -> (Result_3);
+  public_key : () -> (Result_7);
+  transfer_from_p2pkh : (TransferRequest) -> (Result_3);
+  utxos : (text) -> (Result_8);
+}

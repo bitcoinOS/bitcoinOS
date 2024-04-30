@@ -112,6 +112,7 @@ impl WalletType {
 #[derive(Debug, CandidType, Deserialize, Clone)]
 pub struct StakingPoolInfo {
     pub staking_pool_canister: CanisterId,
+    pub bitcoin_address: String,
     pub name: String,
     pub description: String,
     pub network: BitcoinNetwork,
