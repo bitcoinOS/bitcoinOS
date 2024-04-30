@@ -1,7 +1,7 @@
 use candid::CandidType;
 
 #[derive(Debug, thiserror::Error, CandidType)]
-pub enum WalletError {
+pub enum StakingError {
     #[error("{0:?} ECDSA key already exists")]
     ECDSAKeyAlreadyExists(String),
 
@@ -45,8 +45,8 @@ pub enum WalletError {
     OnlySupportP2pkhSign,
 }
 
-impl From<wallet::error::Error> for WalletError {
+impl From<wallet::error::Error> for StakingError {
     fn from(value: wallet::error::Error) -> Self {
-        WalletError::CreateWalletError(value.to_string())
+        StakingError::CreateWalletError(value.to_string())
     }
 }

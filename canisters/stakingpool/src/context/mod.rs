@@ -2,15 +2,13 @@ pub mod memory;
 
 use std::cell::RefCell;
 
-use crate::domain::{Metadata, RawWallet, RedeemLog, SelfCustodyKey, StakingRecord};
+use crate::domain::{Metadata, RawWallet, RedeemLog, SelfCustodyKey, StakingRecord, TxID};
 
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
 use serde::{Deserialize, Serialize};
 
 use self::memory::Memory;
 
-/// Bitcoin Txid String
-pub type TxID = String;
 pub type Timestamp = u64;
 pub type RawWalletStable = StableBTreeMap<SelfCustodyKey, RawWallet, Memory>;
 pub type RedeemLogStable = StableLog<RedeemLog, Memory, Memory>;

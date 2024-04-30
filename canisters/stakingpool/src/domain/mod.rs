@@ -18,6 +18,9 @@ use crate::constants::{METADATA_SIZE, REDEEM_LOG_SIZE, SELF_CUSTODY_SIZE, STAKIN
 
 use self::request::RedeemRequest;
 
+/// Bitcoin Txid String
+pub type TxID = String;
+
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
     pub name: String,
@@ -146,16 +149,19 @@ impl Storable for RawWallet {
     };
 }
 
-/// A Staking record is the record of a staked Bitcoin, its status will be Pending or Confirmed.
-/// When the record is created, it will be Pending.
-/// When the staking transactoin is confirmed by Bitcoin network, it will be Confirmed.
+/// A Staking record is the record of a staked Bitcoin, its status will be `Pending` or `Confirmed` or `Redeeming` or `Redeemed`.
+/// When the record is created, it will be `Pending` and received_amount will be 0.
+/// When the staking transactoin is confirmed for 6 blocks by Bitcoin network, received_amount will be updated and status will be `Confirmed`.
+/// When the staking record is redeemed, its status will be `Redeeming`.
+/// When the redeemed tx is confirmed for 6 blocks by Bitcoin network, status will be `Redeemed`.
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct StakingRecord {
-    pub txid: String,
+    pub txid: TxID,
     pub sender: Principal,
     pub sender_address: String,
-    pub amount: Satoshi,
+    pub sent_amount: Satoshi,
     pub send_time: u64,
+    pub received_amount: Satoshi,
     pub status: StakingStatus,
 }
 
@@ -163,6 +169,8 @@ pub struct StakingRecord {
 pub enum StakingStatus {
     Pending,
     Confirmed,
+    Redeeming,
+    Redeemed,
 }
 
 impl Storable for StakingRecord {

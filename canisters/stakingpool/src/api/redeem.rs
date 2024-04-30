@@ -11,13 +11,13 @@ use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address
 
 use crate::domain::request::RedeemRequest;
 use crate::domain::Metadata;
-use crate::error::WalletError;
+use crate::error::StakingError;
 use crate::repositories::counter;
 use crate::repositories::tx_log;
 
 use super::public_key;
 
-pub(super) async fn serve(metadata: Metadata, req: RedeemRequest) -> Result<String, WalletError> {
+pub(super) async fn serve(metadata: Metadata, req: RedeemRequest) -> Result<String, StakingError> {
     let tx = req.validate_address(metadata.network)?;
 
     // Log transfer info
@@ -36,7 +36,7 @@ pub(super) async fn serve(metadata: Metadata, req: RedeemRequest) -> Result<Stri
 pub async fn send_p2pkh_transaction(
     metadata: Metadata,
     tx: RecipientAmount,
-) -> Result<Txid, WalletError> {
+) -> Result<Txid, StakingError> {
     let network = metadata.network;
     let key_id = metadata.ecdsa_key_id.clone();
     let derivation_path = principal_to_derivation_path(metadata.owner);
@@ -86,7 +86,7 @@ pub async fn send_p2pkh_transaction(
     send_transaction(&signed_tx, network).await
 }
 
-async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<Txid, WalletError> {
+async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<Txid, StakingError> {
     let signed_tx_bytes = consensus::serialize(tx);
     ic_cdk::print(format!("Signed tx: {:?} \n", hex::encode(&signed_tx_bytes)));
 

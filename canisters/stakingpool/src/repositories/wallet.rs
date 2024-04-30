@@ -6,7 +6,7 @@ use wallet::{
 use crate::{
     context::STATE,
     domain::{Metadata, RawWallet, SelfCustodyKey},
-    error::WalletError,
+    error::StakingError,
 };
 
 pub(crate) fn get_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
@@ -18,7 +18,7 @@ pub(crate) fn get_p2pkh_wallet(metadata: &Metadata) -> Option<RawWallet> {
     get_wallet(&key)
 }
 
-pub(crate) async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wallet, WalletError> {
+pub(crate) async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wallet, StakingError> {
     let raw_wallet = get_p2pkh_wallet(&metadata);
 
     match raw_wallet {
@@ -37,12 +37,15 @@ pub(crate) async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wal
     }
 }
 
-pub(crate) fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {
+pub(crate) fn insert_wallet(
+    wallet_key: SelfCustodyKey,
+    wallet: Wallet,
+) -> Result<(), StakingError> {
     STATE.with(|s| {
         let raw_wallet = &mut s.borrow_mut().wallets;
 
         match raw_wallet.get(&wallet_key) {
-            Some(w) => Err(WalletError::WalletAlreadyExists(format!("{:?}", w))),
+            Some(w) => Err(StakingError::WalletAlreadyExists(format!("{:?}", w))),
             None => {
                 raw_wallet.insert(wallet_key, wallet.into());
                 Ok(())

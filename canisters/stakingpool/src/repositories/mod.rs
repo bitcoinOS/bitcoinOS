@@ -1,4 +1,5 @@
-pub mod counter;
-pub mod metadata;
-pub mod tx_log;
-pub mod wallet;
+pub(crate) mod counter;
+pub(crate) mod metadata;
+pub(crate) mod staking_record;
+pub(crate) mod tx_log;
+pub(crate) mod wallet;

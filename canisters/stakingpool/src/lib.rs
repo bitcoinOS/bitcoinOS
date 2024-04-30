@@ -8,13 +8,14 @@ pub mod rgb;
 
 use crate::context::STATE;
 use crate::domain::{request::RedeemRequest, response::NetworkResponse, Metadata, RedeemLog};
-use crate::error::WalletError;
+use crate::error::StakingError;
 
 use candid::{CandidType, Principal};
 
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetUtxosResponse, Satoshi, UtxoFilter,
 };
+use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 use serde::Deserialize;
 use wallet::domain::EcdsaKeyIds;
@@ -48,12 +49,10 @@ async fn init(arg: InitArgument) {
             })
             .expect("Failed to init metadata")
     });
-}
 
-// #[ic_cdk::update]
-// fn issue_rgb20() -> String {
-//     rgb::issue_rgb20()
-// }
+    // TODO: schedule a task to check tx status is confirmed or not very hour, update staking record status when tx is confirmed for 6 blocks
+    // TODO: schedule a task to calculate the rewards for each staking record very date at 0 o'clock
+}
 
 export_candid!();
 
