@@ -2,17 +2,19 @@ pub mod memory;
 
 use std::cell::RefCell;
 
-use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
+use crate::domain::{Metadata, RawWallet, RedeemLog, SelfCustodyKey, StakingRecord};
 
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
 use serde::{Deserialize, Serialize};
 
 use self::memory::Memory;
 
+/// Bitcoin Txid String
+pub type TxID = String;
 pub type Timestamp = u64;
 pub type RawWalletStable = StableBTreeMap<SelfCustodyKey, RawWallet, Memory>;
-pub type TransactionLogStable = StableLog<TransactionLog, Memory, Memory>;
-// pub type TransactionLedgerStable = StableLog<TransactionLedger, Memory, Memory>;
+pub type RedeemLogStable = StableLog<RedeemLog, Memory, Memory>;
+pub type StakingRecordStable = StableBTreeMap<TxID, StakingRecord, Memory>;
 
 thread_local! {
     pub static STATE: RefCell<State> = RefCell::new(State::default());
@@ -27,9 +29,10 @@ pub struct State {
     pub counter: StableCell<u128, Memory>,
     #[serde(skip, default = "init_stable_wallet")]
     pub wallets: RawWalletStable,
-    #[serde(skip, default = "init_stable_transaction_log")]
-    pub logs: TransactionLogStable,
-    // pub ledger: TransactionLedgerStable,
+    #[serde(skip, default = "init_stable_staking_record")]
+    pub staking_records: StakingRecordStable,
+    #[serde(skip, default = "init_stable_redeem_log")]
+    pub redeem_logs: RedeemLogStable,
 }
 
 impl Default for State {
@@ -38,7 +41,8 @@ impl Default for State {
             metadata: init_stable_metadata(),
             counter: init_stable_counter(),
             wallets: init_stable_wallet(),
-            logs: init_stable_transaction_log(),
+            staking_records: init_stable_staking_record(),
+            redeem_logs: init_stable_redeem_log(),
         }
     }
 }
@@ -57,10 +61,14 @@ fn init_stable_wallet() -> RawWalletStable {
     StableBTreeMap::init(memory::get_wallet_memory())
 }
 
-fn init_stable_transaction_log() -> TransactionLogStable {
+fn init_stable_staking_record() -> StakingRecordStable {
+    StableBTreeMap::init(memory::get_staking_record_memory())
+}
+
+fn init_stable_redeem_log() -> RedeemLogStable {
     StableLog::init(
-        memory::get_transaction_log_index_memory(),
-        memory::get_transaction_log_data_memory(),
+        memory::get_redeem_log_index_memory(),
+        memory::get_redeem_log_data_memory(),
     )
     .expect("failed to init wallet ledger")
 }

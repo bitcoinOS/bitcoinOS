@@ -2,14 +2,14 @@ use wallet::utils::{ic_caller, ic_time};
 
 use crate::{
     context::STATE,
-    domain::{request::TransferInfo, TransactionLog},
+    domain::{request::RedeemRequest, RedeemLog},
     error::WalletError,
 };
 
-pub(crate) fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
+pub(crate) fn append_redeem_log(log: &RedeemLog) -> Result<(), WalletError> {
     STATE.with(|s| {
         s.borrow_mut()
-            .logs
+            .redeem_logs
             .append(log)
             .map_err(|e| WalletError::AppendTransferLogError(format!("{:?}", e)))?;
 
@@ -17,14 +17,14 @@ pub(crate) fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletE
     })
 }
 
-pub(crate) fn build_and_append_transaction_log(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
+pub(crate) fn build_and_append_redeem_log(req: RedeemRequest) -> Result<(), WalletError> {
     let sender = ic_caller();
     let send_time = ic_time();
-    let log = TransactionLog {
-        txs,
+    let log = RedeemLog {
+        req,
         sender,
         send_time,
     };
 
-    append_transaction_log(&log)
+    append_redeem_log(&log)
 }

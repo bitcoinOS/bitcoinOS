@@ -2,50 +2,17 @@ use bitcoin::Amount;
 use candid::CandidType;
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use serde::Deserialize;
-use wallet::{
-    tx::{RecipientAmount, RecipientAmountVec},
-    utils::str_to_bitcoin_address,
-};
+use wallet::{tx::RecipientAmount, utils::str_to_bitcoin_address};
 
 use crate::error::WalletError;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
-pub struct TransferRequest {
-    pub txs: Vec<TransferInfo>,
-}
-
-#[derive(Debug, Clone, CandidType, Deserialize)]
-pub struct TransferInfo {
+pub struct RedeemRequest {
     pub recipient: String,
     pub amount: u64,
 }
 
-impl TransferRequest {
-    pub fn iter(&self) -> impl Iterator<Item = &TransferInfo> {
-        self.txs.iter()
-    }
-}
-
-impl IntoIterator for TransferRequest {
-    type Item = TransferInfo;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.txs.into_iter()
-    }
-}
-
-impl TransferRequest {
-    pub fn validate_address(
-        &self,
-        network: BitcoinNetwork,
-    ) -> Result<RecipientAmountVec, WalletError> {
-        let res: Result<Vec<RecipientAmount>, WalletError> =
-            self.iter().map(|t| t.validate_address(network)).collect();
-        res.map(|r| RecipientAmountVec { txs: r })
-    }
-}
-
-impl TransferInfo {
+impl RedeemRequest {
     pub fn validate_address(
         &self,
         network: BitcoinNetwork,

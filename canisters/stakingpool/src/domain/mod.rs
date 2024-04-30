@@ -6,15 +6,17 @@ use std::str::FromStr;
 use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{
-    bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId, main::CanisterId,
+    bitcoin::{BitcoinNetwork, Satoshi},
+    ecdsa::EcdsaKeyId,
+    main::CanisterId,
 };
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
 use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 
-use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE};
+use crate::constants::{METADATA_SIZE, REDEEM_LOG_SIZE, SELF_CUSTODY_SIZE, STAKING_RECORD_SIZE};
 
-use self::request::TransferInfo;
+use self::request::RedeemRequest;
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
@@ -144,14 +146,26 @@ impl Storable for RawWallet {
     };
 }
 
+/// A Staking record is the record of a staked Bitcoin, its status will be Pending or Confirmed.
+/// When the record is created, it will be Pending.
+/// When the staking transactoin is confirmed by Bitcoin network, it will be Confirmed.
 #[derive(Clone, Debug, CandidType, Deserialize)]
-pub struct TransactionLog {
-    pub txs: Vec<TransferInfo>,
+pub struct StakingRecord {
+    pub txid: String,
     pub sender: Principal,
+    pub sender_address: String,
+    pub amount: Satoshi,
     pub send_time: u64,
+    pub status: StakingStatus,
 }
 
-impl Storable for TransactionLog {
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub enum StakingStatus {
+    Pending,
+    Confirmed,
+}
+
+impl Storable for StakingRecord {
     fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
         std::borrow::Cow::Owned(Encode!(self).unwrap())
     }
@@ -161,14 +175,36 @@ impl Storable for TransactionLog {
     }
 
     const BOUND: Bound = Bound::Bounded {
-        max_size: TRANSACTION_LOG_SIZE as u32,
+        max_size: STAKING_RECORD_SIZE as u32,
         is_fixed_size: false,
     };
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
-pub struct TransactionLedger {
-    pub txs: Vec<TransferInfo>,
+pub struct RedeemLog {
+    pub req: RedeemRequest,
     pub sender: Principal,
     pub send_time: u64,
 }
+
+impl Storable for RedeemLog {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        std::borrow::Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: REDEEM_LOG_SIZE as u32,
+        is_fixed_size: false,
+    };
+}
+
+// #[derive(Clone, Debug, CandidType, Deserialize)]
+// pub struct TransactionLedger {
+//     pub txs: Vec<RedeemRequest>,
+//     pub sender: Principal,
+//     pub send_time: u64,
+// }

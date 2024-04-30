@@ -16,8 +16,9 @@ pub type Memory = VirtualMemory<DefMem>;
 const METADATA_MEMORY_ID: MemoryId = MemoryId::new(1);
 const COUNTER_MEMORY_ID: MemoryId = MemoryId::new(2);
 const WALLET_MEMORY_ID: MemoryId = MemoryId::new(3);
-const TRANSACTION_LOG_IDX_MEM_ID: MemoryId = MemoryId::new(4);
-const TRANSACTION_LOG_DATA_MEM_ID: MemoryId = MemoryId::new(5);
+const STAKING_RECORD_MEMORY_ID: MemoryId = MemoryId::new(4);
+const REDEEM_LOG_IDX_MEM_ID: MemoryId = MemoryId::new(5);
+const REDEEOM_LOG_DATA_MEM_ID: MemoryId = MemoryId::new(6);
 
 thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
@@ -37,10 +38,14 @@ pub(super) fn get_wallet_memory() -> Memory {
     MEMORY_MANAGER.with(|m| m.borrow().get(WALLET_MEMORY_ID))
 }
 
-pub(super) fn get_transaction_log_index_memory() -> Memory {
-    MEMORY_MANAGER.with(|m| m.borrow().get(TRANSACTION_LOG_IDX_MEM_ID))
+pub(super) fn get_staking_record_memory() -> Memory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(STAKING_RECORD_MEMORY_ID))
 }
 
-pub(super) fn get_transaction_log_data_memory() -> Memory {
-    MEMORY_MANAGER.with(|m| m.borrow().get(TRANSACTION_LOG_DATA_MEM_ID))
+pub(super) fn get_redeem_log_index_memory() -> Memory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(REDEEM_LOG_IDX_MEM_ID))
+}
+
+pub(super) fn get_redeem_log_data_memory() -> Memory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(REDEEOM_LOG_DATA_MEM_ID))
 }

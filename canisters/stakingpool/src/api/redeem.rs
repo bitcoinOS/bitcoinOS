@@ -9,7 +9,7 @@ use wallet::tx::RecipientAmount;
 use wallet::utils::{self, principal_to_derivation_path};
 use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 
-use crate::domain::request::TransferRequest;
+use crate::domain::request::RedeemRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
 use crate::repositories::counter;
@@ -17,16 +17,16 @@ use crate::repositories::tx_log;
 
 use super::public_key;
 
-pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<String, WalletError> {
-    let txs = req.validate_address(metadata.network)?;
+pub(super) async fn serve(metadata: Metadata, req: RedeemRequest) -> Result<String, WalletError> {
+    let tx = req.validate_address(metadata.network)?;
 
     // Log transfer info
-    tx_log::build_and_append_transaction_log(req.txs)?;
+    tx_log::build_and_append_redeem_log(req)?;
 
     // Transaction counter increment one
     counter::increment_one();
 
-    send_p2pkh_transaction(metadata, &txs.txs)
+    send_p2pkh_transaction(metadata, tx)
         .await
         .map(|txid| txid.to_string())
 }
@@ -35,7 +35,7 @@ pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<St
 /// and the sender is the canister itself
 pub async fn send_p2pkh_transaction(
     metadata: Metadata,
-    txs: &[RecipientAmount],
+    tx: RecipientAmount,
 ) -> Result<Txid, WalletError> {
     let network = metadata.network;
     let key_id = metadata.ecdsa_key_id.clone();
@@ -67,7 +67,7 @@ pub async fn send_p2pkh_transaction(
         &sender_public_key,
         &sender_address,
         &utxos,
-        txs,
+        &[tx],
         fee_per_byte,
     )
     .await?;

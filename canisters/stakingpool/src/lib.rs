@@ -7,16 +7,13 @@ pub mod repositories;
 pub mod rgb;
 
 use crate::context::STATE;
-use crate::domain::{
-    request::TransferRequest, response::NetworkResponse, response::PublicKeyResponse, Metadata,
-    TransactionLog,
-};
+use crate::domain::{request::RedeemRequest, response::NetworkResponse, Metadata, RedeemLog};
 use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
 
 use ic_cdk::api::management_canister::bitcoin::{
-    BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte, Satoshi,
+    BitcoinNetwork, GetUtxosResponse, Satoshi, UtxoFilter,
 };
 use ic_cdk::export_candid;
 use serde::Deserialize;
