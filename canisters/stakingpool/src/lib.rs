@@ -7,7 +7,11 @@ pub mod repositories;
 pub mod rgb;
 
 use crate::context::STATE;
-use crate::domain::{request::RedeemRequest, response::NetworkResponse, Metadata, RedeemLog};
+use crate::domain::{
+    request::{RedeemRequest, RegisterStakingRequest},
+    response::NetworkResponse,
+    Metadata, RedeemLog, StakingRecord,
+};
 use crate::error::StakingError;
 
 use candid::{CandidType, Principal};
@@ -15,7 +19,6 @@ use candid::{CandidType, Principal};
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetUtxosResponse, Satoshi, UtxoFilter,
 };
-use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 use serde::Deserialize;
 use wallet::domain::EcdsaKeyIds;
@@ -41,7 +44,7 @@ async fn init(arg: InitArgument) {
                 description: arg.description,
                 network,
                 annual_interest_rate: arg.annual_interest_rate,
-                duration_in_month: arg.duration_in_month,
+                duration_in_millisecond: arg.duration_in_millisecond,
                 os_canister,
                 ecdsa_key_id,
                 updated_time,
@@ -62,7 +65,7 @@ struct InitArgument {
     description: String,
     network: BitcoinNetwork,
     annual_interest_rate: u64,
-    duration_in_month: u16,
+    duration_in_millisecond: u64,
     os_canister: Principal,
 }
 

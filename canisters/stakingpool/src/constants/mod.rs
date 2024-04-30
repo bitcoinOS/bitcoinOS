@@ -9,3 +9,5 @@ pub const STAKING_RECORD_SIZE: u64 = 100;
 
 /// The daily limit for a wallet in satoshi
 pub const DAILY_LIMIET_SATOSHI: u64 = 10_000_000_000;
+
+pub const DAY_IN_MILLISECOND: u64 = 86_400_000;

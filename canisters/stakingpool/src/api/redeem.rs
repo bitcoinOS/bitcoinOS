@@ -1,9 +1,11 @@
 use bitcoin::consensus;
 
+use bitcoin::Amount;
 use bitcoin::Transaction;
 use bitcoin::Txid;
 
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
 use wallet::tx::RecipientAmount;
 use wallet::utils::{self, principal_to_derivation_path};
@@ -12,13 +14,27 @@ use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address
 use crate::domain::request::RedeemRequest;
 use crate::domain::Metadata;
 use crate::error::StakingError;
+use crate::repositories;
 use crate::repositories::counter;
 use crate::repositories::tx_log;
 
 use super::public_key;
 
-pub(super) async fn serve(metadata: Metadata, req: RedeemRequest) -> Result<String, StakingError> {
-    let tx = req.validate_address(metadata.network)?;
+pub(super) async fn serve(
+    sender: CanisterId,
+    metadata: Metadata,
+    req: RedeemRequest,
+    redeem_time: u64,
+) -> Result<String, StakingError> {
+    let txid = req.txid.clone();
+
+    let amount = repositories::staking_record::validate_staker_amount(sender, &txid, redeem_time)?;
+
+    let recipient = req.validate_address()?;
+    let tx = RecipientAmount {
+        recipient,
+        amount: Amount::from_sat(amount),
+    };
 
     // Log transfer info
     tx_log::build_and_append_redeem_log(req)?;
@@ -26,9 +42,18 @@ pub(super) async fn serve(metadata: Metadata, req: RedeemRequest) -> Result<Stri
     // Transaction counter increment one
     counter::increment_one();
 
-    send_p2pkh_transaction(metadata, tx)
+    // Update the staking record status as `Redeeming`
+    repositories::staking_record::redeeming_record(txid, redeem_time)?;
+
+    let txid = send_p2pkh_transaction(metadata, tx)
         .await
-        .map(|txid| txid.to_string())
+        .map(|txid| txid.to_string())?;
+
+    ic_cdk::print(format!("Redeemed tx is {txid:?} \n"));
+
+    // TODO: Schedule a task to update the staking record status as `Redeemed` if the txid is confirmed for 6 blocks by Bitcoin network
+
+    Ok(txid)
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient

@@ -3,22 +3,25 @@ mod logs;
 mod p2pkh_address;
 mod public_key;
 mod redeem;
+mod register_staking;
 mod utxos;
 
-use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, Satoshi, UtxoFilter};
-use ic_cdk::api::management_canister::main::CanisterId;
+use ic_cdk::api::management_canister::bitcoin::{
+    BitcoinNetwork, GetUtxosResponse, Satoshi, UtxoFilter,
+};
 use ic_cdk::{query, update};
+use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
-use crate::domain::request::RedeemRequest;
+use crate::domain::request::{RedeemRequest, RegisterStakingRequest};
 use crate::domain::response::NetworkResponse;
-use crate::domain::{Metadata, RedeemLog};
+use crate::domain::{Metadata, RedeemLog, StakingRecord};
 use crate::error::StakingError;
 use crate::repositories::{self, counter, metadata};
 
 /// ---------------- Update interface of this canister ------------------
 ///
 
-/// Returns the P2PKH address of this canister at a specific derivation path
+/// Returns the P2PKH address of this staking pool canister
 #[update]
 pub async fn p2pkh_address() -> Result<String, StakingError> {
     let metadata = repositories::metadata::get_metadata();
@@ -26,7 +29,7 @@ pub async fn p2pkh_address() -> Result<String, StakingError> {
     p2pkh_address::serve(metadata).await
 }
 
-/// Returns the utxos of this canister address
+/// Returns the utxos of this staking pool canister
 #[update]
 pub async fn utxos(filter: Option<UtxoFilter>) -> Result<GetUtxosResponse, StakingError> {
     let metadata = metadata::get_metadata();
@@ -36,7 +39,7 @@ pub async fn utxos(filter: Option<UtxoFilter>) -> Result<GetUtxosResponse, Staki
     utxos::serve(address, network, filter).await
 }
 
-/// Returns the balance of the given bitcoin address if the caller is the owner
+/// Returns the balance of this staking pool
 #[update]
 pub async fn balance() -> Result<Satoshi, StakingError> {
     let metadata = repositories::metadata::get_metadata();
@@ -45,24 +48,39 @@ pub async fn balance() -> Result<Satoshi, StakingError> {
     balance::serve(address, network).await
 }
 
-/// Registry a new staking record after smartwallet staked btc to pools
+/// Register a new staking record after smartwallet staked btc to pools
+/// Returns the staking record
+/// NOTE: If the amount of staking record data is too large, it can be migrated to a dedicated data canister cluster.
 #[update]
-async fn register_staking_record() -> Result<CanisterId, StakingError> {
-    todo!()
+async fn register_staking_record(
+    req: RegisterStakingRequest,
+) -> Result<StakingRecord, StakingError> {
+    let sender = ic_caller();
+    check_normal_principal(sender)?;
+
+    check_network(req.network)?;
+
+    let updated_time = ic_time();
+    let duration = repositories::metadata::get_metadata().duration_in_millisecond;
+
+    register_staking::serve(sender, updated_time, req, duration).await
+
+    // TODO: Schedule a task to check the txid confirmed for 6 blocks by bitcoin network, and update the staking record to `Confirmed`
 }
 
-/// Redeem btc from this canister, and return the txid
+/// Redeem btc from this canister, and return the txid,
+/// When user redeems, it will redeems the amount that is received amount + interest
+/// NOTE: Must validate the staker and amount is valid
+/// NOTE: Only staker canister can redeem now, this will change to wrapper token in the future
 #[update]
 pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
+    check_network(req.network)?;
+
     let metadata = repositories::metadata::get_metadata();
     let sender = ic_cdk::caller();
-    repositories::staking_record::validate_staker_amount(sender, req.amount, &req.txid)?;
-    redeem::serve(metadata, req).await
+    let redeem_time = ic_time();
 
-    // TODO: Update the staking record status as `Redeeming`
-    // update_staking_record_redeemed::serve(req.txid)?;
-
-    // TODO: Schedule a task to update the staking record status as `Redeemed` if the txid is confirmed for 6 blocks by Bitcoin network
+    redeem::serve(sender, metadata, req, redeem_time).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -91,4 +109,14 @@ async fn logs() -> Result<Vec<RedeemLog>, StakingError> {
 #[query]
 fn counter() -> u128 {
     counter::get_counter()
+}
+
+fn check_network(network: BitcoinNetwork) -> Result<(), StakingError> {
+    let current_network = repositories::metadata::get_metadata().network;
+
+    if current_network == network {
+        Ok(())
+    } else {
+        Err(StakingError::InvalidNetwork)
+    }
 }

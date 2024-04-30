@@ -23,8 +23,10 @@ thread_local! {
 pub struct State {
     #[serde(skip, default = "init_stable_metadata")]
     pub metadata: StableCell<Metadata, Memory>,
-    #[serde(skip, default = "init_stable_counter")]
-    pub counter: StableCell<u128, Memory>,
+    #[serde(skip, default = "init_stable_staking_counter")]
+    pub staking_counter: StableCell<u128, Memory>,
+    #[serde(skip, default = "init_stable_redeem_counter")]
+    pub redeem_counter: StableCell<u128, Memory>,
     #[serde(skip, default = "init_stable_wallet")]
     pub wallets: RawWalletStable,
     #[serde(skip, default = "init_stable_staking_record")]
@@ -37,7 +39,8 @@ impl Default for State {
     fn default() -> Self {
         Self {
             metadata: init_stable_metadata(),
-            counter: init_stable_counter(),
+            staking_counter: init_stable_staking_counter(),
+            redeem_counter: init_stable_redeem_counter(),
             wallets: init_stable_wallet(),
             staking_records: init_stable_staking_record(),
             redeem_logs: init_stable_redeem_log(),
@@ -50,8 +53,13 @@ fn init_stable_metadata() -> StableCell<Metadata, Memory> {
         .expect("failed to initialize the metadata cell")
 }
 
-fn init_stable_counter() -> StableCell<u128, Memory> {
-    StableCell::init(memory::get_counter_memory(), 0u128)
+fn init_stable_staking_counter() -> StableCell<u128, Memory> {
+    StableCell::init(memory::get_staking_counter_memory(), 0u128)
+        .expect("Could not initialize sig count memory")
+}
+
+fn init_stable_redeem_counter() -> StableCell<u128, Memory> {
+    StableCell::init(memory::get_redeem_counter_memory(), 0u128)
         .expect("Could not initialize sig count memory")
 }
 

@@ -27,7 +27,7 @@ pub struct Metadata {
     pub description: String,
     pub network: BitcoinNetwork,
     pub annual_interest_rate: u64,
-    pub duration_in_month: u16,
+    pub duration_in_millisecond: u64,
     pub os_canister: CanisterId,
     pub ecdsa_key_id: EcdsaKeyId,
     pub updated_time: u64,
@@ -44,7 +44,7 @@ impl Default for Metadata {
             description: "StakingPool".to_string(),
             network,
             annual_interest_rate: 0,
-            duration_in_month: 0,
+            duration_in_millisecond: 0,
             os_canister: Principal::anonymous(),
             ecdsa_key_id,
             updated_time: 0,
@@ -160,12 +160,15 @@ pub struct StakingRecord {
     pub sender: Principal,
     pub sender_address: String,
     pub sent_amount: Satoshi,
-    pub send_time: u64,
+    pub sent_time: u64,
+    pub duration_in_millisecond: u64,
+    pub network: BitcoinNetwork,
     pub received_amount: Satoshi,
     pub status: StakingStatus,
+    pub updated_time: u64,
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize)]
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StakingStatus {
     Pending,
     Confirmed,

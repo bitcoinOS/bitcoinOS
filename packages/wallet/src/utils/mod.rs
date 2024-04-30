@@ -281,6 +281,15 @@ pub fn to_bitcoin_network(bitcoin_network: BitcoinNetwork) -> Network {
     }
 }
 
+pub fn network_to_string(network: BitcoinNetwork) -> String {
+    match network {
+        BitcoinNetwork::Mainnet => "mainnet",
+        BitcoinNetwork::Testnet => "testnet",
+        BitcoinNetwork::Regtest => "regtest",
+    }
+    .to_string()
+}
+
 /// Check the length of the transaction and the signatures
 pub fn check_tx_hashes_len(
     transaction: &Transaction,

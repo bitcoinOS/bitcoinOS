@@ -11,7 +11,7 @@ pub(crate) fn append_redeem_log(log: &RedeemLog) -> Result<(), StakingError> {
         s.borrow_mut()
             .redeem_logs
             .append(log)
-            .map_err(|e| StakingError::AppendTransferLogError(format!("{:?}", e)))?;
+            .map_err(|e| StakingError::AppendRedeemLogError(format!("{:?}", e)))?;
 
         Ok(())
     })
