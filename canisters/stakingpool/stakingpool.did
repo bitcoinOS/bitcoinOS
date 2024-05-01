@@ -8,8 +8,8 @@ type GetUtxosResponse = record {
   utxos : vec Utxo;
 };
 type InitArgument = record {
-  duration_in_month : nat16;
   os_canister : principal;
+  duration_in_millisecond : nat64;
   name : text;
   network : BitcoinNetwork;
   description : text;
@@ -17,9 +17,9 @@ type InitArgument = record {
 };
 type Metadata = record {
   ecdsa_key_id : EcdsaKeyId;
-  duration_in_month : nat16;
   os_canister : principal;
   owner : principal;
+  duration_in_millisecond : nat64;
   name : text;
   network : BitcoinNetwork;
   description : text;
@@ -28,52 +28,64 @@ type Metadata = record {
 };
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : blob; vout : nat32 };
-type PublicKeyResponse = record { public_key_hex : text };
-type Result = variant { Ok : vec text; Err : WalletError };
-type Result_1 = variant { Ok : nat64; Err : WalletError };
-type Result_2 = variant { Ok : vec nat64; Err : WalletError };
-type Result_3 = variant { Ok : text; Err : WalletError };
-type Result_4 = variant { Ok : vec TransactionLog; Err : WalletError };
-type Result_5 = variant { Ok : Metadata; Err : WalletError };
-type Result_6 = variant { Ok : principal; Err : WalletError };
-type Result_7 = variant { Ok : PublicKeyResponse; Err : WalletError };
-type Result_8 = variant { Ok : GetUtxosResponse; Err : WalletError };
-type TransactionLog = record {
-  txs : vec TransferInfo;
+type RedeemLog = record {
+  req : RedeemRequest;
   send_time : nat64;
   sender : principal;
 };
-type TransferInfo = record { recipient : text; amount : nat64 };
-type TransferRequest = record { txs : vec TransferInfo };
-type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
-type WalletError = variant {
-  NetworkAlreadyExists;
-  BaseError : text;
-  RegisterECDSAKeyError;
-  ECDSAKeyUpdateError;
-  AppendTransferLogError : text;
-  StewardCallError : text;
-  ECDSAKeyNotFound : text;
-  ECDSAKeyAlreadyExists : text;
+type RedeemRequest = record {
+  txid : text;
+  recipient : text;
+  network : BitcoinNetwork;
+};
+type RegisterStakingRequest = record {
+  sender_address : text;
+  txid : text;
+  network : BitcoinNetwork;
+  sent_time : nat64;
+  sent_amount : nat64;
+};
+type Result = variant { Ok : nat64; Err : StakingError };
+type Result_1 = variant { Ok : vec RedeemLog; Err : StakingError };
+type Result_2 = variant { Ok : Metadata; Err : StakingError };
+type Result_3 = variant { Ok : text; Err : StakingError };
+type Result_4 = variant { Ok : StakingRecord; Err : StakingError };
+type Result_5 = variant { Ok : GetUtxosResponse; Err : StakingError };
+type StakingError = variant {
+  AppendRedeemLogError : text;
+  StakingRecordAlreadyExists : text;
+  BitcoinAddressNetworkUnmatch : text;
+  RedemptionNotAllowed;
   WalletAlreadyExists : text;
   UnAuthorized : text;
-  WalletNotFound : text;
   CreateWalletError : text;
-  OnlySupportP2pkhSign;
+  InvalidNetwork;
   InsufficientFunds;
+  StakingRecordNotFound : text;
 };
+type StakingRecord = record {
+  status : StakingStatus;
+  sender_address : text;
+  duration_in_millisecond : nat64;
+  txid : text;
+  network : BitcoinNetwork;
+  received_amount : nat64;
+  sender : principal;
+  sent_time : nat64;
+  sent_amount : nat64;
+  updated_time : nat64;
+};
+type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
+type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
+type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
 service : (InitArgument) -> {
-  addresses : () -> (Result) query;
-  balance : (text) -> (Result_1);
+  balance : () -> (Result);
   counter : () -> (nat) query;
-  current_fee_percentiles : () -> (Result_2);
-  ecdsa_key : () -> (Result_3) query;
-  logs : () -> (Result_4) query;
-  metadata : () -> (Result_5) query;
+  logs : () -> (Result_1) query;
+  metadata : () -> (Result_2) query;
   network : () -> (NetworkResponse) query;
-  owner : () -> (Result_6) query;
   p2pkh_address : () -> (Result_3);
-  public_key : () -> (Result_7);
-  transfer_from_p2pkh : (TransferRequest) -> (Result_3);
-  utxos : (text) -> (Result_8);
+  redeem : (RedeemRequest) -> (Result_3);
+  register_staking_record : (RegisterStakingRequest) -> (Result_4);
+  utxos : (opt UtxoFilter) -> (Result_5);
 }

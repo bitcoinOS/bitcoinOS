@@ -1,6 +1,9 @@
 use bitcoin::Amount;
 use candid::CandidType;
-use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+use ic_cdk::api::management_canister::{
+    bitcoin::{BitcoinNetwork, Satoshi},
+    main::CanisterId,
+};
 use serde::Deserialize;
 use wallet::{
     tx::{RecipientAmount, RecipientAmountVec},
@@ -56,4 +59,10 @@ impl TransferInfo {
             amount: Amount::from_sat(self.amount),
         })
     }
+}
+
+pub struct StakingRequest {
+    pub staking_canister: CanisterId,
+    pub staking_address: String,
+    pub amount: Satoshi,
 }
