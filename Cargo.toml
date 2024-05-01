@@ -17,7 +17,7 @@ ic-stable-structures = "0.6"
 ciborium = "0.2"
 
 # for Bitcoin
-bitcoin = { version = "0.31", features = ["std", "no-std"] }
+bitcoin = { version = "0.31", features = ["std"] }
 bs58 = "0.5"
 core2 = "0.4"
 k256 = { version = "0.13", features = ["ecdsa"] }
@@ -25,7 +25,7 @@ k256 = { version = "0.13", features = ["ecdsa"] }
 getrandom = { version = "0.2", features = ["custom"] }
 hex = "0.4"
 maybe-async = "0.2"
-miniscript = { version = "11.0", features = ["std", "no-std"] }
+miniscript = { version = "11.0", features = ["std"] }
 
 # for RGB
 aluvm = "0.11.0-beta.4"
