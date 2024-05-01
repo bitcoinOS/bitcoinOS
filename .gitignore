@@ -27,3 +27,5 @@ dist/
 
 # wasm
 **.wasm
+src/declarations/
+src/*/node_modules
