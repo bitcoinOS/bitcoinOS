@@ -34,7 +34,7 @@ fn update_status(
                 let new_record = StakingRecord {
                     updated_time,
                     status,
-                    received_amount: received_amount.unwrap_or(record.received_amount),
+                    actual_amount: received_amount.unwrap_or(record.actual_amount),
                     ..record
                 };
 
@@ -81,7 +81,7 @@ pub fn validate_staker_amount(
                     && record.sent_time + record.duration_in_millisecond < redeem_time
                     && record.status == StakingStatus::Confirmed
                 {
-                    let amount = record.received_amount + calculate_interest();
+                    let amount = record.actual_amount + calculate_interest();
                     Ok(amount)
                 } else {
                     Err(StakingError::RedemptionNotAllowed)

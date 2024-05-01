@@ -163,7 +163,7 @@ pub struct StakingRecord {
     pub sent_time: u64,
     pub duration_in_millisecond: u64,
     pub network: BitcoinNetwork,
-    pub received_amount: Satoshi,
+    pub actual_amount: Satoshi,
     pub status: StakingStatus,
     pub updated_time: u64,
 }

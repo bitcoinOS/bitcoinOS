@@ -61,6 +61,7 @@ impl TransferInfo {
     }
 }
 
+#[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct StakingRequest {
     pub staking_canister: CanisterId,
     pub staking_address: String,

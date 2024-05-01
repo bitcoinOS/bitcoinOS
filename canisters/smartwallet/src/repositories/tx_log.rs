@@ -17,14 +17,14 @@ pub(crate) fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletE
     })
 }
 
-pub(crate) fn build_and_append_transaction_log(txs: Vec<TransferInfo>) -> Result<(), WalletError> {
+pub(crate) fn build_and_append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     let sender = ic_caller();
     let send_time = ic_time();
-    let log = TransactionLog {
-        txs,
+    let log = &TransactionLog {
+        txs: txs.to_vec(),
         sender,
         send_time,
     };
 
-    append_transaction_log(&log)
+    append_transaction_log(log)
 }

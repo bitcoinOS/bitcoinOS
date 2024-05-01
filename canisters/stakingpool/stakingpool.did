@@ -69,8 +69,8 @@ type StakingRecord = record {
   duration_in_millisecond : nat64;
   txid : text;
   network : BitcoinNetwork;
-  received_amount : nat64;
   sender : principal;
+  actual_amount : nat64;
   sent_time : nat64;
   sent_amount : nat64;
   updated_time : nat64;

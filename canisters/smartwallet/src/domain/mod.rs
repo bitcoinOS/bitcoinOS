@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 
 use crate::constants::{
-    DAILY_LIMIET_SATOSHI, METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE,
+    DAILY_LIMIET_SATOSHI, METADATA_SIZE, STAKING_RECORD_SIZE, TRANSACTION_LOG_SIZE, WALLET_SIZE,
 };
 
 use self::request::TransferInfo;
@@ -125,7 +125,7 @@ impl Storable for SelfCustodyKey {
     }
 
     const BOUND: Bound = Bound::Bounded {
-        max_size: SELF_CUSTODY_SIZE as u32,
+        max_size: WALLET_SIZE as u32,
         is_fixed_size: false,
     };
 }
@@ -140,7 +140,7 @@ impl Storable for RawWallet {
     }
 
     const BOUND: Bound = Bound::Bounded {
-        max_size: SELF_CUSTODY_SIZE as u32,
+        max_size: WALLET_SIZE as u32,
         is_fixed_size: false,
     };
 }
@@ -182,4 +182,19 @@ pub struct StakingRecord {
     pub sent_amount: Satoshi,
     pub sent_time: u64,
     pub network: BitcoinNetwork,
+}
+
+impl Storable for StakingRecord {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        std::borrow::Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: STAKING_RECORD_SIZE as u32,
+        is_fixed_size: false,
+    };
 }

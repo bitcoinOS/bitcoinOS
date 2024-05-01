@@ -22,7 +22,7 @@ pub(crate) async fn serve(
         sent_time: req.sent_time,
         duration_in_millisecond: duration_in_ms,
         network: req.network,
-        received_amount: 0,
+        actual_amount: 0,
         status: StakingStatus::Pending,
         updated_time,
     };

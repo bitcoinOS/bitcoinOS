@@ -87,11 +87,11 @@ dfx start --background
 # Create all canisters
 just create_all_canisters
 
-# Compile the project with `wasm-wasi` inside the project folder
+# Compile smartwallet to wasm
 just build_wallet
 
-# Translate `wasm32-wasi` target to wasm32-unknown-unknown` under the project directory
-just translate_wasm
+# Compile stakingpool to wasm
+just build_staking
 
 # Deploy os canister
 just deploy_os

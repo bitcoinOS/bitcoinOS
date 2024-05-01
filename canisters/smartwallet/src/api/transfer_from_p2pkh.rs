@@ -12,21 +12,24 @@ use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address
 use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
-use crate::repositories::counter;
-use crate::repositories::tx_log;
 
-use super::public_key;
+use super::append_transaction_log;
+use super::counter_increment_one;
 
-pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<String, WalletError> {
+pub(super) async fn serve(
+    public_key: &[u8],
+    metadata: Metadata,
+    req: TransferRequest,
+) -> Result<String, WalletError> {
     let txs = req.validate_address(metadata.network)?;
 
     // Log transfer info
-    tx_log::build_and_append_transaction_log(req.txs)?;
+    append_transaction_log(&req.txs).await?;
 
     // Transaction counter increment one
-    counter::increment_one();
+    counter_increment_one::serve();
 
-    send_p2pkh_transaction(metadata, &txs.txs)
+    send_p2pkh_transaction(public_key, metadata, &txs.txs)
         .await
         .map(|txid| txid.to_string())
 }
@@ -34,6 +37,7 @@ pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<St
 /// Send a transaction to bitcoin network that transfer the given amount and recipient
 /// and the sender is the canister itself
 pub async fn send_p2pkh_transaction(
+    public_key: &[u8],
     metadata: Metadata,
     txs: &[RecipientAmount],
 ) -> Result<Txid, WalletError> {
@@ -45,9 +49,9 @@ pub async fn send_p2pkh_transaction(
     let fee_per_byte = bitcoins::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
     // Fetch public key, p2pkh address, and utxos
-    let sender_public_key = public_key::serve(metadata).await?;
+    // let sender_public_key = public_key::serve(metadata).await?;
 
-    let sender_address = bitcoins::public_key_to_p2pkh_address(network, &sender_public_key);
+    let sender_address = bitcoins::public_key_to_p2pkh_address(network, public_key);
     let sender_address = str_to_bitcoin_address(&sender_address, network)?;
 
     ic_cdk::print(format!(
@@ -63,18 +67,12 @@ pub async fn send_p2pkh_transaction(
         .utxos;
 
     // Build transaction
-    let tx = utils::build_transaction(
-        &sender_public_key,
-        &sender_address,
-        &utxos,
-        txs,
-        fee_per_byte,
-    )
-    .await?;
+    let tx =
+        utils::build_transaction(public_key, &sender_address, &utxos, txs, fee_per_byte).await?;
 
     // Sign the transaction
     let signed_tx = utils::sign_transaction_p2pkh(
-        &sender_public_key,
+        public_key,
         &sender_address,
         tx,
         key_id,

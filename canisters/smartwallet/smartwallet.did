@@ -8,6 +8,7 @@ type GetUtxosResponse = record {
   utxos : vec Utxo;
 };
 type InitArgument = record {
+  owner : opt principal;
   name : text;
   network : BitcoinNetwork;
   steward_canister : principal;
@@ -33,6 +34,11 @@ type Result_5 = variant { Ok : Metadata; Err : WalletError };
 type Result_6 = variant { Ok : principal; Err : WalletError };
 type Result_7 = variant { Ok : PublicKeyResponse; Err : WalletError };
 type Result_8 = variant { Ok : GetUtxosResponse; Err : WalletError };
+type StakingRequest = record {
+  staking_address : text;
+  staking_canister : principal;
+  amount : nat64;
+};
 type TransactionLog = record {
   txs : vec TransferInfo;
   send_time : nat64;
@@ -43,6 +49,7 @@ type TransferRequest = record { txs : vec TransferInfo };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
 type WalletError = variant {
   NetworkAlreadyExists;
+  StakingRecordAlreadyExists : text;
   BaseError : text;
   RegisterECDSAKeyError;
   ECDSAKeyUpdateError;
@@ -69,6 +76,7 @@ service : (InitArgument) -> {
   owner : () -> (Result_6) query;
   p2pkh_address : () -> (Result_3);
   public_key : () -> (Result_7);
+  staking_to_pool : (StakingRequest) -> (Result_3);
   transfer_from_p2pkh : (TransferRequest) -> (Result_3);
   utxos : (text) -> (Result_8);
 }

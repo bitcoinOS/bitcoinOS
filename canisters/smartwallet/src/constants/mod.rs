@@ -1,5 +1,8 @@
-// The stable store Size for Self Custody keys
-pub const SELF_CUSTODY_SIZE: u64 = 1024;
+// The stable store Size for Wallet
+pub const WALLET_SIZE: u64 = 128;
+
+// The stable store Size for Staking record
+pub const STAKING_RECORD_SIZE: u64 = 128;
 
 pub const METADATA_SIZE: u64 = 4096;
 

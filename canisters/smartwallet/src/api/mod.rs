@@ -1,13 +1,14 @@
 mod all_addresses;
 mod balance;
-mod logs;
-
+mod counter_increment_one;
 mod current_fee_percentiles;
 mod ecdsa_key;
+mod logs;
 mod p2pkh_address;
 
 mod public_key;
 mod staking_to_pool;
+mod transaction_log;
 mod transfer_from_p2pkh;
 mod utxos;
 
@@ -17,11 +18,11 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::domain::request::{StakingRequest, TransferRequest};
+use crate::domain::request::{StakingRequest, TransferInfo, TransferRequest};
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
-use crate::repositories::{self, counter, metadata};
+use crate::repositories::{self, counter, metadata, tx_log};
 
 /// ---------------- Update interface of this canister ------------------
 ///
@@ -57,7 +58,7 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
 
-    public_key::serve(metadata)
+    public_key::serve(&metadata)
         .await
         .map(|res| PublicKeyResponse {
             public_key_hex: hex(res),
@@ -86,16 +87,19 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
 pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
+    let public_key = public_key::serve(&metadata).await?;
 
-    transfer_from_p2pkh::serve(metadata, req).await
+    transfer_from_p2pkh::serve(&public_key, metadata, req).await
 }
 
 /// Staking btc to staking pool
+#[update]
 async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
+    let public_key = public_key::serve(&metadata).await?;
 
-    staking_to_pool::serve(metadata, req).await
+    staking_to_pool::serve(&public_key, metadata, req).await
 }
 /// --------------------- Queries interface of this canister -------------------
 ///
@@ -167,4 +171,8 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
     } else {
         Err(WalletError::UnAuthorized(owner.to_string()))
     }
+}
+
+async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
+    tx_log::build_and_append_transaction_log(txs)
 }
