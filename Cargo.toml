@@ -17,7 +17,7 @@ ic-stable-structures = "0.6"
 ciborium = "0.2"
 
 # for Bitcoin
-bitcoin = { version = "0.31", features = ["std"] }
+bitcoin = { version = "0.32", features = ["std"] }
 bs58 = "0.5"
 core2 = "0.4"
 k256 = { version = "0.13", features = ["ecdsa"] }

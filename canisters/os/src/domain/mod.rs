@@ -3,7 +3,7 @@ pub mod request;
 use std::borrow::Cow;
 
 use candid::{CandidType, Decode, Encode, Principal};
-use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
+use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId};
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
@@ -11,6 +11,7 @@ use crate::constants::METADATA_SIZE;
 
 const WALLET_OWNER_MAX_SIZE: u32 = 100;
 const WALLET_ACTION_MAX_SIZE: u32 = 100;
+const STAKING_POOL_MAX_SIZE: u32 = 100;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
@@ -44,7 +45,7 @@ impl Storable for Metadata {
 
 /// The `State` will store the canister info when a user create a wallet.
 /// A wallet is also a canister, call `SmartWallet`
-#[derive(Debug, CandidType, Deserialize)]
+#[derive(Debug, CandidType, Deserialize, Clone)]
 pub struct WalletOwner {
     pub canister_id: Principal,
     pub owner: Principal,
@@ -96,6 +97,43 @@ impl Storable for WalletAction {
     };
 }
 
-pub struct WalletCanisterDeployArgs {
-    // sub_account: Option<Subaccount>,
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub enum WalletType {
+    SelfCustody,
+}
+
+impl WalletType {
+    pub fn list_wallet_types() -> Vec<String> {
+        vec!["SelfCustody".to_string()]
+    }
+}
+
+/// Staking pool info will be stored in stable storage
+#[derive(Debug, CandidType, Deserialize, Clone)]
+pub struct StakingPoolInfo {
+    pub staking_pool_canister: CanisterId,
+    pub bitcoin_address: String,
+    pub name: String,
+    pub description: String,
+    pub network: BitcoinNetwork,
+    pub annual_interest_rate: u64,
+    pub os_canister: CanisterId,
+    pub created_at: u64,
+}
+
+/// For a type to be used in Stable storage like `StableBtreeMap`, it need to implement the `Storable` trait,
+/// which specifies how the type can be serialized/deserialized.
+impl Storable for StakingPoolInfo {
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: STAKING_POOL_MAX_SIZE,
+        is_fixed_size: false,
+    };
 }

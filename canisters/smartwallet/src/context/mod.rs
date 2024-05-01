@@ -1,52 +1,66 @@
+pub mod memory;
+
 use std::cell::RefCell;
 
 use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
 
-use ic_stable_structures::{
-    memory_manager::{MemoryId, MemoryManager, VirtualMemory},
-    BTreeMap as StableBTreeMap, Cell as StableCell, DefaultMemoryImpl, Log as StableLog,
-    RestrictedMemory,
-};
+use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
+use serde::{Deserialize, Serialize};
+
+use self::memory::Memory;
 
 pub type Timestamp = u64;
-pub type DefMem = DefaultMemoryImpl;
-pub type RM = RestrictedMemory<DefMem>;
-pub type VM = VirtualMemory<RM>;
-
-pub type Memory = VirtualMemory<DefMem>;
-
 pub type RawWalletStable = StableBTreeMap<SelfCustodyKey, RawWallet, Memory>;
 pub type TransactionLogStable = StableLog<TransactionLog, Memory, Memory>;
-
-const METADATA_PAGES: u64 = 64;
-
-const SELF_CUSTODY_MEMORY_ID: MemoryId = MemoryId::new(1);
-const TRANSACTION_LOG_IDX_MEM_ID: MemoryId = MemoryId::new(2);
-const TRANSACTION_LOG_DATA_MEM_ID: MemoryId = MemoryId::new(3);
-// const CONTROLLER_ID: MemoryId = MemoryId::new(2);
+// pub type TransactionLedgerStable = StableLog<TransactionLedger, Memory, Memory>;
 
 thread_local! {
+    pub static STATE: RefCell<State> = RefCell::new(State::default());
 
-    static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
-        MemoryManager::init(DefaultMemoryImpl::default())
-    );
+}
 
-    pub static METADATA: RefCell<StableCell<Metadata, RM>> = RefCell::new(StableCell::init(
-        RM::new(DefMem::default(), 0..METADATA_PAGES),
-        Metadata::default(),
-      ).expect("failed to initialize the metadata cell"));
+#[derive(Serialize, Deserialize)]
+pub struct State {
+    #[serde(skip, default = "init_stable_metadata")]
+    pub metadata: StableCell<Metadata, Memory>,
+    #[serde(skip, default = "init_stable_counter")]
+    pub counter: StableCell<u128, Memory>,
+    #[serde(skip, default = "init_stable_wallet")]
+    pub wallets: RawWalletStable,
+    #[serde(skip, default = "init_stable_transaction_log")]
+    pub logs: TransactionLogStable,
+    // pub ledger: TransactionLedgerStable,
+}
 
-    // A Wallet canister can store a wallet with the same derivation path, wallet type, address type once.
-    pub static RAW_WALLET: RefCell<RawWalletStable> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(SELF_CUSTODY_MEMORY_ID))
-        )
-    );
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            metadata: init_stable_metadata(),
+            counter: init_stable_counter(),
+            wallets: init_stable_wallet(),
+            logs: init_stable_transaction_log(),
+        }
+    }
+}
 
-    pub static TRANSACTION_LOG: RefCell<TransactionLogStable> = RefCell::new(
-        StableLog::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(TRANSACTION_LOG_IDX_MEM_ID)),
-            MEMORY_MANAGER.with(|m| m.borrow().get(TRANSACTION_LOG_DATA_MEM_ID))
-        ).expect("failed to init wallet log")
+fn init_stable_metadata() -> StableCell<Metadata, Memory> {
+    StableCell::init(memory::get_metadata_memory(), Metadata::default())
+        .expect("failed to initialize the metadata cell")
+}
+
+fn init_stable_counter() -> StableCell<u128, Memory> {
+    StableCell::init(memory::get_counter_memory(), 0u128)
+        .expect("Could not initialize sig count memory")
+}
+
+fn init_stable_wallet() -> RawWalletStable {
+    StableBTreeMap::init(memory::get_wallet_memory())
+}
+
+fn init_stable_transaction_log() -> TransactionLogStable {
+    StableLog::init(
+        memory::get_transaction_log_index_memory(),
+        memory::get_transaction_log_data_memory(),
     )
+    .expect("failed to init wallet ledger")
 }

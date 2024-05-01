@@ -1,13 +1,9 @@
-use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
+use crate::{domain::Metadata, error::WalletError, repositories::wallet};
 
-use crate::error::WalletError;
-
-pub(super) async fn serve(
-    network: BitcoinNetwork,
-    derivation_path: Vec<Vec<u8>>,
-    key_id: EcdsaKeyId,
-) -> Result<String, WalletError> {
-    base::bitcoins::get_p2pkh_address(network, derivation_path, key_id, None)
+/// Returns the P2PKH address of this canister
+/// if P2PKH address not exist, create a new one and and save it to stable storage
+pub(super) async fn serve(metadata: Metadata) -> Result<String, WalletError> {
+    wallet::get_or_create_p2pkh_wallet(metadata)
         .await
-        .map_err(|e| e.into())
+        .map(|w| w.address.to_string())
 }

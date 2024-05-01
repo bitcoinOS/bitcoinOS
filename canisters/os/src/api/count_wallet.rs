@@ -1,5 +1,5 @@
-use crate::{services, WALLET_OWNER};
+use crate::repositories;
 
 pub fn serve() -> u64 {
-    WALLET_OWNER.with(|w| services::count_wallet::execute(&w.into()))
+    repositories::wallet_owner::count()
 }

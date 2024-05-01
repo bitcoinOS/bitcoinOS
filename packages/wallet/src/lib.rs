@@ -1,13 +1,7 @@
-use bitcoin::{Address, EcdsaSighashType};
-
+pub mod bitcoins;
 pub mod constants;
+pub mod domain;
+pub mod ecdsa;
 pub mod error;
 pub mod tx;
 pub mod utils;
-
-pub const SIG_HASH_TYPE: EcdsaSighashType = EcdsaSighashType::All;
-
-pub struct UserWallet {
-    pub address: Address,
-    pub derivation_path: Vec<Vec<u8>>,
-}

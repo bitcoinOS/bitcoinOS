@@ -37,10 +37,16 @@ pub enum WalletError {
 
     #[error("Append transfer log error: {0:?}")]
     AppendTransferLogError(String),
+
+    #[error("Insufficient funds")]
+    InsufficientFunds,
+
+    #[error("Only support p2pkh sign")]
+    OnlySupportP2pkhSign,
 }
 
-impl From<base::error::Error> for WalletError {
-    fn from(value: base::error::Error) -> Self {
+impl From<wallet::error::Error> for WalletError {
+    fn from(value: wallet::error::Error) -> Self {
         WalletError::CreateWalletError(value.to_string())
     }
 }

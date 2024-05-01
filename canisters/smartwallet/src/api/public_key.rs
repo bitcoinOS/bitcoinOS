@@ -1,16 +1,13 @@
-use base::utils::hex;
-use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
+use wallet::{ecdsa, utils::principal_to_derivation_path};
 
-use crate::{domain::response::PublicKeyResponse, error::WalletError};
+use crate::{domain::Metadata, error::WalletError};
 
-pub async fn serve(
-    derivation_path: Vec<Vec<u8>>,
-    key_id: EcdsaKeyId,
-) -> Result<PublicKeyResponse, WalletError> {
-    base::ecdsa::public_key(derivation_path, key_id, None)
-        .await
-        .map_err(|e| e.into())
-        .map(|res| PublicKeyResponse {
-            public_key_hex: hex(res),
-        })
+pub async fn serve(metadata: Metadata) -> Result<Vec<u8>, WalletError> {
+    ecdsa::public_key(
+        principal_to_derivation_path(metadata.owner),
+        metadata.ecdsa_key_id,
+        None,
+    )
+    .await
+    .map_err(|e| e.into())
 }

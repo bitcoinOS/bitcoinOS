@@ -1,26 +1,27 @@
 pub mod api;
-// pub mod bitcoin;
 pub mod constants;
 pub mod context;
 pub mod domain;
 pub mod error;
+pub mod repositories;
 pub mod rgb;
 
-use crate::context::METADATA;
+use crate::context::STATE;
 use crate::domain::{
     request::TransferRequest, response::NetworkResponse, response::PublicKeyResponse, Metadata,
+    TransactionLog,
 };
 use crate::error::WalletError;
 
-use base::domain::EcdsaKeyIds;
-use base::tx::RawTransactionInfo;
-use base::utils::{ic_caller, ic_time};
 use candid::{CandidType, Principal};
+use constants::DAILY_LIMIET_SATOSHI;
 use ic_cdk::api::management_canister::bitcoin::{
     BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte, Satoshi,
 };
 use ic_cdk::export_candid;
 use serde::Deserialize;
+use wallet::domain::EcdsaKeyIds;
+use wallet::utils::{ic_caller, ic_time};
 
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]
@@ -28,20 +29,22 @@ async fn init(args: InitArgument) {
     // ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
     let owner = ic_caller();
-
+    let name = args.name;
     let network = args.network;
     let steward_canister = args.steward_canister;
     let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
     let updated_time = ic_time();
 
-    METADATA.with(|m| {
-        let mut metadata = m.borrow_mut();
+    STATE.with(|s| {
+        let metadata = &mut s.borrow_mut().metadata;
         metadata
             .set(Metadata {
+                name,
                 owner,
                 network,
                 steward_canister,
                 ecdsa_key_id,
+                daily_limit_satoshi: DAILY_LIMIET_SATOSHI,
                 updated_time,
             })
             .expect("Failed to init metadata")
@@ -57,6 +60,7 @@ export_candid!();
 
 #[derive(CandidType, Deserialize)]
 struct InitArgument {
+    name: String,
     network: BitcoinNetwork,
     steward_canister: Principal,
 }

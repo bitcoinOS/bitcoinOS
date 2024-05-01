@@ -3,23 +3,30 @@ pub mod response;
 
 use std::str::FromStr;
 
-use base::domain::{AddressType, EcdsaKeyIds, WalletType};
 use bitcoin::{Address, ScriptBuf};
 use candid::{CandidType, Decode, Encode, Principal};
-use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
+use ic_cdk::api::management_canister::{
+    bitcoin::{BitcoinNetwork, Satoshi},
+    ecdsa::EcdsaKeyId,
+};
 use ic_stable_structures::{storable::Bound, Storable};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 
-use crate::constants::{METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE};
+use crate::constants::{
+    DAILY_LIMIET_SATOSHI, METADATA_SIZE, SELF_CUSTODY_SIZE, TRANSACTION_LOG_SIZE,
+};
 
 use self::request::TransferInfo;
 
-#[derive(Debug, Clone, CandidType, Deserialize)]
+#[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
+    pub name: String,
     pub owner: Principal,
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
     pub ecdsa_key_id: EcdsaKeyId,
+    pub daily_limit_satoshi: Satoshi,
     pub updated_time: u64,
 }
 
@@ -29,10 +36,12 @@ impl Default for Metadata {
         let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
 
         Self {
+            name: "SmartWallet".to_string(),
             owner: Principal::anonymous(),
             steward_canister: Principal::anonymous(),
             network,
             ecdsa_key_id,
+            daily_limit_satoshi: DAILY_LIMIET_SATOSHI,
             updated_time: 0,
         }
     }
@@ -52,8 +61,6 @@ impl Storable for Metadata {
         is_fixed_size: false,
     };
 }
-
-pub type Wallet = base::domain::Wallet;
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct RawWallet {
@@ -92,6 +99,18 @@ pub struct SelfCustodyKey {
     pub steward_canister: Principal,
     pub wallet_type: WalletType,
     pub address_type: AddressType,
+}
+
+impl SelfCustodyKey {
+    pub fn new(metadata: &Metadata, wallet_type: WalletType, address_type: AddressType) -> Self {
+        Self {
+            network: metadata.network,
+            owner: metadata.owner,
+            steward_canister: metadata.steward_canister,
+            wallet_type,
+            address_type,
+        }
+    }
 }
 
 impl Storable for SelfCustodyKey {
@@ -144,4 +163,11 @@ impl Storable for TransactionLog {
         max_size: TRANSACTION_LOG_SIZE as u32,
         is_fixed_size: false,
     };
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TransactionLedger {
+    pub txs: Vec<TransferInfo>,
+    pub sender: Principal,
+    pub send_time: u64,
 }

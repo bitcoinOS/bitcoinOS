@@ -1,7 +1,7 @@
-use candid::Principal;
+use candid::{CandidType, Principal};
 
-#[derive(Debug, thiserror::Error)]
-pub enum WalletError {
+#[derive(Debug, thiserror::Error, CandidType)]
+pub enum Error {
     #[error("Invalid transaction")]
     InvalidTransaction,
 
@@ -18,35 +18,65 @@ pub enum WalletError {
     InvalidPrincipal(Principal),
 
     #[error("Secp256k1 error: {0:?}")]
-    Secp256k1Error(bitcoin::secp256k1::Error),
+    Secp256k1Error(String),
 
-    #[error("Bitcoin Address error: {0:?}")]
-    BitcoinAddressError(bitcoin::address::Error),
+    #[error("Invalid Bitcoin Address: {0:?}")]
+    InvalidBitcoinAddress(String),
 
-    #[error("Base error: {0:?}")]
-    BaseError(String),
+    #[error("Only support P2PKH sign")]
+    OnlySupportP2pkhSign,
+
+    #[error("Bitcoin address unmatch network: {0:?}")]
+    BitcoinAddressUnmatchNetwork(String),
+
+    #[error("{0:?} ECDSA key already exists")]
+    ECDSAKeyAlreadyExists(String),
+
+    #[error("{0:?} ECDSA key not found")]
+    ECDSAKeyNotFound(String),
+
+    #[error("Failed to update ECDSA key")]
+    ECDSAKeyUpdateError,
+
+    #[error("Amount is not match with address amount")]
+    AmountsAndAddressesMismatch,
+
+    #[error("Transaction and signatures mismatch")]
+    TransactionAndSignaturesMismatch,
+
+    #[error("Transaction hash error: {0:?}")]
+    TransactionHashError(String),
+
+    #[error("P2wshSigHash error: {0:?}")]
+    P2wshSigHashError(String),
+
+    #[error("Transaction amount less than dust")]
+    AmountLessThanDust,
+
+    #[error("Insufficient funds")]
+    InsufficientFunds,
 }
 
-impl From<(ic_cdk::api::call::RejectionCode, String)> for WalletError {
+impl From<(ic_cdk::api::call::RejectionCode, String)> for Error {
     fn from(e: (ic_cdk::api::call::RejectionCode, String)) -> Self {
-        WalletError::ICCallError(e)
+        Error::ICCallError(e)
     }
 }
 
-impl From<bitcoin::secp256k1::Error> for WalletError {
+impl From<bitcoin::secp256k1::Error> for Error {
     fn from(e: bitcoin::secp256k1::Error) -> Self {
-        WalletError::Secp256k1Error(e)
+        Error::Secp256k1Error(e.to_string())
     }
 }
 
-impl From<bitcoin::address::Error> for WalletError {
-    fn from(e: bitcoin::address::Error) -> Self {
-        WalletError::BitcoinAddressError(e)
+impl From<bitcoin::address::FromScriptError> for Error {
+    fn from(e: bitcoin::address::FromScriptError) -> Self {
+        Error::InvalidBitcoinAddress(e.to_string())
     }
 }
 
-impl From<base::error::Error> for WalletError {
-    fn from(e: base::error::Error) -> Self {
-        WalletError::BaseError(e.to_string())
+impl From<bitcoin::address::error::ParseError> for Error {
+    fn from(e: bitcoin::address::error::ParseError) -> Self {
+        Error::BitcoinAddressUnmatchNetwork(e.to_string())
     }
 }

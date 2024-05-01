@@ -1,15 +1,10 @@
-use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::Satoshi;
 
-use crate::error::WalletError;
-
-use super::validate_owner;
+use crate::{domain::Metadata, error::WalletError};
 
 /// Returns the balance of the given bitcoin address
-pub(super) async fn serve(address: String, caller: Principal) -> Result<Satoshi, WalletError> {
-    let network = validate_owner(caller).map(|m| m.network)?;
-
-    base::bitcoins::balance(address, network)
+pub(super) async fn serve(address: String, metadata: Metadata) -> Result<Satoshi, WalletError> {
+    wallet::bitcoins::balance(address, metadata.network)
         .await
         .map_err(|e| e.into())
 }
