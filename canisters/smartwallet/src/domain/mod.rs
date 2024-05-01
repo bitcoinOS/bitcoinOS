@@ -19,6 +19,8 @@ use crate::constants::{
 
 use self::request::TransferInfo;
 
+pub type TxID = String;
+
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
     pub name: String,
@@ -170,4 +172,14 @@ pub struct TransactionLedger {
     pub txs: Vec<TransferInfo>,
     pub sender: Principal,
     pub send_time: u64,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct StakingRecord {
+    pub txid: TxID,
+    pub sender: Principal,
+    pub sender_address: String,
+    pub sent_amount: Satoshi,
+    pub sent_time: u64,
+    pub network: BitcoinNetwork,
 }

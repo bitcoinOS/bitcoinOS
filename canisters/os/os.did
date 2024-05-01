@@ -19,8 +19,10 @@ type Metadata = record {
   network : BitcoinNetwork;
   steward_canister : principal;
 };
-type Result = variant { Ok : principal; Err : Error };
+type Result = variant { Ok : StakingPoolInfo; Err : Error };
+type Result_1 = variant { Ok : principal; Err : Error };
 type StakingPoolInfo = record {
+  bitcoin_address : text;
   os_canister : principal;
   name : text;
   network : BitcoinNetwork;
@@ -45,7 +47,7 @@ service : (Metadata) -> {
   count_staking_pool : () -> (nat) query;
   count_wallet : () -> (nat64) query;
   create_staking_pool_canister : (CreateStakingPoolRequest) -> (Result);
-  create_wallet_canister : (text) -> (Result);
+  create_wallet_canister : (text) -> (Result_1);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
   list_staking_pool : () -> (vec StakingPoolInfo) query;
   list_wallet : () -> (vec WalletOwner) query;

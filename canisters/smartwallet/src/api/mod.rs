@@ -7,6 +7,7 @@ mod ecdsa_key;
 mod p2pkh_address;
 
 mod public_key;
+mod staking_to_pool;
 mod transfer_from_p2pkh;
 mod utxos;
 
@@ -16,7 +17,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::domain::request::TransferRequest;
+use crate::domain::request::{StakingRequest, TransferRequest};
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
@@ -89,6 +90,13 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     transfer_from_p2pkh::serve(metadata, req).await
 }
 
+/// Staking btc to staking pool
+async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+
+    staking_to_pool::serve(metadata, req).await
+}
 /// --------------------- Queries interface of this canister -------------------
 ///
 /// Returns ecdsa key of this canister if the caller is controller and the key exists
