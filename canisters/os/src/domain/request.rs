@@ -13,6 +13,7 @@ pub struct InitWalletArgument {
     pub name: String,
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
+    pub owner: Option<Principal>,
 }
 
 #[derive(CandidType, Deserialize, Clone)]

@@ -21,14 +21,21 @@ use ic_cdk::api::management_canister::bitcoin::{
 use ic_cdk::export_candid;
 use serde::Deserialize;
 use wallet::domain::EcdsaKeyIds;
-use wallet::utils::{ic_caller, ic_time};
+use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]
 async fn init(args: InitArgument) {
     ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
-    let owner = ic_caller();
+    let caller = ic_caller();
+    check_normal_principal(caller).expect("user should be a normal principal");
+
+    let owner = match args.owner {
+        Some(o) => o,
+        None => caller,
+    };
+
     let name = args.name;
     let network = args.network;
     let steward_canister = args.steward_canister;
@@ -63,6 +70,7 @@ struct InitArgument {
     name: String,
     network: BitcoinNetwork,
     steward_canister: Principal,
+    owner: Option<Principal>,
 }
 
 // In the following, we register a custom getrandom implementation because

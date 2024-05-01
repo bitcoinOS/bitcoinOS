@@ -11,6 +11,7 @@ use crate::{
 
 pub async fn serve(
     name: String,
+    os: CanisterId,
     owner: Principal,
     metadata: Metadata,
     wallet_wasm: WasmModule,
@@ -19,11 +20,12 @@ pub async fn serve(
         name,
         network: metadata.network,
         steward_canister: metadata.steward_canister,
+        owner: Some(owner),
     };
 
     let arg = Encode!(&init_wallet).unwrap();
     // create wallet canister id
-    let wallet_canister_id = create_new_wallet_canister(vec![owner]).await?;
+    let wallet_canister_id = create_new_wallet_canister(vec![owner, os]).await?;
 
     ic_cdk::println!(
         "created wallet canister id: {:?}",

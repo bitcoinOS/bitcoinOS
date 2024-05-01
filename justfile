@@ -4,7 +4,7 @@ create_all_canisters:
 
 
 deploy_os:
-    dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"2vxsx-fae\"; })" --mode reinstall
+    dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"2vxsx-fae\"; })"
 
     
 build_wallet:   
@@ -21,5 +21,5 @@ install_wallet:
 deploy_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx deploy smartwallet --argument '(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal "2vxsx-fae" })' --mode reinstall
+    dfx deploy smartwallet --argument '(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal "2vxsx-fae" })'
 

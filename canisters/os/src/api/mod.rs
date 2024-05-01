@@ -37,12 +37,13 @@ use crate::{
 /// Create a smart wallet canister, log the action, and store the wallet owner info
 #[ic_cdk::update]
 pub async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
+    let os = ic_cdk::id();
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
 
     let metadata = repositories::metadata::get_metadata();
 
-    let canister_id = create_wallet::serve(name, owner, metadata, WALLET_WASM.to_owned())
+    let canister_id = create_wallet::serve(name, os, owner, metadata, WALLET_WASM.to_owned())
         .await
         .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
