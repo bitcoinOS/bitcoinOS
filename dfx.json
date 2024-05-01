@@ -15,6 +15,18 @@
       "candid": "canisters/smartwallet/smartwallet.did",
       "package": "smartwallet",
       "type": "rust"
+    },
+    "bitcoinOS_frontend": {
+      "dependencies": [
+        "os",
+        "staking_pool",
+        "smartwallet"
+      ],
+      "source": [
+        "src/bitcoinOS_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "bitcoinOS_frontend"
     }
   },
   "defaults": {
