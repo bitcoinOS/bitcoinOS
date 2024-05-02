@@ -63,7 +63,7 @@ async fn create_staking_pool_canister(
 ) -> Result<StakingPoolInfo, Error> {
     let owner = ic_cdk::caller();
 
-    if is_controller(&owner) {
+    if !is_controller(&owner) {
         return Err(Error::UnAuthorized(owner.to_string()));
     }
 
@@ -74,7 +74,7 @@ async fn create_staking_pool_canister(
         name: arg.name,
         description: arg.description,
         annual_interest_rate: arg.annual_interest_rate,
-        duration_in_month: arg.duration_in_month,
+        duration_in_millisecond: arg.duration_in_millisecond,
         network: metadata.network,
         os_canister,
     };
@@ -84,7 +84,11 @@ async fn create_staking_pool_canister(
             .await
             .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
+    ic_cdk::print("Created staking pool canister ----------- \n");
+
     let staking_pool_address = staking_pool_address(staking_pool_id).await?;
+    // let staking_pool_address  = "abcdefg".to_string();
+
     let info = registry_staking_pool::serve(
         staking_pool_id,
         metadata.network,
@@ -182,9 +186,9 @@ fn init(args: InitArgument) {
 export_candid!();
 
 async fn staking_pool_address(staking_pool_canister: CanisterId) -> Result<String, Error> {
-    let resp: Result<(String,), _> = ic_cdk::call(staking_pool_canister, "p2pkh_address", ())
+    let resp: Result<(String,), _> = ic_cdk::call(staking_pool_canister, "p2pkh_address", ((),))
         .await
-        .map_err(|msg| Error::CreateCanisterFailed {
+        .map_err(|msg| Error::GetStakingPoolAddressFailed {
             msg: format!("{msg:?}"),
         });
 

@@ -11,20 +11,20 @@ pub(crate) async fn serve(
     staking_pool_wasm: WasmModule,
 ) -> Result<CanisterId, String> {
     // create wallet canister id
-    let wallet_canister_id = create_new_staking_pool_canister(vec![arg.os_canister]).await?;
+    let staking_canister_id = create_new_staking_pool_canister(vec![arg.os_canister]).await?;
 
     ic_cdk::println!(
-        "created wallet canister id: {:?}",
-        wallet_canister_id.to_text()
+        "-------------- created staking pool canister id: {:?} --------------- \n",
+        staking_canister_id.to_text()
     );
 
     // Translate arg for CreateStaking
     let arg = Encode!(&arg).unwrap();
 
     // install wallet wasm module
-    install_staking_pool_canister_code(wallet_canister_id, staking_pool_wasm, arg).await?;
+    install_staking_pool_canister_code(staking_canister_id, staking_pool_wasm, arg).await?;
 
-    Ok(wallet_canister_id)
+    Ok(staking_canister_id)
 }
 
 async fn create_new_staking_pool_canister(owners: Vec<Principal>) -> Result<Principal, String> {
@@ -45,14 +45,14 @@ async fn create_new_staking_pool_canister(owners: Vec<Principal>) -> Result<Prin
 }
 
 async fn install_staking_pool_canister_code(
-    wallet_id: Principal,
-    wallet_wasm: WasmModule,
+    staking_canister_id: CanisterId,
+    staking_wasm: WasmModule,
     arg: Vec<u8>,
 ) -> Result<(), String> {
     let install_args = InstallCodeArgument {
         mode: CanisterInstallMode::Install,
-        canister_id: wallet_id,
-        wasm_module: wallet_wasm,
+        canister_id: staking_canister_id,
+        wasm_module: staking_wasm,
         arg,
     };
 

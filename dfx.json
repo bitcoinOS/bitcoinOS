@@ -16,7 +16,7 @@
       "package": "os",
       "type": "rust"
     },
-    "staking_pool": {
+    "stakingpool": {
       "candid": "canisters/stakingpool/stakingpool.did",
       "package": "stakingpool",
       "type": "rust"

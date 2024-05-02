@@ -21,7 +21,7 @@ pub struct CreateStakingPoolRequest {
     pub name: String,
     pub description: String,
     pub annual_interest_rate: u64,
-    pub duration_in_month: u16,
+    pub duration_in_millisecond: u64,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
@@ -30,6 +30,6 @@ pub struct InitStakingPoolArgument {
     pub description: String,
     pub network: BitcoinNetwork,
     pub annual_interest_rate: u64,
-    pub duration_in_month: u16,
+    pub duration_in_millisecond: u64,
     pub os_canister: CanisterId,
 }
