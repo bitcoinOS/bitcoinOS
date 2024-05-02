@@ -23,10 +23,12 @@ use crate::repositories::{self, counter, metadata};
 
 /// Returns the P2PKH address of this staking pool canister
 #[update]
-pub async fn p2pkh_address() -> Result<String, StakingError> {
+pub async fn p2pkh_address() -> String {
     let metadata = repositories::metadata::get_metadata();
 
-    p2pkh_address::serve(metadata).await
+    p2pkh_address::serve(metadata)
+        .await
+        .expect("Staking pool must has a bitcoin address")
 }
 
 /// Returns the utxos of this staking pool canister
