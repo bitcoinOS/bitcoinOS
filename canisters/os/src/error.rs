@@ -12,6 +12,8 @@ pub enum Error {
     StableSetError { msg: String },
     #[error("Staking pool canister {staking_pool_id:?} already exists")]
     StakingPoolAlreadyExists { staking_pool_id: String },
+    #[error("Create wallet canister failed: {msg:?}")]
+    GetStakingPoolAddressFailed { msg: String },
     #[error("UnAuthorized: {0:?}")]
     UnAuthorized(String),
     #[error("Unknown error")]

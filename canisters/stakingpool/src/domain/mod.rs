@@ -14,8 +14,6 @@ use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
 use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
 
-use crate::constants::{METADATA_SIZE, REDEEM_LOG_SIZE, SELF_CUSTODY_SIZE, STAKING_RECORD_SIZE};
-
 use self::request::RedeemRequest;
 
 /// Bitcoin Txid String
@@ -62,10 +60,7 @@ impl Storable for Metadata {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: METADATA_SIZE as u32,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -128,10 +123,7 @@ impl Storable for SelfCustodyKey {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: SELF_CUSTODY_SIZE as u32,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 impl Storable for RawWallet {
@@ -143,10 +135,7 @@ impl Storable for RawWallet {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: SELF_CUSTODY_SIZE as u32,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 /// A Staking record is the record of a staked Bitcoin, its status will be `Pending` or `Confirmed` or `Redeeming` or `Redeemed`.
@@ -185,10 +174,7 @@ impl Storable for StakingRecord {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: STAKING_RECORD_SIZE as u32,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -207,10 +193,7 @@ impl Storable for RedeemLog {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: REDEEM_LOG_SIZE as u32,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 // #[derive(Clone, Debug, CandidType, Deserialize)]

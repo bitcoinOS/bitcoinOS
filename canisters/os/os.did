@@ -1,13 +1,14 @@
 type Action = variant { Delete; Create };
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type CreateStakingPoolRequest = record {
-  duration_in_month : nat16;
+  duration_in_millisecond : nat64;
   name : text;
   description : text;
   annual_interest_rate : nat64;
 };
 type Error = variant {
   StableWriteError : record { msg : text };
+  GetStakingPoolAddressFailed : record { msg : text };
   WalletAlreadyExists : record { wallet_id : text };
   UnAuthorized : text;
   CreateCanisterFailed : record { msg : text };

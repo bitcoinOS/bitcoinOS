@@ -96,7 +96,7 @@ just build_staking
 # Deploy os canister
 just deploy_os
 
-# If you want to deploy smartwall by manually, In normal, the smartwallet will be install by os canister
+# If you want to deploy smartwall for test by manually, In normal, the smartwallet will be install by os canister
 just deploy_wallet
 ```
 
