@@ -1,6 +1,21 @@
 import { useState } from 'react';
-// import { hello_icp2_backend } from 'declarations/hello_icp2_backend';
 import { ChakraProvider } from '@chakra-ui/react'
+import { extendTheme } from '@chakra-ui/react'
+import {
+  BrowserRouter as Router,
+  Routes, Route
+} from "react-router-dom";
+import Stake from "./pages/stake/index"
+import Wallet from "./pages/wallet/index"
+import  Header from "./components/Header"
+ 
+
+const config = {
+  initialColorMode: 'dark',
+  useSystemColorMode: false,
+}
+// 3. extend the theme
+const theme = extendTheme({ config })
 function App() {
   const [greeting, setGreeting] = useState('');
 
@@ -15,19 +30,22 @@ function App() {
   }
 
   return (
-    <ChakraProvider>
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
-    </ChakraProvider>
+      <>
+      <ChakraProvider theme={theme}>
+      
+      <div className="App">
+      <Router>
+      <Header />
+        <Routes>
+          <Route path="/wallet" element={<Wallet />}>
+          </Route>
+          <Route path="/" element={<Stake />}>
+          </Route>
+        </Routes>
+       </Router>
+    </div>
+      </ChakraProvider>
+      </>
   );
 }
 

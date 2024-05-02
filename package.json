@@ -14,5 +14,10 @@
   "type": "module",
   "workspaces": [
     "src/bitcoinOS_frontend"
-  ]
+  ],
+  "dependencies": {
+    "react-icons": "^5.2.0",
+    "react-router-dom": "^6.23.0",
+    "zustand": "^4.5.2"
+  }
 }
