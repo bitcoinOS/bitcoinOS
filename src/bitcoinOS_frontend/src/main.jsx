@@ -7,24 +7,24 @@ import {
   BrowserRouter
 } from "react-router-dom";
 
- 
-import Stake from "./pages/stake/index"
 
- 
-
-
- 
-
+import  WalletActors  from "./ic/WalletActors";
+import  OsActors  from "./ic/OsActors";
+import StakePoolActors  from "./ic/StakePoolActors";
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-     
+
     <InternetIdentityProvider>
-    {/* <BrowserRouter  > */}
-      <App />
-     {/* </BrowserRouter> */}
+      <WalletActors>
+        <OsActors>
+          <StakePoolActors>
+            <App />
+          </StakePoolActors>
+        </OsActors>
+      </WalletActors>
     </InternetIdentityProvider>
- 
+
   </React.StrictMode>
 );

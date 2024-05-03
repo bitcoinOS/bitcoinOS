@@ -24,4 +24,3 @@ deploy_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
     dfx deploy smartwallet --argument '(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal "2vxsx-fae" })'
-
