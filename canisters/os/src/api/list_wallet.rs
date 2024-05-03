@@ -1,5 +1,5 @@
-use crate::{domain::WalletOwner, repositories};
+use crate::{domain::WalletInfo, repositories};
 
-pub fn serve() -> Vec<WalletOwner> {
-    repositories::wallet_owner::list_wallet()
+pub fn serve() -> Vec<WalletInfo> {
+    repositories::wallet_info::list_wallet()
 }

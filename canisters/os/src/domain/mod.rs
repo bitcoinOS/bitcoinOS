@@ -67,12 +67,24 @@ impl Storable for WalletOwner {
 #[derive(Debug, CandidType, Deserialize, Clone)]
 pub struct WalletInfo {
     pub name: String,
-    pub description: String,
+    pub owner: Principal,
     pub wallet_canister: CanisterId,
     pub bitcoin_address: String,
     pub network: BitcoinNetwork,
-    pub owner: Principal,
+    pub steward_canister: CanisterId,
     pub created_at: u64,
+}
+
+impl Storable for WalletInfo {
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(CandidType, Deserialize)]

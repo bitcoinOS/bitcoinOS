@@ -38,10 +38,14 @@ type WalletAction = record {
   operator : principal;
   op_time : nat64;
 };
-type WalletOwner = record {
+type WalletInfo = record {
+  wallet_canister : principal;
+  bitcoin_address : text;
   owner : principal;
-  canister_id : principal;
+  name : text;
+  network : BitcoinNetwork;
   created_at : nat64;
+  steward_canister : principal;
 };
 service : (Metadata) -> {
   canister_balance : () -> (Tokens);
@@ -51,8 +55,9 @@ service : (Metadata) -> {
   create_wallet_canister : (text) -> (Result_1);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
   list_staking_pool : () -> (vec StakingPoolInfo) query;
-  list_wallet : () -> (vec WalletOwner) query;
+  list_wallet : () -> (vec WalletInfo) query;
   list_wallet_types : () -> (vec text) query;
   metadata : () -> (Metadata) query;
+  my_wallets : () -> (vec WalletInfo) query;
   wallet_counter : () -> (nat) query;
 }

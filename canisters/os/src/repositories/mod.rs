@@ -1,6 +1,7 @@
-pub mod metadata;
-pub mod staking_pool;
-pub mod staking_pool_counter;
-pub mod wallet_counter;
-pub mod wallet_log;
-pub mod wallet_owner;
+pub(crate) mod metadata;
+pub(crate) mod staking_pool;
+pub(crate) mod staking_pool_counter;
+pub(crate) mod wallet_counter;
+pub(crate) mod wallet_info;
+pub(crate) mod wallet_log;
+// pub(crate) mod wallet_owner;
