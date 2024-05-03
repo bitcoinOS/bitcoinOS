@@ -1,4 +1,4 @@
-import create from 'zustand';
+import {create} from 'zustand';
 interface IUserState {
     principal: string;
     setPrincipal: (principal:string) => void;
