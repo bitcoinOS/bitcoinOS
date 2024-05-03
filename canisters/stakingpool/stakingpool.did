@@ -84,7 +84,7 @@ service : (InitArgument) -> {
   logs : () -> (Result_1) query;
   metadata : () -> (Result_2) query;
   network : () -> (NetworkResponse) query;
-  p2pkh_address : () -> (Result_3);
+  p2pkh_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
   register_staking_record : (RegisterStakingRequest) -> (Result_4);
   utxos : (opt UtxoFilter) -> (Result_5);

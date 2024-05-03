@@ -1,16 +1,17 @@
-pub mod append_wallet_action;
-pub mod count_staking_pool;
-pub mod count_wallet;
-pub mod create_staking_pool;
-pub mod create_wallet;
-pub mod get_wallet_action;
-pub mod list_staking_pool;
-pub mod list_wallet;
-pub mod list_wallet_types;
-pub mod registry_staking_pool;
-pub mod registry_wallet;
-pub mod staking_pool_increment_one;
-pub mod wallet_counter_increment_one;
+mod append_wallet_action;
+mod count_staking_pool;
+mod count_wallet;
+mod create_staking_pool;
+mod create_wallet;
+mod get_wallet_action;
+mod list_staking_pool;
+mod list_wallet;
+mod list_wallet_types;
+mod my_wallet;
+mod registry_staking_pool;
+mod registry_wallet;
+mod staking_pool_increment_one;
+mod wallet_counter_increment_one;
 
 use candid::Principal;
 use ic_cdk::{
@@ -26,7 +27,7 @@ use crate::{
     context::STATE,
     domain::{
         request::{CreateStakingPoolRequest, InitArgument, InitStakingPoolArgument},
-        Action, Metadata, StakingPoolInfo, WalletAction, WalletOwner,
+        Action, Metadata, StakingPoolInfo, WalletAction, WalletInfo,
     },
     error::Error,
     repositories::{self, staking_pool_counter},
@@ -36,24 +37,42 @@ use crate::{
 ///
 /// Create a smart wallet canister, log the action, and store the wallet owner info
 #[ic_cdk::update]
-pub async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
+async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
     let os = ic_cdk::id();
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
 
     let metadata = repositories::metadata::get_metadata();
 
-    let canister_id = create_wallet::serve(name, os, owner, metadata, WALLET_WASM.to_owned())
-        .await
-        .map_err(|msg| Error::CreateCanisterFailed { msg })?;
+    let wallet_canister = create_wallet::serve(
+        name.clone(),
+        os,
+        owner,
+        metadata.clone(),
+        WALLET_WASM.to_owned(),
+    )
+    .await
+    .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
     append_wallet_action::serve(owner, Action::Create, created_at)?;
 
-    registry_wallet::serve(owner, canister_id, created_at)?;
+    let wallet_address = fetch_wallet_address(wallet_canister).await?;
+
+    let wallet_info = WalletInfo {
+        name,
+        owner,
+        wallet_canister,
+        bitcoin_address: wallet_address,
+        network: metadata.network,
+        steward_canister: metadata.steward_canister,
+        created_at,
+    };
+
+    registry_wallet::serve(owner, wallet_canister, wallet_info)?;
 
     wallet_counter_increment_one::serve()?;
 
-    Ok(canister_id)
+    Ok(wallet_canister)
 }
 
 /// Create a Staking Pool with given annualized interest rate and duration, name and description
@@ -63,7 +82,7 @@ async fn create_staking_pool_canister(
 ) -> Result<StakingPoolInfo, Error> {
     let owner = ic_cdk::caller();
 
-    if is_controller(&owner) {
+    if !is_controller(&owner) {
         return Err(Error::UnAuthorized(owner.to_string()));
     }
 
@@ -74,7 +93,7 @@ async fn create_staking_pool_canister(
         name: arg.name,
         description: arg.description,
         annual_interest_rate: arg.annual_interest_rate,
-        duration_in_month: arg.duration_in_month,
+        duration_in_millisecond: arg.duration_in_millisecond,
         network: metadata.network,
         os_canister,
     };
@@ -84,7 +103,11 @@ async fn create_staking_pool_canister(
             .await
             .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
-    let staking_pool_address = staking_pool_address(staking_pool_id).await?;
+    ic_cdk::print("Created staking pool canister ----------- \n");
+
+    let staking_pool_address = fetch_wallet_address(staking_pool_id).await?;
+    // let staking_pool_address  = "abcdefg".to_string();
+
     let info = registry_staking_pool::serve(
         staking_pool_id,
         metadata.network,
@@ -117,16 +140,23 @@ async fn canister_balance() -> Tokens {
 
 /// --------------------- Queries interface of this canister -------------------
 ///
-/// Returns wallet counter
+/// Returns wallet counter, it will always increment by one
 #[ic_cdk::query]
-pub fn wallet_counter() -> u128 {
+fn wallet_counter() -> u128 {
     repositories::wallet_counter::get_counter()
 }
 
 /// Returns the count of wallet created by os canister
 #[ic_cdk::query]
-pub fn count_wallet() -> u64 {
+fn count_wallet() -> u64 {
     count_wallet::serve()
+}
+
+/// Returns the wallet info list of the caller
+#[ic_cdk::query]
+fn my_wallets() -> Vec<WalletInfo> {
+    let sender = ic_cdk::caller();
+    my_wallet::serve(sender)
 }
 
 /// Returns the list of wallet types
@@ -137,7 +167,7 @@ fn list_wallet_types() -> Vec<String> {
 
 /// Returns the list of wallets created by os canister
 #[ic_cdk::query]
-pub fn list_wallet() -> Vec<WalletOwner> {
+fn list_wallet() -> Vec<WalletInfo> {
     list_wallet::serve()
 }
 
@@ -155,13 +185,13 @@ fn list_staking_pool() -> Vec<StakingPoolInfo> {
 
 /// Returns the create wallet action for given index
 #[ic_cdk::query]
-pub fn get_wallet_action(idx: u64) -> Option<WalletAction> {
+fn get_wallet_action(idx: u64) -> Option<WalletAction> {
     get_wallet_action::serve(idx)
 }
 
 #[ic_cdk::query]
 /// Returns metadata of os canister
-pub fn metadata() -> Metadata {
+fn metadata() -> Metadata {
     repositories::metadata::get_metadata()
 }
 
@@ -181,10 +211,10 @@ fn init(args: InitArgument) {
 
 export_candid!();
 
-async fn staking_pool_address(staking_pool_canister: CanisterId) -> Result<String, Error> {
-    let resp: Result<(String,), _> = ic_cdk::call(staking_pool_canister, "p2pkh_address", ())
+async fn fetch_wallet_address(staking_pool_canister: CanisterId) -> Result<String, Error> {
+    let resp: Result<(String,), _> = ic_cdk::call(staking_pool_canister, "p2pkh_address", ((),))
         .await
-        .map_err(|msg| Error::CreateCanisterFailed {
+        .map_err(|msg| Error::GetStakingPoolAddressFailed {
             msg: format!("{msg:?}"),
         });
 

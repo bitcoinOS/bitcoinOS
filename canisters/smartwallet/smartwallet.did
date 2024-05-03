@@ -74,7 +74,7 @@ service : (InitArgument) -> {
   metadata : () -> (Result_5) query;
   network : () -> (NetworkResponse) query;
   owner : () -> (Result_6) query;
-  p2pkh_address : () -> (Result_3);
+  p2pkh_address : () -> (text);
   public_key : () -> (Result_7);
   staking_to_pool : (StakingRequest) -> (Result_3);
   transfer_from_p2pkh : (TransferRequest) -> (Result_3);

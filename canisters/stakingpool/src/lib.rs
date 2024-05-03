@@ -4,7 +4,6 @@ pub mod context;
 pub mod domain;
 pub mod error;
 pub mod repositories;
-pub mod rgb;
 
 use crate::context::STATE;
 use crate::domain::{

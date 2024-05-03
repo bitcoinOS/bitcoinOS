@@ -7,11 +7,11 @@ use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
-use crate::constants::METADATA_SIZE;
+// use crate::constants::METADATA_SIZE;
 
-const WALLET_OWNER_MAX_SIZE: u32 = 100;
-const WALLET_ACTION_MAX_SIZE: u32 = 100;
-const STAKING_POOL_MAX_SIZE: u32 = 100;
+// const WALLET_OWNER_MAX_SIZE: u32 = 100;
+// const WALLET_ACTION_MAX_SIZE: u32 = 100;
+// const STAKING_POOL_MAX_SIZE: u32 = 100;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
@@ -37,10 +37,7 @@ impl Storable for Metadata {
         Decode!(bytes.as_ref(), Self).unwrap()
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: METADATA_SIZE as u32,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 /// The `State` will store the canister info when a user create a wallet.
@@ -63,10 +60,31 @@ impl Storable for WalletOwner {
         Cow::Owned(Encode!(self).unwrap())
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: WALLET_OWNER_MAX_SIZE,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
+}
+
+/// The information of a wallet
+#[derive(Debug, CandidType, Deserialize, Clone)]
+pub struct WalletInfo {
+    pub name: String,
+    pub owner: Principal,
+    pub wallet_canister: CanisterId,
+    pub bitcoin_address: String,
+    pub network: BitcoinNetwork,
+    pub steward_canister: CanisterId,
+    pub created_at: u64,
+}
+
+impl Storable for WalletInfo {
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(CandidType, Deserialize)]
@@ -91,10 +109,7 @@ impl Storable for WalletAction {
         Cow::Owned(Encode!(self).unwrap())
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: WALLET_ACTION_MAX_SIZE,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -132,8 +147,5 @@ impl Storable for StakingPoolInfo {
         Cow::Owned(Encode!(self).unwrap())
     }
 
-    const BOUND: Bound = Bound::Bounded {
-        max_size: STAKING_POOL_MAX_SIZE,
-        is_fixed_size: false,
-    };
+    const BOUND: Bound = Bound::Unbounded;
 }

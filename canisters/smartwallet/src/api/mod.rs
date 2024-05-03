@@ -22,6 +22,7 @@ use crate::domain::request::{StakingRequest, TransferInfo, TransferRequest};
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
+use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};
 
 /// ---------------- Update interface of this canister ------------------
@@ -29,12 +30,12 @@ use crate::repositories::{self, counter, metadata, tx_log};
 
 /// Returns the P2PKH address of this canister at a specific derivation path
 #[update]
-pub async fn p2pkh_address() -> Result<String, WalletError> {
-    let owner = ic_caller();
+pub async fn p2pkh_address() -> String {
+    let metadata = get_metadata();
 
-    let metadata = validate_owner(owner)?;
-
-    p2pkh_address::serve(metadata).await
+    p2pkh_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
 }
 
 /// Returns the utxos of this canister address
