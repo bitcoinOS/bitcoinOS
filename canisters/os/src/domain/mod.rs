@@ -73,7 +73,7 @@ pub struct WalletInfo {
     pub network: BitcoinNetwork,
     pub owner: Principal,
     pub created_at: u64,
-} 
+}
 
 #[derive(CandidType, Deserialize)]
 pub struct WalletAction {

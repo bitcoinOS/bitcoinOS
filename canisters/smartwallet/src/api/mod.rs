@@ -33,7 +33,9 @@ use crate::repositories::{self, counter, metadata, tx_log};
 pub async fn p2pkh_address() -> String {
     let metadata = get_metadata();
 
-    p2pkh_address::serve(metadata).await.expect("A Smart wallet must have a Bitcoin Address")
+    p2pkh_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
 }
 
 /// Returns the utxos of this canister address
