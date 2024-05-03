@@ -63,6 +63,18 @@ impl Storable for WalletOwner {
     const BOUND: Bound = Bound::Unbounded;
 }
 
+/// The information of a wallet
+#[derive(Debug, CandidType, Deserialize, Clone)]
+pub struct WalletInfo {
+    pub name: String,
+    pub description: String,
+    pub wallet_canister: CanisterId,
+    pub bitcoin_address: String,
+    pub network: BitcoinNetwork,
+    pub owner: Principal,
+    pub created_at: u64,
+} 
+
 #[derive(CandidType, Deserialize)]
 pub struct WalletAction {
     pub operator: Principal,
