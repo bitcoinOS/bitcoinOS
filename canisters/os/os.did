@@ -9,7 +9,7 @@ type CreateStakingPoolRequest = record {
 type Error = variant {
   StableWriteError : record { msg : text };
   GetStakingPoolAddressFailed : record { msg : text };
-  WalletAlreadyExists : record { wallet_id : text };
+  WalletAlreadyExists : record { wallet_canister : text };
   UnAuthorized : text;
   CreateCanisterFailed : record { msg : text };
   StableSetError : record { msg : text };

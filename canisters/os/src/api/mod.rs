@@ -68,7 +68,7 @@ async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
         created_at,
     };
 
-    registry_wallet::serve(owner, wallet_canister, wallet_info)?;
+    registry_wallet::serve(wallet_info)?;
 
     wallet_counter_increment_one::serve()?;
 

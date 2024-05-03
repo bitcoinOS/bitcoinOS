@@ -2,8 +2,8 @@ use candid::CandidType;
 
 #[derive(Debug, CandidType, thiserror::Error)]
 pub enum Error {
-    #[error("Wallet canister {wallet_id:?} already exists")]
-    WalletAlreadyExists { wallet_id: String },
+    #[error("Wallet canister {wallet_canister:?} already exists")]
+    WalletAlreadyExists { wallet_canister: String },
     #[error("Create wallet canister failed: {msg:?}")]
     CreateCanisterFailed { msg: String },
     #[error("Stable write error: {msg:?}")]
