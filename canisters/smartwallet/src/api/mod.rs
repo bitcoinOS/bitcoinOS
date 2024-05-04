@@ -3,6 +3,7 @@ mod balance;
 mod counter_increment_one;
 mod current_fee_percentiles;
 mod ecdsa_key;
+mod list_staking;
 mod logs;
 mod p2pkh_address;
 
@@ -20,7 +21,7 @@ use ic_cdk::{query, update};
 
 use crate::domain::request::{StakingRequest, TransferInfo, TransferRequest};
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, TransactionLog};
+use crate::domain::{Metadata, StakingRecord, TransactionLog};
 use crate::error::WalletError;
 use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};
@@ -102,8 +103,17 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
 
     staking_to_pool::serve(&public_key, metadata, req).await
 }
+
 /// --------------------- Queries interface of this canister -------------------
 ///
+/// Returns all staking record lists of this canister
+#[query]
+fn list_staking() -> Result<Vec<StakingRecord>, WalletError> {
+    let owner = ic_caller();
+    validate_owner(owner)?;
+
+    Ok(list_staking::serve())
+}
 /// Returns ecdsa key of this canister if the caller is controller and the key exists
 /// otherwise return `EcdsaKeyNotFound` or `UnAuthorized`
 #[query]

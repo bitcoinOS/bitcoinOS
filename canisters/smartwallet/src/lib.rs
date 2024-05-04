@@ -10,7 +10,7 @@ use crate::context::STATE;
 use crate::domain::{
     request::{StakingRequest, TransferRequest},
     response::{NetworkResponse, PublicKeyResponse},
-    Metadata, TransactionLog,
+    Metadata, StakingRecord, TransactionLog,
 };
 use crate::error::WalletError;
 

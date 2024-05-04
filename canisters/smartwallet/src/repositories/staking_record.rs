@@ -12,3 +12,12 @@ pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {
         }
     })
 }
+
+pub(crate) fn list_staking() -> Vec<StakingRecord> {
+    STATE.with_borrow(|s| {
+        s.staking_records
+            .iter()
+            .map(|(_, r)| r.to_owned())
+            .collect()
+    })
+}
