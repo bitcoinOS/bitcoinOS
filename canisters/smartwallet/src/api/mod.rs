@@ -100,8 +100,9 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
     let public_key = public_key::serve(&metadata).await?;
+    let sender_canister = ic_cdk::id();
 
-    staking_to_pool::serve(&public_key, metadata, req).await
+    staking_to_pool::serve(&public_key, metadata, sender_canister, req).await
 }
 
 /// --------------------- Queries interface of this canister -------------------

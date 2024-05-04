@@ -8,6 +8,7 @@ use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{
     bitcoin::{BitcoinNetwork, Satoshi},
     ecdsa::EcdsaKeyId,
+    main::CanisterId,
 };
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
@@ -164,9 +165,12 @@ pub struct TransactionLedger {
 pub struct StakingRecord {
     pub txid: TxID,
     pub sender: Principal,
-    pub sender_address: String,
+    pub sender_canister: CanisterId,
+    pub sender_address: String, // Bitcoin address
     pub sent_amount: Satoshi,
     pub sent_time: u64,
+    pub recipient: CanisterId,
+    pub recipient_address: String, // Bitcoin address
     pub network: BitcoinNetwork,
 }
 

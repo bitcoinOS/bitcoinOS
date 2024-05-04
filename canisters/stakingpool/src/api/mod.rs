@@ -4,6 +4,7 @@ mod p2pkh_address;
 mod public_key;
 mod redeem;
 mod register_staking;
+mod tvl;
 mod utxos;
 
 use ic_cdk::api::management_canister::bitcoin::{
@@ -87,6 +88,12 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
 
 /// --------------------- Queries interface of this canister -------------------
 ///
+/// Returns TVL of this staking pool canister
+#[query]
+fn tvl() -> Satoshi {
+    tvl::serve()
+}
+
 /// Returns the network of this canister
 #[query]
 fn network() -> NetworkResponse {
