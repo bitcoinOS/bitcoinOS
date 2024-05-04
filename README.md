@@ -80,7 +80,7 @@ cargo install just
 
 # Starts the replica, running in the background
 # Add --clean if you want to reset the dfx state: dfx start --background --clean
-dfx start --background 
+dfx start --background   --enable-bitcoin
 
 
 # All the just command details are in `justfile`
@@ -98,6 +98,9 @@ just deploy_os
 
 # If you want to deploy smartwall for test by manually, In normal, the smartwallet will be install by os canister
 just deploy_wallet
+
+just deploy_ii
+just deploy_staking
 ```
 
 Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.

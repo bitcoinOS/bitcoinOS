@@ -14,13 +14,18 @@ import { ReactNode } from "react";
 import { _SERVICE } from "../../../declarations/smartwallet/smartwallet.did";
 import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
+import WalletStore from "../store/index"
+
+export  {type  Result_1,type StakingRequest, type Result_3}  from "../../../declarations/smartwallet/smartwallet.did";
 
 const actorContext = createActorContext<_SERVICE>();
 export const useWalletBackend = createUseActorHook<_SERVICE>(actorContext);
 
+
 export default function WalletActors({ children }: { children: ReactNode }) {
   const { identity, clear } = useInternetIdentity();
-
+  const { currentWallet, setCurrentWallet } = WalletStore();
+  // setCurrentWallet(canisterId);
   const handleRequest = (data: InterceptorRequestData) => {
     console.log("onRequest", data.args, data.methodName);
     return data.args;
@@ -67,7 +72,7 @@ export default function WalletActors({ children }: { children: ReactNode }) {
 
   return (
     <ActorProvider<_SERVICE>
-      canisterId={canisterId}
+      canisterId={currentWallet}
       context={actorContext}
       identity={identity}
       idlFactory={idlFactory}
