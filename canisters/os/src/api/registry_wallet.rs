@@ -1,13 +1,13 @@
 use candid::Principal;
+use ic_cdk::api::management_canister::main::CanisterId;
 
-use crate::{domain::WalletInfo, error::Error, repositories};
+use crate::{
+    domain::{WalletInfo, WalletInfoKey},
+    error::Error,
+    repositories,
+};
 
-pub fn serve(
-    owner: Principal,
-    canister_id: Principal,
-    wallet_info: WalletInfo,
-) -> Result<(), Error> {
+pub fn serve(wallet_info: WalletInfo) -> Result<(), Error> {
     // repositories::wallet_owner::create_wallet_owner(owner, canister_id, wallet_info.created_at)?;
-
-    repositories::wallet_info::save(owner, canister_id, wallet_info)
+    repositories::wallet_info::save(wallet_info)
 }

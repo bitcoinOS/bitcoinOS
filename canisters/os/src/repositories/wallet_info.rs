@@ -1,7 +1,13 @@
-use candid::Principal;
-use ic_cdk::api::management_canister::main::CanisterId;
+use std::ops::RangeBounds;
 
-use crate::{context::STATE, domain::WalletInfo, error::Error};
+use candid::Principal;
+
+use crate::{
+    constants::{PRINCIPAL_MAX, PRINCIPAL_MIN},
+    context::STATE,
+    domain::{WalletInfo, WalletInfoKey},
+    error::Error,
+};
 
 pub(crate) fn count() -> u64 {
     STATE.with(|s| s.borrow().wallet_owners.len())
@@ -11,45 +17,55 @@ pub(crate) fn list_wallet() -> Vec<WalletInfo> {
     STATE.with(|s| s.borrow().wallet_infos.iter().map(|(_, w)| w).collect())
 }
 
-pub(crate) fn save(
-    owner: candid::Principal,
-    canister_id: CanisterId,
-    info: WalletInfo,
-) -> Result<(), Error> {
-    STATE.with(|s| {
-        let state = &mut s.borrow_mut();
-        let wallets = &mut state.wallet_infos;
+pub(crate) fn save(info: WalletInfo) -> Result<(), Error> {
+    STATE.with_borrow_mut(|s| {
+        let wallets = &mut s.wallet_infos;
 
-        if wallets.contains_key(&(owner, canister_id)) {
+        let key = WalletInfoKey {
+            owner: info.owner,
+            wallet_canister: info.wallet_canister,
+        };
+
+        if wallets.contains_key(&key) {
             Err(Error::WalletAlreadyExists {
-                wallet_id: canister_id.to_string(),
+                wallet_canister: info.wallet_canister.to_string(),
             })
         } else {
-            wallets.insert((owner, canister_id), info);
+            wallets.insert(key, info);
             Ok(())
         }
     })
 }
 
 /// Find the wallet info list by owner
-/// TODO: FIX with range query
+/// FIX with range query
 pub(crate) fn find_wallet_info_by_owner(owner: Principal) -> Vec<WalletInfo> {
+    // STATE.with_borrow(|s| {
+    //     s.wallet_infos
+    //         .iter()
+    //         .filter(|(key, _)| key.owner == owner)
+    //         .map(|(_, info)| info)
+    //         .collect()
+    // })
+
     STATE.with_borrow(|s| {
         s.wallet_infos
-            .iter()
-            .filter(|((o, _), _)| o == &owner)
+            .range(range_owner_filter(owner))
             .map(|(_, info)| info)
             .collect()
     })
 }
 
-// fn principal_canister_range(
-//     owner: Principal,
-//     start: CanisterId,
-// ) -> Vec<WalletInfo> {
-//     STATE.with_borrow(|s|{
-//         s.wallet_infos.range((owner, start))
-//         .map(|(_, info)| info)
-//         .collect()
-//     })
-// }
+fn range_owner_filter(owner: Principal) -> impl RangeBounds<WalletInfoKey> {
+    let start = WalletInfoKey {
+        owner,
+        wallet_canister: PRINCIPAL_MIN,
+    };
+
+    let end = WalletInfoKey {
+        owner,
+        wallet_canister: PRINCIPAL_MAX,
+    };
+
+    start..end
+}

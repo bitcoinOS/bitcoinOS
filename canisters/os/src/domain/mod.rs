@@ -63,6 +63,24 @@ impl Storable for WalletOwner {
     const BOUND: Bound = Bound::Unbounded;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, CandidType, Deserialize)]
+pub struct WalletInfoKey {
+    pub owner: Principal,
+    pub wallet_canister: CanisterId,
+}
+
+impl Storable for WalletInfoKey {
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    const BOUND: Bound = Bound::Unbounded;
+}
+
 /// The information of a wallet
 #[derive(Debug, CandidType, Deserialize, Clone)]
 pub struct WalletInfo {

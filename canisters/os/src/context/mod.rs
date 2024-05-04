@@ -2,7 +2,9 @@ pub mod memory;
 
 use std::cell::RefCell;
 
-use crate::domain::{Metadata, StakingPoolInfo, WalletAction, WalletInfo, WalletOwner};
+use crate::domain::{
+    Metadata, StakingPoolInfo, WalletAction, WalletInfo, WalletInfoKey, WalletOwner,
+};
 
 use candid::Principal;
 use ic_cdk::api::management_canister::main::CanisterId;
@@ -14,7 +16,7 @@ use self::memory::Memory;
 pub type Timestamp = u64;
 pub type WalletOwnerStable = StableBTreeMap<CanisterId, WalletOwner, Memory>;
 /// A WalletInfo stable storage has a key with `User Principal` and `Wallet Canister`
-pub type WalletInfoStable = StableBTreeMap<(Principal, CanisterId), WalletInfo, Memory>;
+pub type WalletInfoStable = StableBTreeMap<WalletInfoKey, WalletInfo, Memory>;
 pub type WalletLogStable = StableLog<WalletAction, Memory, Memory>;
 pub type StakingPoolStable = StableBTreeMap<CanisterId, StakingPoolInfo, Memory>;
 
