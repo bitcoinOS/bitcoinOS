@@ -22,27 +22,32 @@ import {
     FormControl,
     ModalBody,
     FormLabel,
-    Spinner 
+    Spinner
 }
     from '@chakra-ui/react'
+import { useToast } from '@chakra-ui/react'
+import {
+    BsArrowClockwise,
+} from 'react-icons/bs'
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react"
 import { Select } from "@chakra-ui/react"
 import { useEffect, useState, useRef } from 'react';
-// import UserStore from "../../store/index"
-import { useWalletBackend } from "../../ic/WalletActors";
-import { useOsBackend } from "../../ic/OsActors";
+import WalletStore from "../../store/index"
+import { useWalletBackend, Result_1 as BalanceResult, StakingRequest,Result_3 as StakeResult } from "../../ic/WalletActors";
+import { useOsBackend, WalletInfo } from "../../ic/OsActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
-
+import { Principal } from "@dfinity/principal"
 export default function Stake() {
+    const toast = useToast();
     const { actor: walletBackend } = useWalletBackend();
     const { actor: osBackend } = useOsBackend();
     const { identity } = useInternetIdentity();
-    const [walletList, setWalletList] = useState<string[]>([])
+    const [walletList, setWalletList] = useState<WalletInfo[]>([])
     const [wallet, setWallet] = useState<string>("")
     const [balance, setBalance] = useState<number>(0)
     const [totalBalance, setTotalBalance] = useState<number>(0)
     const [stakeBalance, setStakeBalance] = useState<number>(0)
-    // const { principal, setPrincipal } = UserStore();
+    const { currentWallet, setCurrentWallet } = WalletStore();
     const [balanceError, setBalanceError] = useState<string>("");
     const [isLogin, setIslogin] = useState<boolean>(false)
 
@@ -54,28 +59,26 @@ export default function Stake() {
     const { isOpen, onOpen, onClose } = useDisclosure()
     const [walletName, setWalletName] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const btc = 100000000.0
     useEffect(() => {
         setTvl(100)
         setUsers(30)
-        setBalance(12)
         if (identity) {
             setIslogin(true)
         }
         if (!walletBackend) {
             setIsWalletInited(false);
-            return;
         } else {
             setIsWalletInited(true);
         }
-        if(!osBackend){
+        if (!osBackend) {
             setIsOsInited(false)
-        }else{
+        } else {
             setIsOsInited(true)
-            // osBackend.l
+            osBackend.my_wallets().then((value: WalletInfo[]) => {
+                setWalletList(value);
+            })
         }
-
-        const data = ['1','2','3']
-        setWalletList(data);
     }, [])
 
     useEffect(() => {
@@ -89,26 +92,27 @@ export default function Stake() {
     // Get the principal from the backend when an identity is available
     useEffect(() => {
         debugger
-        if (!walletBackend) {
-            setIsWalletInited(false);
-        } else {
-            setIsWalletInited(true);
+        if (osBackend) {
+            setIsOsInited(true)
         }
-        if (identity && walletBackend) {
-            walletBackend.counter().then((c: bigint) => {
-                debugger
-                // setBalance(parseFloat(c.toString()))
-            });
+        if (identity && osBackend) {
+            get_wallets()
         }
-    }, [walletBackend, identity]);
+    }, [osBackend, identity]);
 
     useEffect(() => {
         setTotalBalance(11)
-        setBalance(13)
+        get_balance()
+        // setBalance(13)
     }, [wallet])
 
     function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
         setWallet(event.target.value)
+        const selectOption = event.target.selectedOptions[0]
+        if (selectOption.dataset.id) {
+            setCurrentWallet(selectOption.dataset.id)
+        }
+
 
     }
     function handleChangeStake(event: React.ChangeEvent<HTMLInputElement>) {
@@ -124,28 +128,118 @@ export default function Stake() {
     function onMaxClick() {
         setStakeBalance(balance)
     }
+    function get_wallets() {
+        if (!osBackend) return;
+        setIsLoading(true)
+        osBackend.my_wallets().then((value: WalletInfo[]) => {
+            setWalletList(value);
+            setIsLoading(false)
+        })
+    }
+    function get_balance() {
+        if (!walletBackend) return;
+        setIsLoading(true);
+        // walletBackend.metadata().then((value) => {
+        //     console.log(value);
+        // })
+        walletBackend.balance(wallet).then((value: BalanceResult) => {
+            if(value.Err){
+                toast({
+                    title: 'Balance',
+                    description: "get balance error",
+                    status: 'error',
+                    position:"top",
+                    duration: 9000,
+                    isClosable: true,
+                  })
+            }else{
+                const b:bigint = value.Ok
+                setBalance(Number(b)/btc)
+            }
+            setIsLoading(false);
+        })
+    }
+    function get_stake_balance() {
+        if (!osBackend) return;
+        osBackend.my_wallets().then((value: WalletInfo[]) => {
+            setWalletList(value);
+        })
+    }
+    function stake_balance() {
+        if (!walletBackend) return
+        setIsLoading(true);
+        const stakeRequest: StakingRequest = {
+            'staking_address': wallet,
+            'staking_canister': Principal.fromText("bw4dl-smaaa-aaaaa-qaacq-cai"),
+            'amount': BigInt(stakeBalance * btc),
+        }
+        walletBackend.staking_to_pool(stakeRequest).then((result:StakeResult)=>{
+            if(result.Err){
+                toast({
+                    title: 'Stake',
+                    description: "stake balance error",
+                    status: 'error',
+                    position:"top",
+                    duration: 9000,
+                    isClosable: true,
+                  })
+            }else{
+                toast({
+                    title: 'Stake',
+                    status: 'success',
+                    position:"top",
+                    duration: 9000,
+                    isClosable: true,
+                    render: () => (
+                        <Box color='white' p={3} bg='green.500'>
+                          <Text>stake balance success</Text>
+                          <Text>{"txid:"+result.Ok}</Text>
+                        </Box>
+                      )
+                  })
+            }
+            setIsLoading(false);
+        })
+    }
+    function get_owner() {
+        if (!walletBackend) return;
+        walletBackend.owner().then((value) => {
+            console.log(value);
+        })
+    }
     function onCreateWallet() {
         onClose()
-        if (!osBackend || !identity){
-            return 
+        if (!osBackend || !identity) {
+            return
         }
         setIsLoading(true)
         osBackend.create_wallet_canister(walletName).then(
-            (v)=>{
+            (v) => {
+                get_wallets()
                 setIsLoading(false)
-            },(e)=>{
+            }, (e) => {
                 setIsLoading(false)
             }
         )
 
     }
+    function refresh() {
+        
+        get_wallets()
+        get_balance()
+        // get_owner()
+         
+    }
+    function onStake(){
+        stake_balance()
+    }
     return (
         <>
             <Flex direction='column' ml='20%' mr="20%">
-               {isLoading && 
-               <Flex zIndex={999999} height="100%" bg="#000" opacity ="0.5"  width="100%" position="fixed" align="center" justifyContent="center" top={0} left={0}>
-                <Spinner color='purple.500'  size="xl" speed="0.65s"></Spinner>
-               </Flex>}                                                                                 
+                {isLoading &&
+                    <Flex zIndex={999999} height="100%" bg="#000" opacity="0.5" width="100%" position="fixed" align="center" justifyContent="center" top={0} left={0}>
+                        <Spinner color='purple.500' size="xl" speed="0.65s"></Spinner>
+                    </Flex>}
                 <Flex mt={6} direction='column'>
                     <Text>
                         <Heading>BitcoinOS</Heading>  An Asset Management System Based  On RGB  And  ICP
@@ -168,24 +262,33 @@ export default function Stake() {
 
                     <Flex width='100%' mb={4}>
                         <Text mr={2}>Wallets:</Text>
-                        <Select onChange={onChangeWallet} mr={10} width="30%">
+                        <Select onChange={onChangeWallet} mr={10} width="30%" placeholder='Select Wallet'>
                             {
-                                walletList.map((item, index) => (<option key={index} value={item}>{item}</option>))
+                                walletList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.wallet_canister.toText()}>{item.name}</option>))
                             }
                         </Select>
                         <Button
                             bgColor="purple.500"
                             color="white"
-                            isDisabled={!isLogin || !isWalletInited}
+                            isDisabled={!isLogin || !isOsInited}
                             _hover={{ bg: "purple.300", borderColor: "purple.500" }}
                             onClick={onOpen}
                         >
                             Create Wallet
                         </Button>
+                        <Spacer></Spacer>
+                        <Button
+                            bgColor="purple.500"
+                            color="white"
+                            isDisabled={!isLogin || !isOsInited}
+                            _hover={{ bg: "purple.300", borderColor: "purple.500" }}
+                            onClick={refresh}>
+                            <BsArrowClockwise />
+                        </Button>
                         <Modal
-                           isOpen={isOpen}
+                            isOpen={isOpen}
                             onClose={onClose}
-                         >
+                        >
                             <ModalOverlay />
                             <ModalContent>
                                 <ModalHeader>Create your wallet</ModalHeader>
@@ -193,19 +296,19 @@ export default function Stake() {
                                 <ModalBody pb={6}>
                                     <FormControl>
                                         <FormLabel>wallet name</FormLabel>
-                                        <Input  placeholder="wallet name"   onChange={event => setWalletName(event.currentTarget.value)}/>
+                                        <Input placeholder="wallet name" onChange={event => setWalletName(event.currentTarget.value)} />
                                     </FormControl>
                                 </ModalBody>
 
                                 <ModalFooter>
-                                    <Button  
-                                     bgColor="purple.500"
-                                     color="white"
-                                    _hover={{ bg: "purple.300", borderColor: "purple.500" }}
-                                     mr={3} onClick={onCreateWallet}>
+                                    <Button
+                                        bgColor="purple.500"
+                                        color="white"
+                                        _hover={{ bg: "purple.300", borderColor: "purple.500" }}
+                                        mr={3} onClick={onCreateWallet}>
                                         create
                                     </Button>
-                                    <Button color="white"  bgColor="gray.500" onClick={onClose}>Cancel</Button>
+                                    <Button color="white" bgColor="gray.500" onClick={onClose}>Cancel</Button>
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
@@ -246,7 +349,7 @@ export default function Stake() {
                                             <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
                                             <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 OSBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
-                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }} isDisabled={stakeBalance <= 0}>Stake</Button>}
+                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }} isDisabled={stakeBalance <= 0} onClick={onStake}>Stake</Button>}
                                                 {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }}>Login</Button>}
                                             </Flex>
                                         </VStack>

@@ -29,21 +29,21 @@ import {
   BsTwitterX,
 } from 'react-icons/bs'
 import { useInternetIdentity } from "ic-use-internet-identity";
-import UserStore from "../store/index"
+// import UserStore from "../store/index"
 import {LoginButton}  from "./LoginButton"
  
 const Header = () => {
   const { identity } = useInternetIdentity();
-  const { principal, setPrincipal } = UserStore();
+  // const { principal, setPrincipal } = UserStore();
   const { colorMode, toggleColorMode } = useColorMode()
-  useEffect(() => {
-    if (!identity) {
-      setPrincipal("");
-    }else{
-      setPrincipal(identity.getPrincipal().toString());
-    }
+  // useEffect(() => {
+  //   if (!identity) {
+  //     setPrincipal("");
+  //   }else{
+  //     setPrincipal(identity.getPrincipal().toString());
+  //   }
       
-  }, [identity]);
+  // }, [identity]);
 
   // Get the principal from the backend when an identity is available
   // useEffect(() => {

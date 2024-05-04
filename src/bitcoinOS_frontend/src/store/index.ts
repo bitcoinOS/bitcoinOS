@@ -1,12 +1,13 @@
 import {create} from 'zustand';
-interface IUserState {
-    principal: string;
-    setPrincipal: (principal:string) => void;
+interface IWalletState {
+  currentWallet: string;
+  setCurrentWallet: (currentWallet:string) => void;
   }
-  const UserStore = create<IUserState>((set) => ({
-    principal :"",
-    setPrincipal:(principal:string)=>set({principal})
+
+  const WalletStore = create<IWalletState>((set) => ({
+    currentWallet :"",
+    setCurrentWallet:(currentWallet:string)=>set({currentWallet})
   }))
 
 
-  export default UserStore;
+  export default WalletStore;
