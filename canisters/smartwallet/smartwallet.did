@@ -45,21 +45,26 @@ type Result_7 = variant { Ok : principal; Err : WalletError };
 type Result_8 = variant { Ok : PublicKeyResponse; Err : WalletError };
 type Result_9 = variant { Ok : StakingRecord; Err : WalletError };
 type StakingRecord = record {
+  status : StakingStatus;
   sender_address : text;
+  duration_in_millisecond : nat64;
+  staking_address : text;
   txid : text;
-  recipient : principal;
   network : BitcoinNetwork;
   sender : principal;
+  actual_amount : nat64;
+  staking_canister : principal;
   sent_time : nat64;
   sent_amount : nat64;
-  recipient_address : text;
   sender_canister : principal;
+  updated_time : nat64;
 };
 type StakingRequest = record {
   staking_address : text;
   staking_canister : principal;
   amount : nat64;
 };
+type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
 type TransactionLog = record {
   txs : vec TransferInfo;
   send_time : nat64;

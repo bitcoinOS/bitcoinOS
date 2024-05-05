@@ -57,16 +57,28 @@ pub async fn balance() -> Result<Satoshi, StakingError> {
 /// NOTE: If the amount of staking record data is too large, it can be migrated to a dedicated data canister cluster.
 #[update]
 async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
-    let sender = ic_caller();
-    check_normal_principal(sender).expect("msg: caller is not normal principal");
+    let sender_canister = ic_caller();
+    check_normal_principal(sender_canister).expect("msg: caller is not normal principal");
 
     check_network(req.network).expect("msg: invalid network");
+
+    let staking_canister = ic_cdk::id();
+    let staking_address = p2pkh_address::serve(repositories::metadata::get_metadata())
+        .await
+        .expect("Staking pool must has a bitcoin address");
 
     let updated_time = ic_time();
     let duration = repositories::metadata::get_metadata().duration_in_millisecond;
 
-    register_staking::serve(sender, updated_time, req, duration)
-        .expect("msg: failed to register staking record")
+    register_staking::serve(
+        sender_canister,
+        updated_time,
+        req,
+        duration,
+        staking_canister,
+        staking_address,
+    )
+    .expect("msg: failed to register staking record")
 
     // TODO: Schedule a task to check the txid confirmed for 6 blocks by bitcoin network, and update the staking record to `Confirmed`
 }

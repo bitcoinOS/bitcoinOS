@@ -1,9 +1,10 @@
 use ic_cdk::api::management_canister::main::CanisterId;
+use wallet::utils::ic_time;
 
 use crate::{
     domain::{
         request::{StakingRequest, TransferInfo, TransferRequest},
-        Metadata, StakingRecord,
+        Metadata, StakingRecord, StakingStatus,
     },
     error::WalletError,
     repositories,
@@ -39,9 +40,13 @@ pub(super) async fn serve(
         sender_address,
         sent_amount: req.amount,
         sent_time,
-        recipient: req.staking_canister,
-        recipient_address: req.staking_address,
+        duration_in_millisecond: 0,
         network,
+        staking_canister: req.staking_canister,
+        staking_address: req.staking_address,
+        actual_amount: 0,
+        status: StakingStatus::Pending,
+        updated_time: ic_time(),
     };
 
     repositories::staking_record::save(stakings)?;

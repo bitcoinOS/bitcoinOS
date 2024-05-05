@@ -135,9 +135,13 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
         staking_canister,
     };
 
-    // TODO: Call register staking record to staking pool
+    // Spawn another task to call register staking record to staking pool
     ic_cdk::spawn(async move {
-        let _ = register_staking::serve(register_req).await;
+        let _ = register_staking::serve(register_req)
+            .await
+            .expect("Failed to register staking record");
+
+        // TODO: Schedule a task to check the staking record status from Staking pool canister for 8 blocks by bitcoin network, and update the staking record to `Confirmed`
     });
 
     Ok(txid)
