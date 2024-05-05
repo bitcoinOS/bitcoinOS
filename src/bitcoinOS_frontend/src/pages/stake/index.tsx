@@ -219,6 +219,7 @@ export default function Stake() {
                       )
                   })
             }
+            refresh()
             setIsLoading(false);
         })
     }
@@ -253,29 +254,35 @@ export default function Stake() {
     }
     function onStake(){
         stake_balance()
+        
     }
     return (
         <>
-            <Flex direction='column' ml='20%' mr="20%">
+            <Flex direction='column' ml='20%' >
                 {isLoading &&
                     <Flex zIndex={999999} height="100%" bg="#000" opacity="0.5" width="100%" position="fixed" align="center" justifyContent="center" top={0} left={0}>
                         <Spinner color='purple.500' size="xl" speed="0.65s"></Spinner>
                     </Flex>}
-                <Flex mt={6} direction='column'>
+                <Flex mt={6} direction='row'>
+                    <Flex direction='column'>
                     <Text>
-                        <Heading>BitcoinOS</Heading>  An Asset Management System Based  On RGB  And  ICP
+                        <Heading>bitcoinOS</Heading>  A Decentralized Multi-chain Bitcoin Assets Management System
                     </Text>
                     <Text mt={2}>
-                        <Heading>OSBTC</Heading> Earn BTC  And Secure OS Points
+                        <Heading>osBTC</Heading> Earn BTC  And Secure OS Points
 
                     </Text>
+                    </Flex>
+                    <Flex>
+                        <Image src="bitcoinos.jpg"></Image>
+                    </Flex>
                 </Flex>
                 <Flex mt={5}>
                     <Text pr={3}>
                         TVL: ${tvl}
                     </Text>
-
-                    <Text>
+                    <Spacer></Spacer>
+                    <Text mr="30%">
                         Users: {users}
                     </Text>
                 </Flex>
@@ -341,7 +348,7 @@ export default function Stake() {
                             <TabList>
                                 <Tab mr={10}>Stake</Tab>
                                 <Tab mr={10}>Unstake</Tab>
-                                {/* <Tab mr={10}>Detail</Tab> */}
+                                <Tab mr={10}>Detail</Tab>
                             </TabList>
 
                             <TabPanels>
@@ -351,7 +358,7 @@ export default function Stake() {
                                             <HStack align='end'>
                                                 <Text fontSize='sm'>BTC Balance:{balance}</Text>
                                                 <Spacer></Spacer>
-                                                <Text fontSize='sm'>OSBTC Balance:{totalBalance}</Text>
+                                                <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
                                             </HStack>
                                             <HStack bg="gray.200" p={1} borderRadius="lg">
                                                 <InputGroup>
@@ -368,7 +375,7 @@ export default function Stake() {
                                                 </InputGroup>
                                             </HStack>
                                             <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
-                                            <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 OSBTC</Text>
+                                            <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
                                                 {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Stake</Button>}
                                                 {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }}>Login</Button>}
@@ -379,9 +386,9 @@ export default function Stake() {
                                 <TabPanel>
                                     <Text p={4} color="purple.500">Please note that unstaking will come soon</Text>
                                 </TabPanel>
-                                {/* <TabPanel>
-                                    <p>Three!</p>
-                                </TabPanel> */}
+                                <TabPanel>
+                                    <p>Please note that detail will come soon</p>
+                                </TabPanel>
                             </TabPanels>
                         </Tabs>
                     </Flex>

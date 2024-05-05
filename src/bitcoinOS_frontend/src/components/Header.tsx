@@ -76,7 +76,7 @@ const Header = () => {
         <HStack gap='5' display={{ base: 'none', md: 'flex' }}>
           <ChakraLink as={ReactRouterLink} _hover={{ textDecoration: "none" }} to='/'>
             <Heading as="h1" size="lg" letterSpacing={"tighter"}>
-              OSBTC
+              osBTC
             </Heading>
           </ChakraLink>
           {/* <Spacer />
@@ -110,7 +110,7 @@ const Header = () => {
         <HStack gap='5' display={{ base: 'none', md: 'flex' }}>
           <ChakraLink
             isExternal
-            aria-label='Go to Chakra UI GitHub page'
+            aria-label='Go to bitcoinOS GitHub page'
             href="https://github.com/bitcoinOS/bitcoinOS"
           >
             <Icon
@@ -123,8 +123,8 @@ const Header = () => {
           </ChakraLink>
           <ChakraLink
             isExternal
-            aria-label='Go to Chakra UI Discord page'
-            href='/discord'
+            aria-label='Go to bitcoinOS X page'
+            href='https://twitter.com/BitcoinOS_labs'
           >
             <Icon
               as={BsTwitterX}
