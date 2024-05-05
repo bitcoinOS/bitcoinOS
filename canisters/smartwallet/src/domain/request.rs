@@ -4,7 +4,7 @@ use ic_cdk::api::management_canister::{
     bitcoin::{BitcoinNetwork, Satoshi},
     main::CanisterId,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use wallet::{
     tx::{RecipientAmount, RecipientAmountVec},
     utils::str_to_bitcoin_address,
@@ -66,4 +66,14 @@ pub struct StakingRequest {
     pub staking_canister: CanisterId,
     pub staking_address: String,
     pub amount: Satoshi,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
+pub struct RegisterStakingRequest {
+    pub txid: String,
+    pub sender_address: String,
+    pub sent_amount: Satoshi,
+    pub sent_time: u64,
+    pub network: BitcoinNetwork,
+    pub staking_canister: CanisterId,
 }

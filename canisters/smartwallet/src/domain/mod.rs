@@ -161,7 +161,7 @@ pub struct TransactionLedger {
     pub send_time: u64,
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize)]
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct StakingRecord {
     pub txid: TxID,
     pub sender: Principal,

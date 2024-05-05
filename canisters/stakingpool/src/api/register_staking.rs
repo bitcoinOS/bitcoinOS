@@ -6,7 +6,7 @@ use crate::{
     repositories,
 };
 
-pub(crate) async fn serve(
+pub(crate) fn serve(
     sender: CanisterId,
     updated_time: u64,
     req: RegisterStakingRequest,
