@@ -40,28 +40,28 @@ impl Storable for Metadata {
     const BOUND: Bound = Bound::Unbounded;
 }
 
-/// The `State` will store the canister info when a user create a wallet.
-/// A wallet is also a canister, call `SmartWallet`
-#[derive(Debug, CandidType, Deserialize, Clone)]
-pub struct WalletOwner {
-    pub canister_id: Principal,
-    pub owner: Principal,
-    pub created_at: u64,
-}
+// /// The `State` will store the canister info when a user create a wallet.
+// /// A wallet is also a canister, call `SmartWallet`
+// #[derive(Debug, CandidType, Deserialize, Clone)]
+// pub struct WalletOwner {
+//     pub canister_id: Principal,
+//     pub owner: Principal,
+//     pub created_at: u64,
+// }
 
-/// For a type to be used in Stable storage like `StableBtreeMap`, it need to implement the `Storable` trait,
-/// which specifies how the type can be serialized/deserialized.
-impl Storable for WalletOwner {
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
+// /// For a type to be used in Stable storage like `StableBtreeMap`, it need to implement the `Storable` trait,
+// /// which specifies how the type can be serialized/deserialized.
+// impl Storable for WalletOwner {
+//     fn from_bytes(bytes: Cow<[u8]>) -> Self {
+//         Decode!(bytes.as_ref(), Self).unwrap()
+//     }
 
-    fn to_bytes(&self) -> Cow<[u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
+//     fn to_bytes(&self) -> Cow<[u8]> {
+//         Cow::Owned(Encode!(self).unwrap())
+//     }
 
-    const BOUND: Bound = Bound::Unbounded;
-}
+//     const BOUND: Bound = Bound::Unbounded;
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, CandidType, Deserialize)]
 pub struct WalletInfoKey {

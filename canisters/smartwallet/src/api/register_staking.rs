@@ -1,5 +1,3 @@
-use ic_cdk::api::management_canister::main::CanisterId;
-
 use crate::{
     domain::{request::RegisterStakingRequest, StakingRecord},
     error::WalletError,
