@@ -39,10 +39,12 @@ pub async fn p2pkh_address() -> String {
         .expect("A Smart wallet must have a Bitcoin Address")
 }
 
-/// Returns the utxos of this canister address
+/// Returns the utxos of this canister default bitcoin address
 #[update]
-pub async fn utxos(address: String) -> Result<GetUtxosResponse, WalletError> {
+pub async fn utxos() -> Result<GetUtxosResponse, WalletError> {
     let network = metadata::get_metadata().network;
+    let address = p2pkh_address().await;
+
     utxos::serve(address, network).await
 }
 
@@ -67,11 +69,12 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
         })
 }
 
-/// Returns the balance of the given bitcoin address if the caller is the owner
+/// Returns the balance of this canister default address if the caller is the owner
 #[update]
-pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
+pub async fn balance() -> Result<Satoshi, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
+    let address = p2pkh_address().await;
 
     balance::serve(address, metadata).await
 }
