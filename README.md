@@ -101,6 +101,10 @@ just deploy_wallet
 
 just deploy_ii
 just deploy_staking
+
+# front 
+npm i
+npm run start
 ```
 
 Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
