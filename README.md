@@ -106,8 +106,7 @@ dfx canister call os create_staking_pool_canister '(record { duration_in_millise
 # just deploy_wallet
 
 just deploy_ii
-# create stake pool
-dfx canister call os create_staking_pool_canister '(record { duration_in_millisecond = 86; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10 })'
+  
 # frontend
 dfx generate
 npm i

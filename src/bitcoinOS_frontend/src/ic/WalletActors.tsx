@@ -14,9 +14,9 @@ import { ReactNode } from "react";
 import { _SERVICE } from "../../../declarations/smartwallet/smartwallet.did";
 import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
-import WalletStore from "../store/index"
+import {WalletStore} from "../store/index"
 
-export  {type  Result_1,type StakingRequest, type Result_3}  from "../../../declarations/smartwallet/smartwallet.did";
+export  {type  Result_1,type StakingRequest, type Result_3,type Result_4 as StakingRecords, type StakingRecord }  from "../../../declarations/smartwallet/smartwallet.did";
 
 const actorContext = createActorContext<_SERVICE>();
 export const useWalletBackend = createUseActorHook<_SERVICE>(actorContext);

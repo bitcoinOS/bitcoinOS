@@ -87,5 +87,6 @@ service : (InitArgument) -> {
   p2pkh_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
   register_staking_record : (RegisterStakingRequest) -> (Result_4);
+  tvl : () -> (nat64) query;
   utxos : (opt UtxoFilter) -> (Result_5);
 }

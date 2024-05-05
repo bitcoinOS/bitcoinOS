@@ -70,11 +70,11 @@ const Header = () => {
     >
       <Flex width='10%'>
         <Image
-          height='50px' src="./logo1.png"></Image >
+          height='50px' src="./logo.png"></Image >
       </Flex>
       <Flex align="center" ml="10%" >
         <HStack gap='5' display={{ base: 'none', md: 'flex' }}>
-          <ChakraLink as={ReactRouterLink} _hover={{ textDecoration: "none" }} to='/'>
+          <ChakraLink as={ReactRouterLink} _hover={{ textDecoration: "none" }}  to='/'>
             <Heading as="h1" size="lg" letterSpacing={"tighter"}>
               osBTC
             </Heading>

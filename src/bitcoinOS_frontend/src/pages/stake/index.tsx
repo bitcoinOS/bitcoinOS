@@ -25,22 +25,35 @@ import {
     Spinner
 }
     from '@chakra-ui/react'
+import {
+    Table,
+    Thead,
+    Tbody,
+    Tfoot,
+    Tr,
+    Th,
+    Td,
+    TableCaption,
+    TableContainer,
+} from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
 import {
-    BsArrowClockwise,
+    BsArrowClockwise, BsBoxArrowUpRight
 } from 'react-icons/bs'
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react"
 import { Select } from "@chakra-ui/react"
 import { useEffect, useState, useRef } from 'react';
-import WalletStore from "../../store/index"
-import { useWalletBackend, Result_1 as BalanceResult, StakingRequest,Result_3 as StakeResult } from "../../ic/WalletActors";
-import { useOsBackend, WalletInfo,StakingPoolInfo } from "../../ic/OsActors";
+import { WalletStore, StakepoolStore } from "../../store/index"
+import { useWalletBackend, Result_1 as BalanceResult, StakingRequest, Result_3 as StakeResult, StakingRecords, StakingRecord } from "../../ic/WalletActors";
+import { useOsBackend, WalletInfo, StakingPoolInfo } from "../../ic/OsActors";
+import { useSatkePoolBackend } from "../../ic/StakePoolActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
 import { Principal } from "@dfinity/principal"
 export default function Stake() {
     const toast = useToast();
     const { actor: walletBackend } = useWalletBackend();
     const { actor: osBackend } = useOsBackend();
+    const { actor: stakeBackend } = useSatkePoolBackend();
     const { identity } = useInternetIdentity();
     const [walletList, setWalletList] = useState<WalletInfo[]>([])
     const [wallet, setWallet] = useState<string>("")
@@ -50,6 +63,7 @@ export default function Stake() {
 
     const [stakeBalance, setStakeBalance] = useState<number>(0)
     const { currentWallet, setCurrentWallet } = WalletStore();
+    const { stakepoolCanister, setStakepoolCanister } = StakepoolStore();
     const [balanceError, setBalanceError] = useState<string>("");
     const [isLogin, setIslogin] = useState<boolean>(false)
 
@@ -62,14 +76,13 @@ export default function Stake() {
     const { isOpen, onOpen, onClose } = useDisclosure()
     const [walletName, setWalletName] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [stakeAddress,setStakeAddress] = useState<string>("")
-    const [stakeCanister,setStakeCanister] = useState<Principal>();
-
+    const [stakeAddress, setStakeAddress] = useState<string>("")
+    const [stakeCanister, setStakeCanister] = useState<Principal>();
+    const [stakeRecords, setStakeRecords] = useState<StakingRecord[]>([])
 
     const btc = 100000000
     useEffect(() => {
-        setTvl(100)
-        setUsers(30)
+
         if (identity) {
             setIslogin(true)
         }
@@ -104,13 +117,25 @@ export default function Stake() {
         if (identity && osBackend) {
             get_wallets()
             get_stake_pool()
+
         }
     }, [osBackend, identity]);
 
     useEffect(() => {
-        setTotalBalance(11)
+        if (identity && stakeBackend) {
+            get_tvl()
+        }
+    }, [stakeBackend, identity]);
+
+    useEffect(() => {
+        if (identity && walletBackend) {
+            get_tvl()
+        }
+    }, [walletBackend, identity]);
+
+    useEffect(() => {
         get_balance()
-        // setBalance(13)
+        get_stake_records()
     }, [wallet])
 
     function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
@@ -119,8 +144,6 @@ export default function Stake() {
         if (selectOption.dataset.id) {
             setCurrentWallet(selectOption.dataset.id)
         }
-
-
     }
     function handleChangeStake(event: React.ChangeEvent<HTMLInputElement>) {
         const value = parseFloat(event.target.value)
@@ -135,14 +158,15 @@ export default function Stake() {
     function onMaxClick() {
         setStakeBalance(balance)
     }
-    function get_stake_pool(){
+    function get_stake_pool() {
         if (!osBackend) return;
         setIsLoading(true)
         osBackend.list_staking_pool().then((value: StakingPoolInfo[]) => {
-            if(value.length >0){
+            if (value.length > 0) {
                 const stakePool = value[0]
                 setStakeAddress(stakePool.bitcoin_address)
                 setStakeCanister(stakePool.staking_pool_canister)
+                setStakepoolCanister(stakePool.staking_pool_canister.toText())
             }
             setIsLoading(false)
         })
@@ -155,26 +179,67 @@ export default function Stake() {
             setIsLoading(false)
         })
     }
-    function get_balance() {
-        if (!walletBackend) return;
-        if(wallet.length <=1) return;
+
+    function get_wallet_count() {
+        if (!osBackend) return;
+        setIsLoading(true)
+        osBackend.count_wallet().then((value: BigInt) => {
+            setUsers(Number(value));
+            setIsLoading(false)
+        })
+    }
+
+    function get_tvl() {
+        if (!stakeBackend) return;
+        // if(wallet.length <=1) return;
         setIsLoading(true);
         // walletBackend.metadata().then((value) => {
         //     console.log(value);
         // })
-        walletBackend.balance(wallet).then((value: BalanceResult) => {
-            if(value.Err){
+        stakeBackend.tvl().then((v: BigInt) => {
+            setTvl(Number(v) * 1.0 / btc)
+            setIsLoading(false);
+        })
+    }
+    function get_stake_records() {
+        if (!walletBackend) return;
+        // if(wallet.length <=1) return;
+        setIsLoading(true);
+
+        walletBackend.list_staking().then((v: StakingRecords) => {
+            if (v.Ok) {
+                const records: StakingRecord[] = v.Ok
+                setStakeRecords(records)
+                let r: BigInt = BigInt(0)
+                records.map((v) => {
+                    r = r + v.sent_amount
+                })
+                setTotalBalance(Number(r) * 1.0 / btc)
+            }
+            setIsLoading(false);
+        })
+    }
+
+    function get_balance() {
+        if (!walletBackend) return;
+        // if(wallet.length <=1) return;
+        setIsLoading(true);
+        // walletBackend.metadata().then((value) => {
+        //     console.log(value);
+        // })
+        walletBackend.balance().then((value: BalanceResult) => {
+            if (value.Err) {
                 toast({
                     title: 'Balance',
                     description: "get balance error",
                     status: 'error',
-                    position:"top",
+                    position: "top",
                     duration: 9000,
                     isClosable: true,
-                  })
-            }else{
-                const b:bigint = value.Ok
-                setBalance(Number(b)/btc)
+                })
+            } else {
+                const b: bigint = value.Ok
+                setBalance(Number(b) / btc)
             }
             setIsLoading(false);
         })
@@ -185,50 +250,60 @@ export default function Stake() {
             setWalletList(value);
         })
     }
+    // function stake_pool_canister(){
+    //     if(osBackend){
+    //         osBackend.list_staking_pool().then((value: StakingPoolInfo[]) => {
+    //             if(value.length >0){
+    //                 const stakePool = value[0]
+    //                 setStakepoolCanister(stakePool.staking_pool_canister.toText())
+    //             }
+    //         })
+    //     }
+    // }
     function stake_balance() {
         if (!walletBackend) return
-        if(!stakeCanister) return
+        if (!stakeCanister) return
         setIsLoading(true);
         const stakeRequest: StakingRequest = {
             'staking_address': stakeAddress,
-            'staking_canister':  stakeCanister,
+            'staking_canister': stakeCanister,
             'amount': BigInt(stakeBalance * btc),
         }
-        walletBackend.staking_to_pool(stakeRequest).then((result:StakeResult)=>{
-            if(result.Err){
+        walletBackend.staking_to_pool(stakeRequest).then((result: StakeResult) => {
+            if (result.Err) {
                 toast({
                     title: 'Stake',
                     description: "stake balance error",
                     status: 'error',
-                    position:"top",
+                    position: "top",
                     duration: 9000,
                     isClosable: true,
-                  })
-            }else{
+                })
+            } else {
                 toast({
                     title: 'Stake',
                     status: 'success',
-                    position:"top",
+                    position: "top",
                     duration: 9000,
                     isClosable: true,
                     render: () => (
                         <Box color='white' p={3} bg='green.500'>
-                          <Text>stake balance success</Text>
-                          <Text>{"txid:"+result.Ok}</Text>
+                            <Text>stake balance success</Text>
+                            <Text>{"txid:" + result.Ok}</Text>
                         </Box>
-                      )
-                  })
+                    )
+                })
             }
             refresh()
             setIsLoading(false);
         })
     }
-    function get_owner() {
-        if (!walletBackend) return;
-        walletBackend.owner().then((value) => {
-            console.log(value);
-        })
-    }
+    // function get_owner() {
+    //     if (!walletBackend) return;
+    //     walletBackend.owner().then((value) => {
+    //         console.log(value);
+    //     })
+    // }
     function onCreateWallet() {
         onClose()
         if (!osBackend || !identity) {
@@ -238,6 +313,7 @@ export default function Stake() {
         osBackend.create_wallet_canister(walletName).then(
             (v) => {
                 get_wallets()
+                get_wallet_count()
                 setIsLoading(false)
             }, (e) => {
                 setIsLoading(false)
@@ -246,15 +322,20 @@ export default function Stake() {
 
     }
     function refresh() {
-        
+
         get_wallets()
         get_balance()
-        // get_owner()
-         
+        get_tvl()
+        get_stake_records()
+        get_wallet_count()
     }
-    function onStake(){
+    function onStake() {
         stake_balance()
-        
+
+    }
+    function sub(s:string){
+        const l = s.length
+        return s.substring(0,3)+"..."+s.substring(l-3,l);
     }
     return (
         <>
@@ -265,21 +346,21 @@ export default function Stake() {
                     </Flex>}
                 <Flex mt={6} direction='row'>
                     <Flex direction='column'>
-                    <Text>
-                        <Heading>bitcoinOS</Heading>  A Decentralized Multi-chain Bitcoin Assets Management System
-                    </Text>
-                    <Text mt={2}>
-                        <Heading>osBTC</Heading> Earn BTC  And Secure OS Points
+                        <Text>
+                            <Heading>bitcoinOS</Heading>  A Decentralized Multi-chain Bitcoin Assets Management System
+                        </Text>
+                        <Text mt={2}>
+                            <Heading>osBTC</Heading> Earn BTC  And Secure OS Points
 
-                    </Text>
+                        </Text>
                     </Flex>
-                    <Flex>
+                    {/* <Flex>
                         <Image src="bitcoinos.jpg"></Image>
-                    </Flex>
+                    </Flex> */}
                 </Flex>
                 <Flex mt={5}>
                     <Text pr={3}>
-                        TVL: ${tvl}
+                        TVL: {tvl}
                     </Text>
                     <Spacer></Spacer>
                     <Text mr="30%">
@@ -296,20 +377,20 @@ export default function Stake() {
                             }
                         </Select>
                         <Button
-                            bgColor="purple.500"
+                            bgColor="orange.400"
                             color="white"
                             isDisabled={!isLogin || !isOsInited}
-                            _hover={{ bg: "purple.300", borderColor: "purple.500" }}
+                            _hover={{ bg: "orange.200", borderColor: "orange.400" }}
                             onClick={onOpen}
                         >
                             Create Wallet
                         </Button>
                         <Spacer></Spacer>
                         <Button
-                            bgColor="purple.500"
+                            bgColor="orange.400"
                             color="white"
                             isDisabled={!isLogin || !isOsInited}
-                            _hover={{ bg: "purple.300", borderColor: "purple.500" }}
+                            _hover={{ bg: "orange.200", borderColor: "orange.400" }}
                             onClick={refresh}>
                             <BsArrowClockwise />
                         </Button>
@@ -346,9 +427,9 @@ export default function Stake() {
                     <Flex>
                         <Tabs>
                             <TabList>
-                                <Tab mr={10}>Stake</Tab>
-                                <Tab mr={10}>Unstake</Tab>
-                                <Tab mr={10}>Detail</Tab>
+                                <Tab mr={10} _selected={{ color: 'orange.400' }}>Stake</Tab>
+                                <Tab mr={10} _selected={{ color: 'orange.400' }}>Unstake</Tab>
+                                <Tab mr={10} _selected={{ color: 'orange.400' }}>Detail</Tab>
                             </TabList>
 
                             <TabPanels>
@@ -358,27 +439,37 @@ export default function Stake() {
                                             <HStack align='end'>
                                                 <Text fontSize='sm'>BTC Balance:{balance}</Text>
                                                 <Spacer></Spacer>
-                                                <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
+                                                <Flex>
+                                                    <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
+                                                    {/* <Button
+                                                    bgColor="orange.400"
+                                                    color="white"
+                                                    size='sm'
+                                                    _hover={{ bg: "orange.200", borderColor: "orange.400" }}
+                                                    onClick={refresh}>
+                                                    <BsBoxArrowUpRight  />
+                                                </Button> */}
+                                                </Flex>
                                             </HStack>
                                             <HStack bg="gray.200" p={1} borderRadius="lg">
                                                 <InputGroup>
                                                     <InputLeftElement
                                                         pointerEvents="none"
                                                     >
-                                                        <Image src='https://res1.sft-api.com/token/WBTC.png' boxSize="1.2rem" />
+                                                        <Image src='./favicon.png' boxSize="1.2rem" />
                                                     </InputLeftElement>
                                                     <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
 
                                                     <InputRightElement  >
-                                                        <Button color="purple.500" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
+                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
                                                     </InputRightElement>
                                                 </InputGroup>
                                             </HStack>
                                             <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
                                             <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
-                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Stake</Button>}
-                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="purple.500" _hover={{ bg: "purple.300", borderColor: "purple.500" }}>Login</Button>}
+                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Stake</Button>}
+                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }}>Login</Button>}
                                             </Flex>
                                         </VStack>
                                     </Flex>
@@ -387,7 +478,29 @@ export default function Stake() {
                                     <Text p={4} color="purple.500">Please note that unstaking will come soon</Text>
                                 </TabPanel>
                                 <TabPanel>
-                                    <p>Please note that detail will come soon</p>
+                                    <TableContainer>
+                                        <Table variant='simple'>
+                                            <Thead>
+                                                <Tr>
+                                                    <Th>Date</Th>
+                                                    <Th>Stake pool</Th>
+                                                    <Th> Ammount(BTC) </Th>
+                                                </Tr>
+                                            </Thead>
+                                            <Tbody>
+                                               {
+                                                 stakeRecords.map((v,i)=>(
+                                                     
+                                                    <Tr>
+                                                    <Td>{new Date(Number(v.sent_time)/1000000).toDateString()}</Td>
+                                                    <Td>{sub(v.recipient_address)} </Td>
+                                                    <Td >{Number(v.sent_amount)/btc}</Td>
+                                                  </Tr>
+                                                 ))
+                                               }
+                                            </Tbody>
+                                        </Table>
+                                    </TableContainer>
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
