@@ -8,19 +8,20 @@ import {
   createUseActorHook,
   isIdentityExpiredError,
 } from "ic-use-actor";
-import { canisterId, idlFactory } from "../../../declarations/staking_pool/index";
+import { canisterId, idlFactory } from "../../../declarations/stakingpool/index";
 
 import { ReactNode } from "react";
-import { _SERVICE } from "../../../declarations/staking_pool/staking_pool.did";
+import { _SERVICE } from "../../../declarations/stakingpool/stakingpool.did";
 import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
+import {StakepoolStore} from "../store/index"
 
 const actorContext = createActorContext<_SERVICE>();
 export const useSatkePoolBackend = createUseActorHook<_SERVICE>(actorContext);
 
 export default function StakePoolActors({ children }: { children: ReactNode }) {
   const { identity, clear } = useInternetIdentity();
-
+  const { stakepoolCanister, setStakepoolCanister } = StakepoolStore();
   const handleRequest = (data: InterceptorRequestData) => {
     console.log("onRequest", data.args, data.methodName);
     return data.args;
@@ -67,7 +68,7 @@ export default function StakePoolActors({ children }: { children: ReactNode }) {
 
   return (
     <ActorProvider<_SERVICE>
-      canisterId={canisterId}
+      canisterId={stakepoolCanister}
       context={actorContext}
       identity={identity}
       idlFactory={idlFactory}

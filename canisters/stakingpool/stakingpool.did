@@ -92,6 +92,7 @@ service : (InitArgument) -> {
   redeem : (RedeemRequest) -> (Result_3);
   redeem_logs : () -> (Result_4) query;
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
+
   tvl : () -> (nat64) query;
   utxos : (opt UtxoFilter) -> (Result_5);
 }

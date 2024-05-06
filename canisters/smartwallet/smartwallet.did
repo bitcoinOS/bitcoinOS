@@ -104,8 +104,10 @@ service : (InitArgument) -> {
   owner : () -> (Result_7) query;
   p2pkh_address : () -> (text);
   public_key : () -> (Result_8);
+
   register_staking : (RegisterStakingRequest) -> (Result_9);
   staking_to_pool : (StakingRequest) -> (Result_3);
   transfer_from_p2pkh : (TransferRequest) -> (Result_3);
   utxos : () -> (Result_10);
+
 }
