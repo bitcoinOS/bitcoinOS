@@ -207,12 +207,12 @@ export default function Stake() {
         setIsLoading(true);
 
         walletBackend.list_staking().then((v: StakingRecords) => {
-            if (v.Ok) {
+            if ('Ok' in v) {
                 const records: StakingRecord[] = v.Ok
                 setStakeRecords(records)
-                let r: BigInt = BigInt(0)
+                let r: bigint  =  0n
                 records.map((v) => {
-                    r = r + v.sent_amount
+                    r = r + (v.sent_amount)
                 })
                 setTotalBalance(Number(r) * 1.0 / btc)
             }
@@ -228,7 +228,7 @@ export default function Stake() {
         //     console.log(value);
         // })
         walletBackend.balance().then((value: BalanceResult) => {
-            if (value.Err) {
+            if ('Err' in value) {
                 toast({
                     title: 'Balance',
                     description: "get balance error",
@@ -270,7 +270,7 @@ export default function Stake() {
             'amount': BigInt(stakeBalance * btc),
         }
         walletBackend.staking_to_pool(stakeRequest).then((result: StakeResult) => {
-            if (result.Err) {
+            if ('Err' in result) {
                 toast({
                     title: 'Stake',
                     description: "stake balance error",
@@ -493,7 +493,7 @@ export default function Stake() {
                                                      
                                                     <Tr>
                                                     <Td>{new Date(Number(v.sent_time)/1000000).toDateString()}</Td>
-                                                    <Td>{sub(v.recipient_address)} </Td>
+                                                    <Td>{sub(v.staking_address)} </Td>
                                                     <Td >{Number(v.sent_amount)/btc}</Td>
                                                   </Tr>
                                                  ))
