@@ -42,14 +42,15 @@ type RegisterStakingRequest = record {
   sender_address : text;
   txid : text;
   network : BitcoinNetwork;
+  sender : principal;
   sent_time : nat64;
   sent_amount : nat64;
 };
 type Result = variant { Ok : nat64; Err : StakingError };
-type Result_1 = variant { Ok : vec RedeemLog; Err : StakingError };
+type Result_1 = variant { Ok : vec StakingRecord; Err : StakingError };
 type Result_2 = variant { Ok : Metadata; Err : StakingError };
 type Result_3 = variant { Ok : text; Err : StakingError };
-type Result_4 = variant { Ok : StakingRecord; Err : StakingError };
+type Result_4 = variant { Ok : vec RedeemLog; Err : StakingError };
 type Result_5 = variant { Ok : GetUtxosResponse; Err : StakingError };
 type StakingError = variant {
   AppendRedeemLogError : text;
@@ -67,12 +68,15 @@ type StakingRecord = record {
   status : StakingStatus;
   sender_address : text;
   duration_in_millisecond : nat64;
+  staking_address : text;
   txid : text;
   network : BitcoinNetwork;
   sender : principal;
   actual_amount : nat64;
+  staking_canister : principal;
   sent_time : nat64;
   sent_amount : nat64;
+  sender_canister : principal;
   updated_time : nat64;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
@@ -81,12 +85,14 @@ type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
 service : (InitArgument) -> {
   balance : () -> (Result);
   counter : () -> (nat) query;
-  logs : () -> (Result_1) query;
+  list_staking : () -> (Result_1) query;
   metadata : () -> (Result_2) query;
   network : () -> (NetworkResponse) query;
   p2pkh_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
-  register_staking_record : (RegisterStakingRequest) -> (Result_4);
+  redeem_logs : () -> (Result_4) query;
+  register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
+
   tvl : () -> (nat64) query;
   utxos : (opt UtxoFilter) -> (Result_5);
 }

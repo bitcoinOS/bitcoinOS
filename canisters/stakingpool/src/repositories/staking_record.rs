@@ -6,6 +6,11 @@ use crate::{
     error::StakingError,
 };
 
+/// List all staking records
+pub(crate) fn list_staking_records() -> Vec<StakingRecord> {
+    STATE.with_borrow(|s| s.staking_records.iter().map(|(_, r)| r).collect())
+}
+
 /// Calculate the total amount staked
 /// TODO: FIX using `actual_amount`
 pub(crate) fn sum_staking_amount() -> Satoshi {
@@ -13,7 +18,7 @@ pub(crate) fn sum_staking_amount() -> Satoshi {
 }
 
 /// Save staking record if it doesn't exist, otherwise return StakingRecordAlreadyExists
-pub fn save(record: &StakingRecord) -> Result<(), StakingError> {
+pub(crate) fn save(record: &StakingRecord) -> Result<(), StakingError> {
     STATE.with(|s| {
         let records = &mut s.borrow_mut().staking_records;
         let key = record.txid.clone();
@@ -52,7 +57,7 @@ fn update_status(
     })
 }
 
-pub fn confirmed_record(
+pub(crate) fn confirmed_record(
     txid: TxID,
     received_amount: Satoshi,
     updated_time: u64,
@@ -65,16 +70,16 @@ pub fn confirmed_record(
     )
 }
 
-pub fn redeeming_record(txid: TxID, updated_time: u64) -> Result<(), StakingError> {
+pub(crate) fn redeeming_record(txid: TxID, updated_time: u64) -> Result<(), StakingError> {
     update_status(txid, StakingStatus::Redeeming, updated_time, None)
 }
 
-pub fn redeemed_record(txid: TxID, updated_time: u64) -> Result<(), StakingError> {
+pub(crate) fn redeemed_record(txid: TxID, updated_time: u64) -> Result<(), StakingError> {
     update_status(txid, StakingStatus::Redeemed, updated_time, None)
 }
 
 /// Validate the sender is the staker and the amount is valid
-pub fn validate_staker_amount(
+pub(crate) fn validate_staker_amount(
     staker: CanisterId,
     txid: &TxID,
     redeem_time: u64,

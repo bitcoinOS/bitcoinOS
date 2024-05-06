@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub(crate) fn count() -> u64 {
-    STATE.with(|s| s.borrow().wallet_owners.len())
+    STATE.with(|s| s.borrow().wallet_infos.len())
 }
 
 pub(crate) fn list_wallet() -> Vec<WalletInfo> {

@@ -38,6 +38,9 @@ pub enum WalletError {
     #[error("Staking record {0:?} already exists")]
     StakingRecordAlreadyExists(String),
 
+    #[error("Call staking pool register staking record error: {0:?}")]
+    RegisterStakingRecordError(String),
+
     #[error("Append transfer log error: {0:?}")]
     AppendTransferLogError(String),
 

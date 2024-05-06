@@ -161,17 +161,34 @@ pub struct TransactionLedger {
     pub send_time: u64,
 }
 
+/// A Staking record is the record of a staked Bitcoin, its status will be `Pending` or `Confirmed` or `Redeeming` or `Redeemed`.
+/// When the record is created, it will be `Pending` and received_amount will be 0.
+/// When the staking transactoin is confirmed for 6 blocks by Bitcoin network, received_amount will be updated and status will be `Confirmed`.
+/// When the staking record is redeemed, its status will be `Redeeming`.
+/// When the redeemed tx is confirmed for 6 blocks by Bitcoin network, status will be `Redeemed`.
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct StakingRecord {
     pub txid: TxID,
     pub sender: Principal,
     pub sender_canister: CanisterId,
-    pub sender_address: String, // Bitcoin address
+    pub sender_address: String,
     pub sent_amount: Satoshi,
     pub sent_time: u64,
-    pub recipient: CanisterId,
-    pub recipient_address: String, // Bitcoin address
+    pub duration_in_millisecond: u64,
     pub network: BitcoinNetwork,
+    pub staking_canister: CanisterId,
+    pub staking_address: String,
+    pub actual_amount: Satoshi,
+    pub status: StakingStatus,
+    pub updated_time: u64,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub enum StakingStatus {
+    Pending,
+    Confirmed,
+    Redeeming,
+    Redeemed,
 }
 
 impl Storable for StakingRecord {
