@@ -96,6 +96,11 @@ just build_staking
 # Deploy os canister
 just deploy_os
 
+# Mint cycles on local network if you need
+wallet=$(dfx identity get-wallet)
+dfx ledger fabricate-cycles --t 2000 --canister $wallet
+dfx wallet balance
+
 # Deposit cycles to os canister if os canister cycles are not enought
 dfx canister deposit-cycles 2000000000000 os
 
