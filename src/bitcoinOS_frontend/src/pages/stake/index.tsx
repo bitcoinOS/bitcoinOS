@@ -210,7 +210,7 @@ export default function Stake() {
             if ('Ok' in v) {
                 const records: StakingRecord[] = v.Ok
                 setStakeRecords(records)
-                let r: bigint  =  0n
+                let r: bigint = 0n
                 records.map((v) => {
                     r = r + (v.sent_amount)
                 })
@@ -333,9 +333,9 @@ export default function Stake() {
         stake_balance()
 
     }
-    function sub(s:string){
+    function sub(s: string) {
         const l = s.length
-        return s.substring(0,3)+"..."+s.substring(l-3,l);
+        return s.substring(0, 3) + "..." + s.substring(l - 3, l);
     }
     return (
         <>
@@ -370,12 +370,17 @@ export default function Stake() {
                 <Box mt={2} boxShadow="lg" border="1px" borderColor="gray.200" borderRadius="md" mr="30%" p={3} zIndex={4}>
 
                     <Flex width='100%' mb={4}>
-                        <Text mr={2}>Wallets:</Text>
-                        <Select onChange={onChangeWallet} mr={10} width="30%" placeholder='Select Wallet'>
-                            {
-                                walletList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.wallet_canister.toText()}>{item.name}</option>))
-                            }
-                        </Select>
+                        <Flex direction='column'>
+                            <Flex>
+                                <Text mr={2}>Wallets:</Text>
+                                <Select onChange={onChangeWallet} mr={10} width="100%" placeholder='Select Wallet'>
+                                    {
+                                        walletList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.wallet_canister.toText()}>{item.name}</option>))
+                                    }
+                                </Select>
+                            </Flex>
+                            {wallet.length >0 && <Text fontSize='sm' mt="2">{(wallet)}</Text>}
+                        </Flex>
                         <Button
                             bgColor="orange.400"
                             color="white"
@@ -488,16 +493,16 @@ export default function Stake() {
                                                 </Tr>
                                             </Thead>
                                             <Tbody>
-                                               {
-                                                 stakeRecords.map((v,i)=>(
-                                                     
-                                                    <Tr>
-                                                    <Td>{new Date(Number(v.sent_time)/1000000).toDateString()}</Td>
-                                                    <Td>{sub(v.staking_address)} </Td>
-                                                    <Td >{Number(v.sent_amount)/btc}</Td>
-                                                  </Tr>
-                                                 ))
-                                               }
+                                                {
+                                                    stakeRecords.map((v, i) => (
+
+                                                        <Tr>
+                                                            <Td>{new Date(Number(v.sent_time) / 1000000).toDateString()}</Td>
+                                                            <Td>{sub(v.staking_address)} </Td>
+                                                            <Td >{Number(v.sent_amount) / btc}</Td>
+                                                        </Tr>
+                                                    ))
+                                                }
                                             </Tbody>
                                         </Table>
                                     </TableContainer>
