@@ -29,8 +29,7 @@
     "bitcoinOS_frontend": {
       "dependencies": [
         "os",
-        "stakingpool",
-        "smartwallet"
+        "internet_identity"
       ],
       "source": [
         "src/bitcoinOS_frontend/dist"
