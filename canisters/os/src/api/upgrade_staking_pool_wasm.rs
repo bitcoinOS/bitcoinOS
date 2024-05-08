@@ -1,5 +1,5 @@
 use candid::Encode;
-use ic_cdk::api::management_canister::main::{CanisterId, WasmModule};
+use ic_cdk::api::management_canister::main::{CanisterId, CanisterInstallMode, WasmModule};
 
 use crate::{domain::request::InitStakingPoolArgument, error::Error, repositories};
 
@@ -27,6 +27,7 @@ pub(super) async fn serve(
     create_staking_pool::install_staking_pool_canister_code(
         staking_pool_canister,
         staking_pool_wasm,
+        CanisterInstallMode::Upgrade,
         arg_bytes,
     )
     .await

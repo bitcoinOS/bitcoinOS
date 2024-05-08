@@ -32,6 +32,7 @@ pub async fn serve(
     install_wallet_canister_code(
         wallet_canister_id,
         wallet_wasm,
+        CanisterInstallMode::Install,
         name,
         metadata.network,
         metadata.steward_canister,
@@ -62,6 +63,7 @@ async fn create_new_wallet_canister(owners: Vec<Principal>) -> Result<Principal,
 pub(super) async fn install_wallet_canister_code(
     wallet_id: Principal,
     wallet_wasm: WasmModule,
+    mode: CanisterInstallMode,
     name: String,
     network: BitcoinNetwork,
     steward_canister: CanisterId,
@@ -77,7 +79,7 @@ pub(super) async fn install_wallet_canister_code(
     let arg =
         Encode!(&init_wallet).map_err(|e| Error::CandidEncodeError(e.to_string()).to_string())?;
     let install_args = InstallCodeArgument {
-        mode: CanisterInstallMode::Install,
+        mode,
         canister_id: wallet_id,
         wasm_module: wallet_wasm,
         arg,

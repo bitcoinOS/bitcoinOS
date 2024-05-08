@@ -10,6 +10,5 @@ pub const PRINCIPAL_MAX: Principal = Principal::from_slice(&[255; 29]);
 pub const WALLET_WASM: &[u8] =
     std::include_bytes!("./../../../target/wasm32-unknown-unknown/release/smartwallet.wasm");
 
-// TODO: Fix wasm
 pub const STAKING_POOL_WASM: &[u8] =
     std::include_bytes!("./../../../target/wasm32-unknown-unknown/release/stakingpool.wasm");

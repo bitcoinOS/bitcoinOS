@@ -1,4 +1,4 @@
-use ic_cdk::api::management_canister::main::{CanisterId, WasmModule};
+use ic_cdk::api::management_canister::main::{CanisterId, CanisterInstallMode, WasmModule};
 
 use crate::repositories;
 
@@ -18,6 +18,7 @@ pub(super) async fn serve(
     create_wallet::install_wallet_canister_code(
         wallet_canister,
         wallet_wasm,
+        CanisterInstallMode::Upgrade,
         wallet_info.name,
         wallet_info.network,
         wallet_info.steward_canister,

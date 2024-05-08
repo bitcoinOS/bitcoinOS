@@ -103,7 +103,8 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
 /// Returns TVL of this staking pool canister
 #[query]
 async fn tvl() -> Satoshi {
-    balance().await.unwrap()
+    // balance().await.unwrap()
+    tvl::serve()
 }
 
 /// Returns all staking record lists of this canister

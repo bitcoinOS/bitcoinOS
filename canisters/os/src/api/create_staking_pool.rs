@@ -41,7 +41,13 @@ pub(crate) async fn serve(
     let arg = Encode!(&arg).map_err(|e| Error::CandidEncodeError(e.to_string()).to_string())?;
 
     // install wallet wasm module
-    install_staking_pool_canister_code(staking_canister_id, staking_pool_wasm, arg).await?;
+    install_staking_pool_canister_code(
+        staking_canister_id,
+        staking_pool_wasm,
+        CanisterInstallMode::Install,
+        arg,
+    )
+    .await?;
 
     Ok(staking_canister_id)
 }
@@ -66,10 +72,11 @@ async fn create_new_staking_pool_canister(owners: Vec<Principal>) -> Result<Prin
 pub(super) async fn install_staking_pool_canister_code(
     staking_canister_id: CanisterId,
     staking_wasm: WasmModule,
+    mode: CanisterInstallMode,
     arg: Vec<u8>,
 ) -> Result<(), String> {
     let install_args = InstallCodeArgument {
-        mode: CanisterInstallMode::Install,
+        mode,
         canister_id: staking_canister_id,
         wasm_module: staking_wasm,
         arg,

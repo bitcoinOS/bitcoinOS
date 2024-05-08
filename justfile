@@ -47,5 +47,5 @@ mint_cycles:
     dfx ledger fabricate-cycles --t 2000 --canister $wallet
     dfx wallet balance
 
-deposit_cycles:
+deposit_os:
     dfx canister deposit-cycles 20000000000000 os
