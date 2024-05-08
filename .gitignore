@@ -24,6 +24,7 @@ dist/
 
 # environment variables
 .env
+*.bak
 
 # wasm
 **.wasm

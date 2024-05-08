@@ -347,10 +347,11 @@ export default function Stake() {
                 <Flex mt={6} direction='row'>
                     <Flex direction='column'>
                         <Text>
-                            <Heading>bitcoinOS</Heading>  A Decentralized Multi-chain Bitcoin Assets Management System
+                            <Heading>bitcoinOS</Heading>  A Decentralized Bitcoin Finance & Assets Management Platform
                         </Text>
+                        <br />
                         <Text mt={2}>
-                            <Heading>osBTC</Heading> Earn BTC  And Secure OS Points
+                            <Heading>osBTC</Heading> Earn BTCs And Credits
 
                         </Text>
                     </Flex>
