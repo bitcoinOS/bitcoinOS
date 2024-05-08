@@ -133,6 +133,7 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
         sent_time,
         network,
         staking_canister,
+        sender: owner,
     };
 
     // Spawn another task to call register staking record to staking pool

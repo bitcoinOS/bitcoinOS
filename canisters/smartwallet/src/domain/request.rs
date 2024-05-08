@@ -1,5 +1,5 @@
 use bitcoin::Amount;
-use candid::CandidType;
+use candid::{CandidType, Principal};
 use ic_cdk::api::management_canister::{
     bitcoin::{BitcoinNetwork, Satoshi},
     main::CanisterId,
@@ -71,6 +71,7 @@ pub struct StakingRequest {
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct RegisterStakingRequest {
     pub txid: String,
+    pub sender: Principal,
     pub sender_address: String,
     pub sent_amount: Satoshi,
     pub sent_time: u64,
