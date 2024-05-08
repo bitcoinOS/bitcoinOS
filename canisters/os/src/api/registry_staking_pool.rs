@@ -2,6 +2,7 @@ use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId
 
 use crate::{domain::StakingPoolInfo, error::Error, repositories};
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn serve(
     staking_pool_id: CanisterId,
     network: BitcoinNetwork,

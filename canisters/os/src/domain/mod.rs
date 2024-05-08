@@ -7,14 +7,6 @@ use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
-use self::request::InitStakingPoolArgument;
-
-// use crate::constants::METADATA_SIZE;
-
-// const WALLET_OWNER_MAX_SIZE: u32 = 100;
-// const WALLET_ACTION_MAX_SIZE: u32 = 100;
-// const STAKING_POOL_MAX_SIZE: u32 = 100;
-
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
     pub network: BitcoinNetwork,

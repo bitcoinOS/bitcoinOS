@@ -1,10 +1,6 @@
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId};
 
-use crate::{
-    context::STATE,
-    domain::{request::InitStakingPoolArgument, StakingPoolInfo},
-    error::Error,
-};
+use crate::{context::STATE, domain::StakingPoolInfo, error::Error};
 
 pub(crate) fn get(staking_canister: &CanisterId) -> Option<StakingPoolInfo> {
     STATE.with_borrow(|s| s.staking_pools.get(staking_canister))
@@ -20,6 +16,7 @@ pub(crate) fn list_staking_pool() -> Vec<StakingPoolInfo> {
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn create_staking_pool(
     canister_id: CanisterId,
     network: BitcoinNetwork,
