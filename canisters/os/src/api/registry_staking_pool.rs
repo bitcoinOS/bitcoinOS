@@ -1,17 +1,16 @@
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId};
 
-use crate::{
-    domain::{request::InitStakingPoolArgument, StakingPoolInfo},
-    error::Error,
-    repositories,
-};
+use crate::{domain::StakingPoolInfo, error::Error, repositories};
 
 pub(crate) fn serve(
     staking_pool_id: CanisterId,
     network: BitcoinNetwork,
     os_canister: CanisterId,
     created_at: u64,
-    arg: InitStakingPoolArgument,
+    name: String,
+    description: String,
+    annual_interest_rate: u64,
+    duration_in_millisecond: u64,
     bitcoin_address: String,
 ) -> Result<StakingPoolInfo, Error> {
     repositories::staking_pool::create_staking_pool(
@@ -19,7 +18,10 @@ pub(crate) fn serve(
         network,
         os_canister,
         created_at,
-        arg,
+        name,
+        description,
+        annual_interest_rate,
+        duration_in_millisecond,
         bitcoin_address,
     )
 }

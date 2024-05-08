@@ -4,6 +4,8 @@ use candid::CandidType;
 pub enum Error {
     #[error("Wallet canister {wallet_canister:?} already exists")]
     WalletAlreadyExists { wallet_canister: String },
+    #[error("Wallet canister {0:?} not found")]
+    WalletNotFound(String),
     #[error("Create wallet canister failed: {msg:?}")]
     CreateCanisterFailed { msg: String },
     #[error("Stable write error: {msg:?}")]
@@ -16,6 +18,8 @@ pub enum Error {
     GetStakingPoolAddressFailed { msg: String },
     #[error("UnAuthorized: {0:?}")]
     UnAuthorized(String),
+    #[error("Candid encode error: {0:?}")]
+    CandidEncodeError(String),
     #[error("Unknown error")]
     Unknown,
 }

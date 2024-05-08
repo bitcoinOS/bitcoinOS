@@ -1,12 +1,16 @@
 use candid::{Encode, Principal};
-use ic_cdk::api::management_canister::main::{
-    create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
-    CreateCanisterArgument, InstallCodeArgument, WasmModule,
+use ic_cdk::api::management_canister::{
+    bitcoin::BitcoinNetwork,
+    main::{
+        create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
+        CreateCanisterArgument, InstallCodeArgument, WasmModule,
+    },
 };
 
 use crate::{
     constants::DEFAULT_CYCLES_PER_CANISTER,
     domain::{request::InitWalletArgument, Metadata},
+    error::Error,
 };
 
 pub async fn serve(
@@ -16,14 +20,6 @@ pub async fn serve(
     metadata: Metadata,
     wallet_wasm: WasmModule,
 ) -> Result<CanisterId, String> {
-    let init_wallet = InitWalletArgument {
-        name,
-        network: metadata.network,
-        steward_canister: metadata.steward_canister,
-        owner: Some(owner),
-    };
-
-    let arg = Encode!(&init_wallet).unwrap();
     // create wallet canister id
     let wallet_canister_id = create_new_wallet_canister(vec![owner, os]).await?;
 
@@ -33,7 +29,15 @@ pub async fn serve(
     );
 
     // install wallet wasm module
-    install_wallet_canister_code(wallet_canister_id, wallet_wasm, arg).await?;
+    install_wallet_canister_code(
+        wallet_canister_id,
+        wallet_wasm,
+        name,
+        metadata.network,
+        metadata.steward_canister,
+        Some(owner),
+    )
+    .await?;
 
     Ok(wallet_canister_id)
 }
@@ -55,11 +59,23 @@ async fn create_new_wallet_canister(owners: Vec<Principal>) -> Result<Principal,
         .map(|(c,)| c.canister_id)
 }
 
-async fn install_wallet_canister_code(
+pub(super) async fn install_wallet_canister_code(
     wallet_id: Principal,
     wallet_wasm: WasmModule,
-    arg: Vec<u8>,
+    name: String,
+    network: BitcoinNetwork,
+    steward_canister: CanisterId,
+    owner: Option<Principal>,
 ) -> Result<(), String> {
+    let init_wallet = InitWalletArgument {
+        name,
+        network,
+        steward_canister,
+        owner,
+    };
+
+    let arg =
+        Encode!(&init_wallet).map_err(|e| Error::CandidEncodeError(e.to_string()).to_string())?;
     let install_args = InstallCodeArgument {
         mode: CanisterInstallMode::Install,
         canister_id: wallet_id,

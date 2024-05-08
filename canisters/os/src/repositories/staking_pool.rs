@@ -6,6 +6,10 @@ use crate::{
     error::Error,
 };
 
+pub(crate) fn get(staking_canister: &CanisterId) -> Option<StakingPoolInfo> {
+    STATE.with_borrow(|s| s.staking_pools.get(staking_canister))
+}
+
 pub(crate) fn list_staking_pool() -> Vec<StakingPoolInfo> {
     STATE.with(|s| {
         s.borrow()
@@ -21,7 +25,10 @@ pub(crate) fn create_staking_pool(
     network: BitcoinNetwork,
     os_canister: CanisterId,
     created_at: u64,
-    arg: InitStakingPoolArgument,
+    name: String,
+    description: String,
+    annual_interest_rate: u64,
+    duration_in_millisecond: u64,
     bitcoin_address: String,
 ) -> Result<StakingPoolInfo, Error> {
     STATE.with(|s| {
@@ -34,11 +41,12 @@ pub(crate) fn create_staking_pool(
             })
         } else {
             let staking_pool = StakingPoolInfo {
-                name: arg.name,
+                name,
                 staking_pool_canister: canister_id,
-                description: arg.description,
+                description,
                 network,
-                annual_interest_rate: arg.annual_interest_rate,
+                annual_interest_rate,
+                duration_in_millisecond,
                 os_canister,
                 created_at,
                 bitcoin_address,

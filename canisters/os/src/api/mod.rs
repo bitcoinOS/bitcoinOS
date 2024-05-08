@@ -11,6 +11,8 @@ mod my_wallet;
 mod registry_staking_pool;
 mod registry_wallet;
 mod staking_pool_increment_one;
+mod upgrade_staking_pool_wasm;
+mod upgrade_wallet_wasm;
 mod wallet_counter_increment_one;
 
 use candid::Principal;
@@ -26,7 +28,7 @@ use crate::{
     constants::{STAKING_POOL_WASM, WALLET_WASM},
     context::STATE,
     domain::{
-        request::{CreateStakingPoolRequest, InitArgument, InitStakingPoolArgument},
+        request::{CreateStakingPoolRequest, InitArgument},
         Action, Metadata, StakingPoolInfo, WalletAction, WalletInfo,
     },
     error::Error,
@@ -75,6 +77,13 @@ async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
     Ok(wallet_canister)
 }
 
+/// Update wallet with new wasm file for tests
+/// TODO: Remove this once tests when deploy to mainnet
+#[ic_cdk::update]
+async fn upgrade_wallet_wasm(wallet_canister: CanisterId) -> Result<(), String> {
+    upgrade_wallet_wasm::serve(wallet_canister, WALLET_WASM.to_owned()).await
+}
+
 /// Create a Staking Pool with given annualized interest rate and duration, name and description
 #[ic_cdk::update]
 async fn create_staking_pool_canister(
@@ -89,37 +98,45 @@ async fn create_staking_pool_canister(
     let os_canister = ic_cdk::id();
     let created_at = ic_cdk::api::time();
     let metadata = repositories::metadata::get_metadata();
-    let init_arg = InitStakingPoolArgument {
-        name: arg.name,
-        description: arg.description,
-        annual_interest_rate: arg.annual_interest_rate,
-        duration_in_millisecond: arg.duration_in_millisecond,
-        network: metadata.network,
-        os_canister,
-    };
 
-    let staking_pool_id =
-        create_staking_pool::serve(init_arg.clone(), STAKING_POOL_WASM.to_owned())
-            .await
-            .map_err(|msg| Error::CreateCanisterFailed { msg })?;
+    let staking_pool_id = create_staking_pool::serve(
+        arg.name.clone(),
+        arg.description.clone(),
+        arg.annual_interest_rate,
+        arg.duration_in_millisecond,
+        metadata.network,
+        os_canister,
+        STAKING_POOL_WASM.to_owned(),
+    )
+    .await
+    .map_err(|msg| Error::CreateCanisterFailed { msg })?;
 
     ic_cdk::print("Created staking pool canister ----------- \n");
 
     let staking_pool_address = fetch_wallet_address(staking_pool_id).await?;
-    // let staking_pool_address  = "abcdefg".to_string();
 
     let info = registry_staking_pool::serve(
         staking_pool_id,
         metadata.network,
         os_canister,
         created_at,
-        init_arg,
+        arg.name,
+        arg.description,
+        arg.annual_interest_rate,
+        arg.duration_in_millisecond,
         staking_pool_address,
     )?;
 
     staking_pool_increment_one::serve()?;
 
     Ok(info)
+}
+
+/// Update staking pool with new wasm file for tests
+/// TODO: Remove this once tests when deploy to mainnet
+#[ic_cdk::update]
+async fn upgrade_staking_pool_wasm(staking_pool_canister: CanisterId) -> Result<(), String> {
+    upgrade_staking_pool_wasm::serve(staking_pool_canister, WALLET_WASM.to_owned()).await
 }
 
 /// Returns the ICP balance of  this canister

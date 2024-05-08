@@ -1,6 +1,7 @@
 use std::ops::RangeBounds;
 
 use candid::Principal;
+use ic_cdk::api::management_canister::main::CanisterId;
 
 use crate::{
     constants::{PRINCIPAL_MAX, PRINCIPAL_MIN},
@@ -15,6 +16,18 @@ pub(crate) fn count() -> u64 {
 
 pub(crate) fn list_wallet() -> Vec<WalletInfo> {
     STATE.with(|s| s.borrow().wallet_infos.iter().map(|(_, w)| w).collect())
+}
+
+pub(crate) fn find_info_by_owner_wallet(
+    owner: Principal,
+    wallet_canister: CanisterId,
+) -> Option<WalletInfo> {
+    STATE.with_borrow(|s| {
+        s.wallet_infos.get(&WalletInfoKey {
+            owner,
+            wallet_canister,
+        })
+    })
 }
 
 pub(crate) fn save(info: WalletInfo) -> Result<(), Error> {
@@ -38,16 +51,7 @@ pub(crate) fn save(info: WalletInfo) -> Result<(), Error> {
 }
 
 /// Find the wallet info list by owner
-/// FIX with range query
-pub(crate) fn find_wallet_info_by_owner(owner: Principal) -> Vec<WalletInfo> {
-    // STATE.with_borrow(|s| {
-    //     s.wallet_infos
-    //         .iter()
-    //         .filter(|(key, _)| key.owner == owner)
-    //         .map(|(_, info)| info)
-    //         .collect()
-    // })
-
+pub(crate) fn find_info_by_owner(owner: Principal) -> Vec<WalletInfo> {
     STATE.with_borrow(|s| {
         s.wallet_infos
             .range(range_owner_filter(owner))

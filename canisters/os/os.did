@@ -9,8 +9,10 @@ type CreateStakingPoolRequest = record {
 type Error = variant {
   StableWriteError : record { msg : text };
   GetStakingPoolAddressFailed : record { msg : text };
+  CandidEncodeError : text;
   WalletAlreadyExists : record { wallet_canister : text };
   UnAuthorized : text;
+  WalletNotFound : text;
   CreateCanisterFailed : record { msg : text };
   StableSetError : record { msg : text };
   Unknown;
@@ -22,9 +24,11 @@ type Metadata = record {
 };
 type Result = variant { Ok : StakingPoolInfo; Err : Error };
 type Result_1 = variant { Ok : principal; Err : Error };
+type Result_2 = variant { Ok; Err : text };
 type StakingPoolInfo = record {
   bitcoin_address : text;
   os_canister : principal;
+  duration_in_millisecond : nat64;
   name : text;
   network : BitcoinNetwork;
   description : text;
@@ -59,5 +63,7 @@ service : (Metadata) -> {
   list_wallet_types : () -> (vec text) query;
   metadata : () -> (Metadata) query;
   my_wallets : () -> (vec WalletInfo) query;
+  upgrade_staking_pool_wasm : (principal) -> (Result_2);
+  upgrade_wallet_wasm : (principal) -> (Result_2);
   wallet_counter : () -> (nat) query;
 }

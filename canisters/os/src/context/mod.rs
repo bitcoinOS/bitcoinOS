@@ -2,7 +2,9 @@ pub mod memory;
 
 use std::cell::RefCell;
 
-use crate::domain::{Metadata, StakingPoolInfo, WalletAction, WalletInfo, WalletInfoKey};
+use crate::domain::{
+    Metadata, StakingPoolInfo, WalletAction, WalletInfo, WalletInfoKey, WalletOwner,
+};
 
 use ic_cdk::api::management_canister::main::CanisterId;
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
@@ -12,7 +14,7 @@ use self::memory::Memory;
 
 pub type Timestamp = u64;
 
-// pub type WalletOwnerStable = StableBTreeMap<CanisterId, WalletOwner, Memory>;
+pub type WalletOwnerStable = StableBTreeMap<CanisterId, WalletOwner, Memory>;
 /// A WalletInfo stable storage has a key with `User Principal` and `Wallet Canister`
 pub type WalletInfoStable = StableBTreeMap<WalletInfoKey, WalletInfo, Memory>;
 pub type WalletLogStable = StableLog<WalletAction, Memory, Memory>;
@@ -31,8 +33,8 @@ pub struct State {
     pub wallet_counter: StableCell<u128, Memory>,
     #[serde(skip, default = "init_stable_staking_pool_counter")]
     pub staking_pool_counter: StableCell<u128, Memory>,
-    // #[serde(skip, default = "init_stable_wallet_owner")]
-    // pub wallet_owners: WalletOwnerStable,
+    #[serde(skip, default = "init_stable_wallet_owner")]
+    pub wallet_owners: WalletOwnerStable,
     #[serde(skip, default = "init_stable_action_log")]
     pub logs: WalletLogStable,
     #[serde(skip, default = "init_stable_staking_pool")]
@@ -47,7 +49,7 @@ impl Default for State {
             metadata: init_stable_metadata(),
             wallet_counter: init_stable_wallet_counter(),
             staking_pool_counter: init_stable_staking_pool_counter(),
-            // wallet_owners: init_stable_wallet_owner(),
+            wallet_owners: init_stable_wallet_owner(),
             logs: init_stable_action_log(),
             staking_pools: init_stable_staking_pool(),
             wallet_infos: init_stable_wallet_info(),
@@ -70,9 +72,9 @@ fn init_stable_staking_pool_counter() -> StableCell<u128, Memory> {
         .expect("Could not initialize sig count memory")
 }
 
-// fn init_stable_wallet_owner() -> WalletOwnerStable {
-//     StableBTreeMap::init(memory::get_wallet_owner_memory())
-// }
+fn init_stable_wallet_owner() -> WalletOwnerStable {
+    StableBTreeMap::init(memory::get_wallet_owner_memory())
+}
 
 fn init_stable_action_log() -> WalletLogStable {
     StableLog::init(

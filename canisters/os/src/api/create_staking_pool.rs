@@ -1,25 +1,44 @@
 use candid::{Encode, Principal};
-use ic_cdk::api::management_canister::main::{
-    create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
-    CreateCanisterArgument, InstallCodeArgument, WasmModule,
+use ic_cdk::api::management_canister::{
+    bitcoin::BitcoinNetwork,
+    main::{
+        create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
+        CreateCanisterArgument, InstallCodeArgument, WasmModule,
+    },
 };
 
-use crate::{constants::DEFAULT_CYCLES_PER_CANISTER, domain::request::InitStakingPoolArgument};
+use crate::{
+    constants::DEFAULT_CYCLES_PER_CANISTER, domain::request::InitStakingPoolArgument, error::Error,
+};
 
 pub(crate) async fn serve(
-    arg: InitStakingPoolArgument,
+    name: String,
+    description: String,
+    annual_interest_rate: u64,
+    duration_in_millisecond: u64,
+    network: BitcoinNetwork,
+    os_canister: CanisterId,
     staking_pool_wasm: WasmModule,
 ) -> Result<CanisterId, String> {
     // create wallet canister id
-    let staking_canister_id = create_new_staking_pool_canister(vec![arg.os_canister]).await?;
+    let staking_canister_id = create_new_staking_pool_canister(vec![os_canister]).await?;
 
     ic_cdk::println!(
         "-------------- created staking pool canister id: {:?} --------------- \n",
         staking_canister_id.to_text()
     );
 
+    let arg = InitStakingPoolArgument {
+        name,
+        description,
+        annual_interest_rate,
+        duration_in_millisecond,
+        network,
+        os_canister,
+    };
+
     // Translate arg for CreateStaking
-    let arg = Encode!(&arg).unwrap();
+    let arg = Encode!(&arg).map_err(|e| Error::CandidEncodeError(e.to_string()).to_string())?;
 
     // install wallet wasm module
     install_staking_pool_canister_code(staking_canister_id, staking_pool_wasm, arg).await?;
@@ -44,7 +63,7 @@ async fn create_new_staking_pool_canister(owners: Vec<Principal>) -> Result<Prin
         .map(|(c,)| c.canister_id)
 }
 
-async fn install_staking_pool_canister_code(
+pub(super) async fn install_staking_pool_canister_code(
     staking_canister_id: CanisterId,
     staking_wasm: WasmModule,
     arg: Vec<u8>,
