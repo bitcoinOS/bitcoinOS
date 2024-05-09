@@ -18,13 +18,20 @@ type Error = variant {
   Unknown;
   StakingPoolAlreadyExists : record { staking_pool_id : text };
 };
+type InitArgument = record {
+  network : BitcoinNetwork;
+  steward_canister : principal;
+  wallet_cycles : opt nat64;
+};
 type Metadata = record {
   network : BitcoinNetwork;
   steward_canister : principal;
+  wallet_cycles : nat64;
 };
 type Result = variant { Ok : StakingPoolInfo; Err : Error };
 type Result_1 = variant { Ok : principal; Err : Error };
-type Result_2 = variant { Ok; Err : text };
+type Result_2 = variant { Ok : nat64; Err : Error };
+type Result_3 = variant { Ok; Err : text };
 type StakingPoolInfo = record {
   bitcoin_address : text;
   os_canister : principal;
@@ -51,7 +58,7 @@ type WalletInfo = record {
   created_at : nat64;
   steward_canister : principal;
 };
-service : (Metadata) -> {
+service : (InitArgument) -> {
   canister_balance : () -> (Tokens);
   count_staking_pool : () -> (nat) query;
   count_wallet : () -> (nat64) query;
@@ -63,7 +70,8 @@ service : (Metadata) -> {
   list_wallet_types : () -> (vec text) query;
   metadata : () -> (Metadata) query;
   my_wallets : () -> (vec WalletInfo) query;
-  upgrade_staking_pool_wasm : (principal) -> (Result_2);
-  upgrade_wallet_wasm : (principal) -> (Result_2);
+  set_wallet_cycles : (nat64) -> (Result_2);
+  upgrade_staking_pool_wasm : (principal) -> (Result_3);
+  upgrade_wallet_wasm : (principal) -> (Result_3);
   wallet_counter : () -> (nat) query;
 }

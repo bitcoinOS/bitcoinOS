@@ -29,6 +29,7 @@ type RegisterStakingRequest = record {
   sender_address : text;
   txid : text;
   network : BitcoinNetwork;
+  sender : principal;
   staking_canister : principal;
   sent_time : nat64;
   sent_amount : nat64;

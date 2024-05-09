@@ -52,14 +52,6 @@ pub async fn utxos() -> Result<GetUtxosResponse, WalletError> {
     utxos::serve(address, network).await
 }
 
-/// Returns all utxos of this canister's address
-/// There're multiple address in a canister
-/// TODO:
-// #[update]
-// pub async fn self_utxos() -> Result<Vec<GetUtxosResponse>, WalletError> {
-//     todo!()
-// }
-
 /// Returns this canister's public key with hex string if the caller is the owner
 #[update]
 pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {

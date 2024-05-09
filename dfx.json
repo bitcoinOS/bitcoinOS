@@ -28,7 +28,7 @@
     },
     "bitcoinOS_frontend": {
       "dependencies": [
-        "os",
+       
         "internet_identity"
       ],
       "source": [

@@ -9,6 +9,7 @@ use ic_cdk::api::management_canister::{
 
 use crate::{domain::request::InitStakingPoolArgument, error::Error};
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) async fn serve(
     name: String,
     description: String,

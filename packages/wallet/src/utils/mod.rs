@@ -92,7 +92,7 @@ pub fn calc_fee_and_build_transaction(
     // Assume that any amount below this threshold is dust.
     const DUST_THRESHOLD: u64 = 1_000;
 
-    // TODO: Optimize UTXO selection
+    // FIXME Optimize UTXO selection
     // Select which UTXOs to spend. We naively spend the oldest available UTXOs,
     // even if they were previously spent in a transaction. This isn't a
     // problem as long as at most one transaction is created per block and

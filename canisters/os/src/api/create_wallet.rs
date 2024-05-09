@@ -8,7 +8,6 @@ use ic_cdk::api::management_canister::{
 };
 
 use crate::{
-    constants::DEFAULT_CYCLES_PER_CANISTER,
     domain::{request::InitWalletArgument, Metadata},
     error::Error,
 };
