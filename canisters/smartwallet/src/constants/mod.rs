@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 // The stable store Size for Wallet
 pub const WALLET_SIZE: u64 = 128;
 
@@ -11,3 +13,6 @@ pub const TRANSACTION_LOG_SIZE: u64 = 2_048_000;
 
 /// The daily limit for a wallet in satoshi
 pub const DAILY_LIMIET_SATOSHI: u64 = 10_000_000_000;
+
+/// Two hours for staking pool
+pub const TWO_HOURS: Duration = Duration::from_secs(2 * 60 * 60);

@@ -12,6 +12,7 @@ mod register_staking;
 mod staking_to_pool;
 mod transaction_log;
 mod transfer_from_p2pkh;
+mod update_staking_record;
 mod utxos;
 
 use wallet::bitcoins;
@@ -21,6 +22,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
+use crate::constants::TWO_HOURS;
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TransferInfo, TransferRequest,
 };
@@ -130,11 +132,16 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
 
     // Spawn another task to call register staking record to staking pool
     ic_cdk::spawn(async move {
-        let _ = register_staking::serve(register_req)
+        let info = register_staking::serve(register_req)
             .await
             .expect("Failed to register staking record");
 
         // TODO: Schedule a task to check the staking record status from Staking pool canister for 8 blocks by bitcoin network, and update the staking record to `Confirmed`
+        let timer_id = ic_cdk_timers::set_timer(TWO_HOURS, || {
+            update_staking_record::serve(info).expect("Failed to update staking record");
+        });
+
+        // Save timer id for upgrade canister to reschedule or cancel
     });
 
     Ok(txid)

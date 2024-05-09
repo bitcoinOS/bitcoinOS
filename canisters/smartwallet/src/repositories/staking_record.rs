@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::{context::STATE, domain::StakingRecord, error::WalletError};
 
 pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {
@@ -19,5 +21,22 @@ pub(crate) fn list_staking() -> Vec<StakingRecord> {
             .iter()
             .map(|(_, r)| r.to_owned())
             .collect()
+    })
+}
+
+pub(crate) fn update(info: StakingRecord) -> Result<(), WalletError> {
+    STATE.with_borrow_mut(|s| match s.staking_records.get(&info.txid) {
+        Some(record) => {
+            if info.can_update(&record) {
+                s.staking_records.insert(info.txid.clone(), info);
+                Ok(())
+            } else {
+                Err(WalletError::StakingRecordCantUpdate(info.txid.clone()))
+            }
+        }
+        None => {
+            s.staking_records.insert(info.txid.clone(), info);
+            Ok(())
+        }
     })
 }

@@ -183,12 +183,37 @@ pub struct StakingRecord {
     pub updated_time: u64,
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+impl StakingRecord {
+    pub fn can_update(&self, other: &Self) -> bool {
+        self.status.next() == Some(other.status)
+            && self.txid == other.txid
+            && self.sender == other.sender
+            && self.sender_address == other.sender_address
+            && self.sender_canister == other.sender_canister
+            && self.sent_amount == other.sent_amount
+            && self.actual_amount == other.actual_amount
+            && self.network == other.network
+            && self.updated_time < other.updated_time
+    }
+}
+
+#[derive(Clone, Copy, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StakingStatus {
     Pending,
     Confirmed,
     Redeeming,
     Redeemed,
+}
+
+impl StakingStatus {
+    pub fn next(&self) -> Option<Self> {
+        match self {
+            StakingStatus::Pending => Some(StakingStatus::Confirmed),
+            StakingStatus::Confirmed => Some(StakingStatus::Redeeming),
+            StakingStatus::Redeeming => Some(StakingStatus::Redeemed),
+            StakingStatus::Redeemed => None,
+        }
+    }
 }
 
 impl Storable for StakingRecord {

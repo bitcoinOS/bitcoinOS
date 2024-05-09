@@ -61,7 +61,7 @@ pub async fn send_p2pkh_transaction(
     // Fetching UTXOs
     ic_cdk::print("Fetching UTXOs... \n");
 
-    // TODO: UTXOs maybe very large, need to paginate
+    // FIXME: UTXOs maybe very large, need to paginate
     let utxos = wallet::bitcoins::get_utxos(sender_address.to_string(), network, None)
         .await?
         .utxos;
