@@ -7,9 +7,7 @@ use ic_cdk::api::management_canister::{
     },
 };
 
-use crate::{
-    constants::DEFAULT_CYCLES_PER_CANISTER, domain::request::InitStakingPoolArgument, error::Error,
-};
+use crate::{domain::request::InitStakingPoolArgument, error::Error};
 
 pub(crate) async fn serve(
     name: String,
@@ -19,9 +17,11 @@ pub(crate) async fn serve(
     network: BitcoinNetwork,
     os_canister: CanisterId,
     staking_pool_wasm: WasmModule,
+    wallet_cycles: u64,
 ) -> Result<CanisterId, String> {
     // create wallet canister id
-    let staking_canister_id = create_new_staking_pool_canister(vec![os_canister]).await?;
+    let staking_canister_id =
+        create_new_staking_pool_canister(vec![os_canister], wallet_cycles).await?;
 
     ic_cdk::println!(
         "-------------- created staking pool canister id: {:?} --------------- \n",
@@ -52,7 +52,10 @@ pub(crate) async fn serve(
     Ok(staking_canister_id)
 }
 
-async fn create_new_staking_pool_canister(owners: Vec<Principal>) -> Result<Principal, String> {
+async fn create_new_staking_pool_canister(
+    owners: Vec<Principal>,
+    wallet_cycles: u64,
+) -> Result<Principal, String> {
     let create_args = CreateCanisterArgument {
         settings: Some(CanisterSettings {
             controllers: Some(owners),
@@ -63,7 +66,7 @@ async fn create_new_staking_pool_canister(owners: Vec<Principal>) -> Result<Prin
         }),
     };
 
-    create_canister(create_args, DEFAULT_CYCLES_PER_CANISTER)
+    create_canister(create_args, wallet_cycles as u128)
         .await
         .map_err(|(code, msg)| format!("Created failed: code: {code:?}, msg: {msg:?}"))
         .map(|(c,)| c.canister_id)

@@ -21,7 +21,8 @@ pub async fn serve(
     wallet_wasm: WasmModule,
 ) -> Result<CanisterId, String> {
     // create wallet canister id
-    let wallet_canister_id = create_new_wallet_canister(vec![owner, os]).await?;
+    let wallet_canister_id =
+        create_new_wallet_canister(vec![owner, os], metadata.wallet_cycles).await?;
 
     ic_cdk::println!(
         "created wallet canister id: {:?}",
@@ -43,7 +44,10 @@ pub async fn serve(
     Ok(wallet_canister_id)
 }
 
-async fn create_new_wallet_canister(owners: Vec<Principal>) -> Result<Principal, String> {
+async fn create_new_wallet_canister(
+    owners: Vec<Principal>,
+    wallet_cycles: u64,
+) -> Result<Principal, String> {
     let create_args = CreateCanisterArgument {
         settings: Some(CanisterSettings {
             controllers: Some(owners),
@@ -54,7 +58,7 @@ async fn create_new_wallet_canister(owners: Vec<Principal>) -> Result<Principal,
         }),
     };
 
-    create_canister(create_args, DEFAULT_CYCLES_PER_CANISTER)
+    create_canister(create_args, wallet_cycles as u128)
         .await
         .map_err(|(code, msg)| format!("Created failed: code: {code:?}, msg: {msg:?}"))
         .map(|(c,)| c.canister_id)

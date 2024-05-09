@@ -7,10 +7,13 @@ use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
+use crate::constants::DEFAULT_CYCLES_PER_CANISTER;
+
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
+    pub wallet_cycles: u64,
 }
 
 impl Default for Metadata {
@@ -18,6 +21,7 @@ impl Default for Metadata {
         Self {
             steward_canister: Principal::anonymous(),
             network: BitcoinNetwork::Regtest,
+            wallet_cycles: DEFAULT_CYCLES_PER_CANISTER,
         }
     }
 }

@@ -10,6 +10,7 @@ mod list_wallet_types;
 mod my_wallet;
 mod registry_staking_pool;
 mod registry_wallet;
+mod set_wallet_cycles;
 mod staking_pool_increment_one;
 mod upgrade_staking_pool_wasm;
 mod upgrade_wallet_wasm;
@@ -25,7 +26,7 @@ use ic_ledger_types::{
 };
 
 use crate::{
-    constants::{STAKING_POOL_WASM, WALLET_WASM},
+    constants::{DEFAULT_CYCLES_PER_CANISTER, STAKING_POOL_WASM, WALLET_WASM},
     context::STATE,
     domain::{
         request::{CreateStakingPoolRequest, InitArgument},
@@ -81,7 +82,11 @@ async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
 /// TODO: Remove this once tests when deploy to mainnet
 #[ic_cdk::update]
 async fn upgrade_wallet_wasm(wallet_canister: CanisterId) -> Result<(), String> {
-    upgrade_wallet_wasm::serve(wallet_canister, WALLET_WASM.to_owned()).await
+    if is_controller(&ic_cdk::caller()) {
+        upgrade_wallet_wasm::serve(wallet_canister, WALLET_WASM.to_owned()).await
+    } else {
+        Err("UnAuthorized".to_string())
+    }
 }
 
 /// Create a Staking Pool with given annualized interest rate and duration, name and description
@@ -107,6 +112,7 @@ async fn create_staking_pool_canister(
         metadata.network,
         os_canister,
         STAKING_POOL_WASM.to_owned(),
+        metadata.wallet_cycles,
     )
     .await
     .map_err(|msg| Error::CreateCanisterFailed { msg })?;
@@ -136,7 +142,11 @@ async fn create_staking_pool_canister(
 /// TODO: Remove this once tests when deploy to mainnet
 #[ic_cdk::update]
 async fn upgrade_staking_pool_wasm(staking_pool_canister: CanisterId) -> Result<(), String> {
-    upgrade_staking_pool_wasm::serve(staking_pool_canister, WALLET_WASM.to_owned()).await
+    if is_controller(&ic_cdk::caller()) {
+        upgrade_staking_pool_wasm::serve(staking_pool_canister, WALLET_WASM.to_owned()).await
+    } else {
+        Err("UnAuthorized".to_string())
+    }
 }
 
 /// Returns the ICP balance of  this canister
@@ -152,6 +162,17 @@ async fn canister_balance() -> Tokens {
     {
         Ok(t) => t,
         _ => Tokens::from_e8s(0),
+    }
+}
+
+/// Update the default cycles for a wallet canister when creating a wallet
+/// NOTE: Only controller can update
+#[ic_cdk::update]
+fn set_wallet_cycles(wallet_cycles: u64) -> Result<u64, Error> {
+    if is_controller(&ic_cdk::caller()) {
+        set_wallet_cycles::serve(wallet_cycles)
+    } else {
+        Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
     }
 }
 
@@ -221,6 +242,7 @@ fn init(args: InitArgument) {
             .set(Metadata {
                 network: args.network,
                 steward_canister: args.steward_canister,
+                wallet_cycles: args.wallet_cycles.unwrap_or(DEFAULT_CYCLES_PER_CANISTER),
             })
             .expect("Failed to init metadata of os canister");
     });

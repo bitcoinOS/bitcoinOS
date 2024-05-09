@@ -8,6 +8,7 @@ use super::StakingPoolInfo;
 pub struct InitArgument {
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
+    pub wallet_cycles: Option<u64>,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
