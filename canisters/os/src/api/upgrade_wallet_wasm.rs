@@ -18,7 +18,7 @@ pub(super) async fn serve(
     create_wallet::install_wallet_canister_code(
         wallet_canister,
         wallet_wasm,
-        CanisterInstallMode::Upgrade,
+        CanisterInstallMode::Upgrade(None),
         wallet_info.name,
         wallet_info.network,
         wallet_info.steward_canister,

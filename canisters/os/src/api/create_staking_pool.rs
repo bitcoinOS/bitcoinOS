@@ -64,6 +64,7 @@ async fn create_new_staking_pool_canister(
             memory_allocation: None,
             freezing_threshold: None,
             reserved_cycles_limit: None,
+            wasm_memory_limit: None,
         }),
     };
 

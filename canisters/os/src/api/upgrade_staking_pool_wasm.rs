@@ -27,7 +27,7 @@ pub(super) async fn serve(
     create_staking_pool::install_staking_pool_canister_code(
         staking_pool_canister,
         staking_pool_wasm,
-        CanisterInstallMode::Upgrade,
+        CanisterInstallMode::Upgrade(None),
         arg_bytes,
     )
     .await
