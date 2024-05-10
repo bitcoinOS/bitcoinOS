@@ -3,22 +3,22 @@ type EcdsaCurve = variant { secp256k1 };
 type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
 type InitArgument = record {
   os_canister : principal;
-  duration_in_millisecond : nat64;
   name : text;
   network : BitcoinNetwork;
   description : text;
-  annual_interest_rate : nat64;
+  duration_in_day : nat64;
+  annual_interest_rate : nat16;
 };
 type Metadata = record {
   ecdsa_key_id : EcdsaKeyId;
   os_canister : principal;
   owner : principal;
-  duration_in_millisecond : nat64;
   name : text;
   network : BitcoinNetwork;
   description : text;
+  duration_in_day : nat64;
   updated_time : nat64;
-  annual_interest_rate : nat64;
+  annual_interest_rate : nat16;
 };
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : text; vout : nat32 };
@@ -61,17 +61,18 @@ type StakingError = variant {
 type StakingRecord = record {
   status : StakingStatus;
   sender_address : text;
-  duration_in_millisecond : nat64;
   staking_address : text;
   txid : text;
   network : BitcoinNetwork;
   sender : principal;
+  duration_in_day : nat64;
   actual_amount : nat64;
   staking_canister : principal;
   sent_time : nat64;
   sent_amount : nat64;
   sender_canister : principal;
   updated_time : nat64;
+  annual_interest_rate : nat16;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
@@ -85,6 +86,7 @@ type UtxosResponse = record {
 service : (InitArgument) -> {
   balance : () -> (Result);
   counter : () -> (nat) query;
+  get_staking : (text) -> (opt StakingRecord) query;
   list_staking : () -> (Result_1) query;
   metadata : () -> (Result_2) query;
   network : () -> (NetworkResponse) query;
