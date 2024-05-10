@@ -2,7 +2,7 @@ pub mod memory;
 
 use std::{cell::RefCell, collections::BTreeMap};
 
-use crate::domain::{Metadata, RawWallet, SelfCustodyKey, StakingRecord, TransactionLog, TxID};
+use crate::domain::{Metadata, RawWallet, SelfCustodyKey, StakingRecord, TransactionLog, TxId};
 
 use ic_cdk_timers::TimerId;
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
@@ -13,8 +13,8 @@ use self::memory::Memory;
 pub type Timestamp = u64;
 pub type RawWalletStable = StableBTreeMap<SelfCustodyKey, RawWallet, Memory>;
 pub type TransactionLogStable = StableLog<TransactionLog, Memory, Memory>;
-pub type StakingRecordStable = StableBTreeMap<TxID, StakingRecord, Memory>;
-pub type TimerIdStable = StableBTreeMap<TimerId, Timestamp, Memory>;
+pub type StakingRecordStable = StableBTreeMap<TxId, StakingRecord, Memory>;
+pub type StakingTimerStable = StableBTreeMap<TxId, Timestamp, Memory>;
 
 thread_local! {
     pub static STATE: RefCell<State> = RefCell::new(State::default());
@@ -35,6 +35,8 @@ pub struct State {
     pub logs: TransactionLogStable,
     #[serde(skip, default = "init_stable_staking_record")]
     pub staking_records: StakingRecordStable,
+    #[serde(skip, default = "init_stable_staking_timer")]
+    pub stakingtimers: StakingTimerStable,
 }
 
 impl Default for State {
@@ -45,6 +47,7 @@ impl Default for State {
             wallets: init_stable_wallet(),
             logs: init_stable_transaction_log(),
             staking_records: init_stable_staking_record(),
+            stakingtimers: init_stable_staking_timer(),
         }
     }
 }
@@ -65,6 +68,10 @@ fn init_stable_wallet() -> RawWalletStable {
 
 fn init_stable_staking_record() -> StakingRecordStable {
     StableBTreeMap::init(memory::get_staking_record_memory())
+}
+
+fn init_stable_staking_timer() -> StakingTimerStable {
+    StableBTreeMap::init(memory::get_staking_timer_memory())
 }
 
 fn init_stable_transaction_log() -> TransactionLogStable {

@@ -21,7 +21,7 @@ use crate::constants::DAILY_LIMIET_SATOSHI;
 
 use self::request::TransferInfo;
 
-pub type TxID = String;
+pub type TxId = String;
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {
@@ -171,7 +171,7 @@ pub struct TransactionLedger {
 /// When the redeemed tx is confirmed for 6 blocks by Bitcoin network, status will be `Redeemed`.
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct StakingRecord {
-    pub txid: TxID,
+    pub txid: TxId,
     pub sender: Principal,
     pub sender_canister: CanisterId,
     pub sender_address: String,

@@ -16,6 +16,7 @@ use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
 use constants::DAILY_LIMIET_SATOSHI;
+use domain::TxId;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::export_candid;
 
@@ -64,13 +65,11 @@ async fn init(args: InitArgument) {
 //     rgb::issue_rgb20()
 // }
 
-/// Load timer ids from stable storage after canister upgrade
-#[ic_cdk::post_upgrade]
-fn post_upgrade() {}
-
-// Save the timer ids to stable storage before canister upgrade
-#[ic_cdk::pre_upgrade]
-fn pre_upgrade() {}
+// Load timer ids from stable storage after canister upgrade
+// #[ic_cdk::post_upgrade]
+// fn post_upgrade() {
+//     let staking_records = repositories::staking_record::list_staking().iter().filter(|r| r.tx)
+// }
 
 export_candid!();
 

@@ -1,4 +1,8 @@
-use crate::{context::STATE, domain::StakingRecord, error::WalletError};
+use crate::{
+    context::STATE,
+    domain::{StakingRecord, TxId},
+    error::WalletError,
+};
 
 pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {
     STATE.with(|s| {
@@ -11,6 +15,11 @@ pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {
             Ok(())
         }
     })
+}
+
+/// Get staking record by txid
+pub(crate) fn get_staking(txid: &TxId) -> Option<StakingRecord> {
+    STATE.with_borrow(|s| s.staking_records.get(txid))
 }
 
 pub(crate) fn list_staking() -> Vec<StakingRecord> {

@@ -47,6 +47,9 @@ pub enum WalletError {
     #[error("Call staking pool register staking record error: {0:?}")]
     RegisterStakingRecordError(String),
 
+    #[error("Call staking pool sync staking record error: {0:?}")]
+    SyncStakingRecordError(String),
+
     #[error("Append transfer log error: {0:?}")]
     AppendTransferLogError(String),
 

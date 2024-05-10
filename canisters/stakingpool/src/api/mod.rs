@@ -1,4 +1,5 @@
 mod balance;
+mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
@@ -113,6 +114,13 @@ async fn tvl() -> Satoshi {
 #[query]
 fn list_staking() -> Result<Vec<StakingRecord>, StakingError> {
     Ok(list_staking::serve())
+}
+
+/// Query a staking record of given txid
+/// Returns Some(StakingRecord) if found, otherwise return None
+#[query]
+fn get_staking(txid: String) -> Option<StakingRecord> {
+    get_staking::serve(txid)
 }
 
 /// Returns the network of this canister

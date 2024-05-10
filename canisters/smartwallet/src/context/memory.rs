@@ -19,6 +19,7 @@ const WALLET_MEMORY_ID: MemoryId = MemoryId::new(3);
 const TRANSACTION_LOG_IDX_MEM_ID: MemoryId = MemoryId::new(4);
 const TRANSACTION_LOG_DATA_MEM_ID: MemoryId = MemoryId::new(5);
 const STAKING_RECORD_MEMORY_ID: MemoryId = MemoryId::new(6);
+const STAKING_TIMER_MEMORY_ID: MemoryId = MemoryId::new(7);
 
 thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
@@ -40,6 +41,10 @@ pub(super) fn get_wallet_memory() -> Memory {
 
 pub(super) fn get_staking_record_memory() -> Memory {
     MEMORY_MANAGER.with(|m| m.borrow().get(STAKING_RECORD_MEMORY_ID))
+}
+
+pub(super) fn get_staking_timer_memory() -> Memory {
+    MEMORY_MANAGER.with(|m| m.borrow().get(STAKING_TIMER_MEMORY_ID))
 }
 
 pub(super) fn get_transaction_log_index_memory() -> Memory {

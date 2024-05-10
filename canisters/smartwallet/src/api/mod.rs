@@ -10,11 +10,13 @@ mod public_key;
 
 mod register_staking;
 mod staking_to_pool;
+mod sync_staking_record_status;
 mod transaction_log;
 mod transfer_from_p2pkh;
-mod update_staking_record;
+// mod update_staking_record;
 mod utxos;
 
+use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
 use wallet::domain::response::UtxosResponse;
 use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time};
@@ -23,13 +25,13 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::constants::TWO_HOURS;
+use crate::constants::ONE_HOURS;
 use crate::context::TIMER_IDS;
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TransferInfo, TransferRequest,
 };
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, StakingRecord, TransactionLog};
+use crate::domain::{Metadata, StakingRecord, TransactionLog, TxId};
 use crate::error::WalletError;
 use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};
@@ -132,31 +134,37 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
         sender: owner,
     };
 
-    // Spawn another task to call register staking record to staking pool
-    ic_cdk::spawn(async move {
-        // Register staking record to staking pool cnaister
-        let info = register_staking::serve(register_req)
-            .await
-            .expect("Failed to register staking record");
+    // Register staking record to staking pool cnaister
+    let record = register_staking::serve(register_req)
+        .await
+        .expect("Failed to register staking record");
 
-        // Schedule a task to check the staking record status from Staking pool canister for 8 blocks by bitcoin network, and update the staking record to `Confirmed`
-        let timer_id = ic_cdk_timers::set_timer(TWO_HOURS, || {
-            update_staking_record::serve(info).expect("Failed to update staking record");
-        });
-
-        // Save timer id for upgrade canister to reschedule or cancel
-        TIMER_IDS.with_borrow_mut(|t| t.insert(timer_id, ic_time()));
+    // Schedule a task to check the staking record status from Staking pool canister for 8 blocks by bitcoin network, and update the staking record to `Confirmed`
+    let timer_id = ic_cdk_timers::set_timer(ONE_HOURS, move || {
+        ic_cdk::spawn(async move {
+            sync_and_update_staking_record(record.staking_canister, record.txid.clone()).await
+        })
     });
+
+    // Save timer id for upgrade canister to reschedule or cancel
+    TIMER_IDS.with_borrow_mut(|t| t.insert(timer_id, ic_time()));
 
     Ok(txid)
 }
-
-// async fn sync_staking_status_after_eight_minutes()
 
 /// Register staking record to staking pool by manual if staking btc from a standard bitcoin wallet
 #[update]
 async fn register_staking(req: RegisterStakingRequest) -> Result<StakingRecord, WalletError> {
     register_staking::serve(req).await
+}
+
+/// Sync staking record status from Staking pool canister
+#[update]
+async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
+    let owner = ic_caller();
+    validate_owner(owner)?;
+
+    sync_staking_record_status::serve(txid).await.map(|_| true)
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -243,4 +251,31 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
 
 async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
+}
+
+pub(crate) async fn sync_and_update_staking_record(staking_canister: CanisterId, txid: TxId) {
+    let sync_res = sync_staking_status(staking_canister, txid.clone())
+        .await
+        .expect("Failed to sync staking record");
+
+    match sync_res {
+        None => ic_cdk::print(format!("Staking record {txid:?} not found")),
+        Some(record) => update_staking_record(record).expect("Failed to update staking record"),
+    }
+}
+
+/// Sync staking record from staking pool canister
+pub(crate) async fn sync_staking_status(
+    stakgin_canister: CanisterId,
+    txid: TxId,
+) -> Result<Option<StakingRecord>, WalletError> {
+    // call remote canister
+    let resp: Result<(Option<StakingRecord>,), _> =
+        ic_cdk::call(stakgin_canister, "get_staking", (txid,)).await;
+    resp.map(|(r,)| r)
+        .map_err(|e| WalletError::SyncStakingRecordError(format!("{e:?}")))
+}
+
+fn update_staking_record(staking_record: StakingRecord) -> Result<(), WalletError> {
+    repositories::staking_record::update(staking_record)
 }

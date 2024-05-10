@@ -1,11 +1,15 @@
-
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
 use crate::{
     context::STATE,
-    domain::{StakingRecord, StakingStatus, TxID},
+    domain::{StakingRecord, StakingStatus, TxId},
     error::StakingError,
 };
+
+/// Get staking record by txid
+pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {
+    STATE.with_borrow(|s| s.staking_records.get(&txid))
+}
 
 /// List all staking records
 pub(crate) fn list_staking_records() -> Vec<StakingRecord> {
@@ -33,7 +37,7 @@ pub(crate) fn save(record: &StakingRecord) -> Result<(), StakingError> {
 }
 
 fn update_status(
-    txid: TxID,
+    txid: TxId,
     status: StakingStatus,
     updated_time: u64,
     received_amount: Option<Satoshi>,
@@ -59,7 +63,7 @@ fn update_status(
 }
 
 pub(crate) fn confirmed_record(
-    txid: TxID,
+    txid: TxId,
     received_amount: Satoshi,
     updated_time: u64,
 ) -> Result<(), StakingError> {
@@ -71,18 +75,18 @@ pub(crate) fn confirmed_record(
     )
 }
 
-pub(crate) fn redeeming_record(txid: TxID, updated_time: u64) -> Result<(), StakingError> {
+pub(crate) fn redeeming_record(txid: TxId, updated_time: u64) -> Result<(), StakingError> {
     update_status(txid, StakingStatus::Redeeming, updated_time, None)
 }
 
-pub(crate) fn redeemed_record(txid: TxID, updated_time: u64) -> Result<(), StakingError> {
+pub(crate) fn redeemed_record(txid: TxId, updated_time: u64) -> Result<(), StakingError> {
     update_status(txid, StakingStatus::Redeemed, updated_time, None)
 }
 
 /// Validate the sender is the staker and the amount is valid
 pub(crate) fn validate_staker_amount(
     staker: CanisterId,
-    txid: &TxID,
+    txid: &TxId,
     redeem_time: u64,
 ) -> Result<u64, StakingError> {
     STATE.with_borrow(|s| {
@@ -93,7 +97,12 @@ pub(crate) fn validate_staker_amount(
                     && record.sent_time + record.duration_in_day < redeem_time
                     && record.status == StakingStatus::Confirmed
                 {
-                    let amount = record.actual_amount + calculate_interest(record.actual_amount, record.annual_interest_rate, record.duration_in_day);
+                    let amount = record.actual_amount
+                        + calculate_interest(
+                            record.actual_amount,
+                            record.annual_interest_rate,
+                            record.duration_in_day,
+                        );
                     Ok(amount)
                 } else {
                     Err(StakingError::RedemptionNotAllowed)

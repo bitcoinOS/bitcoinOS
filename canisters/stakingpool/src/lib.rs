@@ -63,7 +63,7 @@ struct InitArgument {
     description: String,
     network: BitcoinNetwork,
     // the annual interest rate of the staking pool will less than 10000, it will divide by 10000 for compute
-    annual_interest_rate: u16,  
+    annual_interest_rate: u16,
     duration_in_day: u64,
     os_canister: Principal,
 }
