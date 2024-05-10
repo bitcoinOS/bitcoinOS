@@ -1,12 +1,6 @@
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type EcdsaCurve = variant { secp256k1 };
 type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
-type GetUtxosResponse = record {
-  next_page : opt blob;
-  tip_height : nat32;
-  tip_block_hash : blob;
-  utxos : vec Utxo;
-};
 type InitArgument = record {
   os_canister : principal;
   duration_in_millisecond : nat64;
@@ -27,7 +21,7 @@ type Metadata = record {
   annual_interest_rate : nat64;
 };
 type NetworkResponse = record { network : text };
-type Outpoint = record { txid : blob; vout : nat32 };
+type Outpoint = record { txid : text; vout : nat32 };
 type RedeemLog = record {
   req : RedeemRequest;
   send_time : nat64;
@@ -51,7 +45,7 @@ type Result_1 = variant { Ok : vec StakingRecord; Err : StakingError };
 type Result_2 = variant { Ok : Metadata; Err : StakingError };
 type Result_3 = variant { Ok : text; Err : StakingError };
 type Result_4 = variant { Ok : vec RedeemLog; Err : StakingError };
-type Result_5 = variant { Ok : GetUtxosResponse; Err : StakingError };
+type Result_5 = variant { Ok : UtxosResponse; Err : StakingError };
 type StakingError = variant {
   AppendRedeemLogError : text;
   StakingRecordAlreadyExists : text;
@@ -82,6 +76,12 @@ type StakingRecord = record {
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
 type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
+type UtxosResponse = record {
+  next_page : opt blob;
+  tip_height : nat32;
+  tip_block_hash : blob;
+  utxos : vec Utxo;
+};
 service : (InitArgument) -> {
   balance : () -> (Result);
   counter : () -> (nat) query;

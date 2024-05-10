@@ -1,3 +1,5 @@
+pub mod response;
+
 use bitcoin::{Address, ScriptBuf};
 use candid::CandidType;
 use ic_cdk::api::management_canister::{

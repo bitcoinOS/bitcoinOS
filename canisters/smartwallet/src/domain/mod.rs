@@ -12,7 +12,10 @@ use ic_cdk::api::management_canister::{
 };
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
-use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
+use wallet::{
+    domain::{AddressType, EcdsaKeyIds, Wallet, WalletType},
+    utils::mgmt_canister_id,
+};
 
 use crate::constants::DAILY_LIMIET_SATOSHI;
 
@@ -39,7 +42,7 @@ impl Default for Metadata {
         Self {
             name: "SmartWallet".to_string(),
             owner: Principal::anonymous(),
-            steward_canister: Principal::anonymous(),
+            steward_canister: mgmt_canister_id(),
             network,
             ecdsa_key_id,
             daily_limit_satoshi: DAILY_LIMIET_SATOSHI,

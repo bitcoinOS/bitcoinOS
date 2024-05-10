@@ -15,11 +15,10 @@ use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::Principal;
 use ic_cdk::api::call::{call_with_payment, CallResult};
 
-use ic_cdk::api::management_canister::bitcoin::{
-    BitcoinNetwork, MillisatoshiPerByte, Satoshi, Utxo,
-};
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 
+use crate::domain::response::Utxo;
 use crate::domain::Wallet;
 use crate::error::Error;
 use crate::tx::RecipientAmount;
@@ -126,7 +125,7 @@ pub fn calc_fee_and_build_transaction(
         .into_iter()
         .map(|u| TxIn {
             previous_output: OutPoint {
-                txid: Txid::from_raw_hash(Hash::from_slice(&u.outpoint.txid).unwrap()),
+                txid: Txid::from_str(&u.outpoint.txid).expect("Failed to parse txid"),
                 vout: u.outpoint.vout,
             },
             sequence: Sequence::MAX,

@@ -3,13 +3,12 @@ use bitcoin::{PublicKey, ScriptBuf};
 use ic_cdk::api::management_canister::bitcoin::{
     bitcoin_get_balance, bitcoin_get_current_fee_percentiles, bitcoin_get_utxos,
     bitcoin_send_transaction, BitcoinNetwork, GetBalanceRequest, GetCurrentFeePercentilesRequest,
-    GetUtxosRequest, GetUtxosResponse, MillisatoshiPerByte, Satoshi, SendTransactionRequest,
-    UtxoFilter,
+    GetUtxosRequest, MillisatoshiPerByte, Satoshi, SendTransactionRequest, UtxoFilter,
 };
 use sha2::Digest;
 
 use crate::{
-    domain::{Wallet, WalletType},
+    domain::{response::UtxosResponse, Wallet, WalletType},
     error::Error,
     utils::{to_bitcoin_network, WalletResult},
 };
@@ -75,7 +74,7 @@ pub async fn get_utxos(
     address: impl Into<String>,
     network: BitcoinNetwork,
     filter: Option<UtxoFilter>,
-) -> WalletResult<GetUtxosResponse> {
+) -> WalletResult<UtxosResponse> {
     let arg = GetUtxosRequest {
         address: address.into(),
         network,
@@ -84,7 +83,7 @@ pub async fn get_utxos(
 
     bitcoin_get_utxos(arg)
         .await
-        .map(|(utxo,)| utxo)
+        .map(|(utxo,)| utxo.into())
         .map_err(|e| e.into())
 }
 

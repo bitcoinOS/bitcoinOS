@@ -1,9 +1,10 @@
 pub mod memory;
 
-use std::cell::RefCell;
+use std::{cell::RefCell, collections::BTreeMap};
 
 use crate::domain::{Metadata, RawWallet, SelfCustodyKey, StakingRecord, TransactionLog, TxID};
 
+use ic_cdk_timers::TimerId;
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
 use serde::{Deserialize, Serialize};
 
@@ -13,9 +14,12 @@ pub type Timestamp = u64;
 pub type RawWalletStable = StableBTreeMap<SelfCustodyKey, RawWallet, Memory>;
 pub type TransactionLogStable = StableLog<TransactionLog, Memory, Memory>;
 pub type StakingRecordStable = StableBTreeMap<TxID, StakingRecord, Memory>;
+pub type TimerIdStable = StableBTreeMap<TimerId, Timestamp, Memory>;
 
 thread_local! {
     pub static STATE: RefCell<State> = RefCell::new(State::default());
+
+    pub static TIMER_IDS: RefCell<BTreeMap<TimerId, Timestamp>> = const { RefCell::new(BTreeMap::new()) };
 
 }
 

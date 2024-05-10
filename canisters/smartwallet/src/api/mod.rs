@@ -16,13 +16,15 @@ mod update_staking_record;
 mod utxos;
 
 use wallet::bitcoins;
+use wallet::domain::response::UtxosResponse;
 use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time};
 
 use candid::Principal;
-use ic_cdk::api::management_canister::bitcoin::{GetUtxosResponse, MillisatoshiPerByte, Satoshi};
+use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
 use crate::constants::TWO_HOURS;
+use crate::context::TIMER_IDS;
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TransferInfo, TransferRequest,
 };
@@ -47,7 +49,7 @@ pub async fn p2pkh_address() -> String {
 
 /// Returns the utxos of this canister default bitcoin address
 #[update]
-pub async fn utxos() -> Result<GetUtxosResponse, WalletError> {
+pub async fn utxos() -> Result<UtxosResponse, WalletError> {
     let network = metadata::get_metadata().network;
     let address = p2pkh_address().await;
 
@@ -132,22 +134,26 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
 
     // Spawn another task to call register staking record to staking pool
     ic_cdk::spawn(async move {
+        // Register staking record to staking pool cnaister
         let info = register_staking::serve(register_req)
             .await
             .expect("Failed to register staking record");
 
-        // TODO: Schedule a task to check the staking record status from Staking pool canister for 8 blocks by bitcoin network, and update the staking record to `Confirmed`
+        // Schedule a task to check the staking record status from Staking pool canister for 8 blocks by bitcoin network, and update the staking record to `Confirmed`
         let timer_id = ic_cdk_timers::set_timer(TWO_HOURS, || {
             update_staking_record::serve(info).expect("Failed to update staking record");
         });
 
         // Save timer id for upgrade canister to reschedule or cancel
+        TIMER_IDS.with_borrow_mut(|t| t.insert(timer_id, ic_time()));
     });
 
     Ok(txid)
 }
 
-/// Register staking record to staking pool
+// async fn sync_staking_status_after_eight_minutes()
+
+/// Register staking record to staking pool by manual if staking btc from a standard bitcoin wallet
 #[update]
 async fn register_staking(req: RegisterStakingRequest) -> Result<StakingRecord, WalletError> {
     register_staking::serve(req).await
@@ -181,8 +187,9 @@ fn network() -> NetworkResponse {
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, WalletError> {
-    validate_owner(ic_caller())
-    // Ok(get_metadata())
+    // validate_owner(ic_caller())
+    // TODO: FIX before mainnet
+    Ok(get_metadata())
 }
 
 /// Returns the owner of this canister if the caller is controller

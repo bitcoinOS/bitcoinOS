@@ -8,10 +8,9 @@ mod register_staking;
 mod tvl;
 mod utxos;
 
-use ic_cdk::api::management_canister::bitcoin::{
-    BitcoinNetwork, GetUtxosResponse, Satoshi, UtxoFilter,
-};
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi, UtxoFilter};
 use ic_cdk::{query, update};
+use wallet::domain::response::UtxosResponse;
 use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
 use crate::domain::request::{RedeemRequest, RegisterStakingRequest};
@@ -35,7 +34,7 @@ pub async fn p2pkh_address() -> String {
 
 /// Returns the utxos of this staking pool canister
 #[update]
-pub async fn utxos(filter: Option<UtxoFilter>) -> Result<GetUtxosResponse, StakingError> {
+pub async fn utxos(filter: Option<UtxoFilter>) -> Result<UtxosResponse, StakingError> {
     let metadata = metadata::get_metadata();
     let network = metadata.network;
     let address = p2pkh_address::serve(metadata).await?;

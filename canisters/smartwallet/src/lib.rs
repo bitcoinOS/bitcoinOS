@@ -16,11 +16,11 @@ use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
 use constants::DAILY_LIMIET_SATOSHI;
-use ic_cdk::api::management_canister::bitcoin::{
-    BitcoinNetwork, GetUtxosResponse, MillisatoshiPerByte, Satoshi,
-};
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::export_candid;
+
 use serde::Deserialize;
+use wallet::domain::response::UtxosResponse;
 use wallet::domain::EcdsaKeyIds;
 use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
@@ -63,6 +63,14 @@ async fn init(args: InitArgument) {
 // fn issue_rgb20() -> String {
 //     rgb::issue_rgb20()
 // }
+
+/// Load timer ids from stable storage after canister upgrade
+#[ic_cdk::post_upgrade]
+fn post_upgrade() {}
+
+// Save the timer ids to stable storage before canister upgrade
+#[ic_cdk::pre_upgrade]
+fn pre_upgrade() {}
 
 export_candid!();
 

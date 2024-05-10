@@ -71,6 +71,7 @@ service : (InitArgument) -> {
   metadata : () -> (Metadata) query;
   my_wallets : () -> (vec WalletInfo) query;
   set_wallet_cycles : (nat64) -> (Result_2);
+  timestamp : () -> (nat64) query;
   upgrade_staking_pool_wasm : (principal) -> (Result_3);
   upgrade_wallet_wasm : (principal) -> (Result_3);
   wallet_counter : () -> (nat) query;

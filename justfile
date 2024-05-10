@@ -4,7 +4,7 @@ create_all_canisters:
 
 
 deploy_os:
-    dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"2vxsx-fae\"; })" 
+    dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"aaaaa-aa\"; })" 
 
 build_staking:
     cargo build -p stakingpool --release --target wasm32-unknown-unknown
@@ -18,12 +18,12 @@ translate_wasm:
 install_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { name = \"smartwallet\";  network = variant { regtest }; steward_canister = principal \"2vxsx-fae\" })"
+    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { name = \"smartwallet\";  network = variant { regtest }; steward_canister = principal \"aaaaa-aa\" })"
 
 deploy_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx deploy smartwallet --argument '(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal "2vxsx-fae" })'
+    dfx deploy smartwallet --argument '(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal "aaaaa-aa" })'
 
 deploy_staking:
     #!/usr/bin/env bash
@@ -35,7 +35,7 @@ deploy_ii:
     dfx deploy internet_identity
 
 deploy_frontend:
-    dfx deploy bitcoinOS_frontend --argument "(record { network = variant { regtest }; steward_canister =  principal \"2vxsx-fae\"; })" 
+    dfx deploy bitcoinOS_frontend --argument "(record { network = variant { regtest }; steward_canister =  principal \"aaaaa-aa\"; })" 
 
 create_staking_pool:
     dfx canister call os create_staking_pool_canister '(record { duration_in_millisecond = 86400; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10 })'

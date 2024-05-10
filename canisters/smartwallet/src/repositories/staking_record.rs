@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::{context::STATE, domain::StakingRecord, error::WalletError};
 
 pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {

@@ -227,10 +227,16 @@ fn get_wallet_action(idx: u64) -> Option<WalletAction> {
     get_wallet_action::serve(idx)
 }
 
-#[ic_cdk::query]
 /// Returns metadata of os canister
+#[ic_cdk::query]
 fn metadata() -> Metadata {
     repositories::metadata::get_metadata()
+}
+
+/// Returns the timestamp of this canister
+#[ic_cdk::query]
+fn timestamp() -> u64 {
+    ic_cdk::api::time()
 }
 
 #[init]
