@@ -42,7 +42,7 @@ async fn init(arg: InitArgument) {
                 description: arg.description,
                 network,
                 annual_interest_rate: arg.annual_interest_rate,
-                duration_in_millisecond: arg.duration_in_millisecond,
+                duration_in_day: arg.duration_in_day,
                 os_canister,
                 ecdsa_key_id,
                 updated_time,
@@ -62,8 +62,9 @@ struct InitArgument {
     name: String,
     description: String,
     network: BitcoinNetwork,
-    annual_interest_rate: u64,
-    duration_in_millisecond: u64,
+    // the annual interest rate of the staking pool will less than 10000, it will divide by 10000 for compute
+    annual_interest_rate: u16,  
+    duration_in_day: u64,
     os_canister: Principal,
 }
 

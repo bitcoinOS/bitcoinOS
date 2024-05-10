@@ -1,3 +1,4 @@
+
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
 use crate::{
@@ -19,8 +20,8 @@ pub(crate) fn sum_staking_amount() -> Satoshi {
 
 /// Save staking record if it doesn't exist, otherwise return StakingRecordAlreadyExists
 pub(crate) fn save(record: &StakingRecord) -> Result<(), StakingError> {
-    STATE.with(|s| {
-        let records = &mut s.borrow_mut().staking_records;
+    STATE.with_borrow_mut(|s| {
+        let records = &mut s.staking_records;
         let key = record.txid.clone();
         if records.contains_key(&key) {
             Err(StakingError::StakingRecordAlreadyExists(key))
@@ -37,8 +38,8 @@ fn update_status(
     updated_time: u64,
     received_amount: Option<Satoshi>,
 ) -> Result<(), StakingError> {
-    STATE.with(|s| {
-        let records = &mut s.borrow_mut().staking_records;
+    STATE.with_borrow_mut(|s| {
+        let records = &mut s.staking_records;
 
         match records.get(&txid) {
             Some(record) => {
@@ -84,15 +85,15 @@ pub(crate) fn validate_staker_amount(
     txid: &TxID,
     redeem_time: u64,
 ) -> Result<u64, StakingError> {
-    STATE.with(|s| {
-        let records = &s.borrow().staking_records;
+    STATE.with_borrow(|s| {
+        let records = &s.staking_records;
         match records.get(txid) {
             Some(record) => {
                 if record.sender == staker
-                    && record.sent_time + record.duration_in_millisecond < redeem_time
+                    && record.sent_time + record.duration_in_day < redeem_time
                     && record.status == StakingStatus::Confirmed
                 {
-                    let amount = record.actual_amount + calculate_interest();
+                    let amount = record.actual_amount + calculate_interest(record.actual_amount, record.annual_interest_rate, record.duration_in_day);
                     Ok(amount)
                 } else {
                     Err(StakingError::RedemptionNotAllowed)
@@ -103,7 +104,7 @@ pub(crate) fn validate_staker_amount(
     })
 }
 
-/// TODO: Calculate interest with duration and interest rate
-fn calculate_interest() -> Satoshi {
-    0
+/// Calculate interest with duration and interest rate
+fn calculate_interest(amount: Satoshi, interest_rate: u16, duration_in_day: u64) -> Satoshi {
+    amount * interest_rate as u64 * duration_in_day / (10000 * 365)
 }

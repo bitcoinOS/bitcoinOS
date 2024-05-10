@@ -17,7 +17,7 @@ use crate::domain::request::{RedeemRequest, RegisterStakingRequest};
 use crate::domain::response::NetworkResponse;
 use crate::domain::{Metadata, RedeemLog, StakingRecord};
 use crate::error::StakingError;
-use crate::repositories::{self, counter, metadata};
+use crate::repositories;
 
 /// ---------------- Update interface of this canister ------------------
 ///
@@ -25,7 +25,7 @@ use crate::repositories::{self, counter, metadata};
 /// Returns the P2PKH address of this staking pool canister
 #[update]
 pub async fn p2pkh_address() -> String {
-    let metadata = repositories::metadata::get_metadata();
+    let metadata = get_metadata();
 
     p2pkh_address::serve(metadata)
         .await
@@ -35,7 +35,7 @@ pub async fn p2pkh_address() -> String {
 /// Returns the utxos of this staking pool canister
 #[update]
 pub async fn utxos(filter: Option<UtxoFilter>) -> Result<UtxosResponse, StakingError> {
-    let metadata = metadata::get_metadata();
+    let metadata = get_metadata();
     let network = metadata.network;
     let address = p2pkh_address::serve(metadata).await?;
 
@@ -45,7 +45,7 @@ pub async fn utxos(filter: Option<UtxoFilter>) -> Result<UtxosResponse, StakingE
 /// Returns the balance of this staking pool
 #[update]
 pub async fn balance() -> Result<Satoshi, StakingError> {
-    let metadata = repositories::metadata::get_metadata();
+    let metadata = get_metadata();
     let network = metadata.network;
     let address = p2pkh_address::serve(metadata).await?;
     balance::serve(address, network).await
@@ -62,17 +62,20 @@ async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
     check_network(req.network).expect("msg: invalid network");
 
     let staking_canister = ic_cdk::id();
-    let staking_address = p2pkh_address::serve(repositories::metadata::get_metadata())
+    let staking_address = p2pkh_address::serve(get_metadata())
         .await
         .expect("Staking pool must has a bitcoin address");
 
     let updated_time = ic_time();
-    let duration = repositories::metadata::get_metadata().duration_in_millisecond;
+    let metadata = get_metadata();
+    let duration = metadata.duration_in_day;
+    let interest_rate = metadata.annual_interest_rate;
 
     register_staking::serve(
         sender_canister,
         updated_time,
         req,
+        interest_rate,
         duration,
         staking_canister,
         staking_address,
@@ -90,7 +93,7 @@ async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
 pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     check_network(req.network)?;
 
-    let metadata = repositories::metadata::get_metadata();
+    let metadata = get_metadata();
     let sender = ic_cdk::caller();
     let redeem_time = ic_time();
 
@@ -115,14 +118,14 @@ fn list_staking() -> Result<Vec<StakingRecord>, StakingError> {
 /// Returns the network of this canister
 #[query]
 fn network() -> NetworkResponse {
-    metadata::get_metadata().network.into()
+    get_metadata().network.into()
 }
 
 /// Returns the metadata of this canister if the caller is controller
 /// otherwise return `UnAuthorized`
 #[query]
 fn metadata() -> Result<Metadata, StakingError> {
-    Ok(repositories::metadata::get_metadata())
+    Ok(get_metadata())
 }
 
 /// Returns all ledger records of this canister if the caller is controller
@@ -135,15 +138,23 @@ async fn redeem_logs() -> Result<Vec<RedeemLog>, StakingError> {
 /// Returns the counter of this canister
 #[query]
 fn counter() -> u128 {
-    counter::get_counter()
+    get_counter()
 }
 
 fn check_network(network: BitcoinNetwork) -> Result<(), StakingError> {
-    let current_network = repositories::metadata::get_metadata().network;
+    let current_network = get_metadata().network;
 
     if current_network == network {
         Ok(())
     } else {
         Err(StakingError::InvalidNetwork)
     }
+}
+
+fn get_metadata() -> Metadata {
+    repositories::metadata::get_metadata()
+}
+
+fn get_counter() -> u128 {
+    repositories::counter::get_counter()
 }
