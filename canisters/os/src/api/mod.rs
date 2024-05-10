@@ -143,7 +143,7 @@ async fn create_staking_pool_canister(
 #[ic_cdk::update]
 async fn upgrade_staking_pool_wasm(staking_pool_canister: CanisterId) -> Result<(), String> {
     if is_controller(&ic_cdk::caller()) {
-        upgrade_staking_pool_wasm::serve(staking_pool_canister, WALLET_WASM.to_owned()).await
+        upgrade_staking_pool_wasm::serve(staking_pool_canister, STAKING_POOL_WASM.to_owned()).await
     } else {
         Err("UnAuthorized".to_string())
     }
