@@ -74,10 +74,10 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
 
 /// Returns the balance of this canister default address if the caller is the owner
 #[update]
-pub async fn balance() -> Result<Satoshi, WalletError> {
+pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
-    let address = p2pkh_address().await;
+    // let address = p2pkh_address().await;
 
     balance::serve(address, metadata).await
 }

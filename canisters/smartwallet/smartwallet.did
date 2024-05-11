@@ -99,7 +99,7 @@ type WalletError = variant {
 };
 service : (InitArgument) -> {
   addresses : () -> (Result) query;
-  balance : () -> (Result_1);
+  balance : (text) -> (Result_1);
   counter : () -> (nat) query;
   current_fee_percentiles : () -> (Result_2);
   ecdsa_key : () -> (Result_3) query;

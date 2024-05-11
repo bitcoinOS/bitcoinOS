@@ -46,10 +46,10 @@ pub async fn utxos(filter: Option<UtxoFilter>) -> Result<UtxosResponse, StakingE
 
 /// Returns the balance of this staking pool
 #[update]
-pub async fn balance() -> Result<Satoshi, StakingError> {
+pub async fn balance(address: String) -> Result<Satoshi, StakingError> {
     let metadata = get_metadata();
     let network = metadata.network;
-    let address = p2pkh_address::serve(metadata).await?;
+  
     balance::serve(address, network).await
 }
 

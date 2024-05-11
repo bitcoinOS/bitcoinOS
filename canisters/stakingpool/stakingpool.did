@@ -84,7 +84,7 @@ type UtxosResponse = record {
   utxos : vec Utxo;
 };
 service : (InitArgument) -> {
-  balance : () -> (Result);
+  balance : (text) -> (Result);
   counter : () -> (nat) query;
   get_staking : (text) -> (opt StakingRecord) query;
   list_staking : () -> (Result_1) query;
