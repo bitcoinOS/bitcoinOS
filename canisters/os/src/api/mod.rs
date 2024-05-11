@@ -108,7 +108,7 @@ async fn create_staking_pool_canister(
         arg.name.clone(),
         arg.description.clone(),
         arg.annual_interest_rate,
-        arg.duration_in_millisecond,
+        arg.duration_in_day,
         metadata.network,
         os_canister,
         STAKING_POOL_WASM.to_owned(),
@@ -129,7 +129,7 @@ async fn create_staking_pool_canister(
         arg.name,
         arg.description,
         arg.annual_interest_rate,
-        arg.duration_in_millisecond,
+        arg.duration_in_day,
         staking_pool_address,
     )?;
 

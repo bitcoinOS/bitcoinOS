@@ -1,10 +1,10 @@
 type Action = variant { Delete; Create };
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type CreateStakingPoolRequest = record {
-  duration_in_millisecond : nat64;
   name : text;
   description : text;
-  annual_interest_rate : nat64;
+  duration_in_day : nat64;
+  annual_interest_rate : nat16;
 };
 type Error = variant {
   StableWriteError : record { msg : text };
@@ -41,7 +41,7 @@ type StakingPoolInfo = record {
   description : text;
   created_at : nat64;
   staking_pool_canister : principal;
-  annual_interest_rate : nat64;
+  annual_interest_rate : nat16;
 };
 type Tokens = record { e8s : nat64 };
 type WalletAction = record {

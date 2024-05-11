@@ -24,7 +24,7 @@ pub(crate) fn create_staking_pool(
     created_at: u64,
     name: String,
     description: String,
-    annual_interest_rate: u64,
+    annual_interest_rate: u16,
     duration_in_millisecond: u64,
     bitcoin_address: String,
 ) -> Result<StakingPoolInfo, Error> {

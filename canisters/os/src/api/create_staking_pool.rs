@@ -13,7 +13,7 @@ use crate::{domain::request::InitStakingPoolArgument, error::Error};
 pub(crate) async fn serve(
     name: String,
     description: String,
-    annual_interest_rate: u64,
+    annual_interest_rate: u16,
     duration_in_millisecond: u64,
     network: BitcoinNetwork,
     os_canister: CanisterId,
@@ -33,7 +33,7 @@ pub(crate) async fn serve(
         name,
         description,
         annual_interest_rate,
-        duration_in_millisecond,
+        duration_in_day: duration_in_millisecond,
         network,
         os_canister,
     };

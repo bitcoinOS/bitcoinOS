@@ -38,7 +38,7 @@ deploy_frontend:
     dfx deploy bitcoinOS_frontend --argument "(record { network = variant { regtest }; steward_canister =  principal \"aaaaa-aa\"; })" 
 
 create_staking_pool:
-    dfx canister call os create_staking_pool_canister '(record { duration_in_millisecond = 86400; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10 })'
+    dfx canister call os create_staking_pool_canister '(record { duration_in_day = 30:nat64; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16 })'
 
 mint_cycles:
     #!/usr/bin/env bash

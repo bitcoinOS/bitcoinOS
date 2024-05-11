@@ -23,8 +23,8 @@ pub struct InitWalletArgument {
 pub struct CreateStakingPoolRequest {
     pub name: String,
     pub description: String,
-    pub annual_interest_rate: u64,
-    pub duration_in_millisecond: u64,
+    pub annual_interest_rate: u16,
+    pub duration_in_day: u64,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
@@ -32,8 +32,8 @@ pub struct InitStakingPoolArgument {
     pub name: String,
     pub description: String,
     pub network: BitcoinNetwork,
-    pub annual_interest_rate: u64,
-    pub duration_in_millisecond: u64,
+    pub annual_interest_rate: u16,
+    pub duration_in_day: u64,
     pub os_canister: CanisterId,
 }
 
@@ -44,7 +44,7 @@ impl From<StakingPoolInfo> for InitStakingPoolArgument {
             description: info.description,
             network: info.network,
             annual_interest_rate: info.annual_interest_rate,
-            duration_in_millisecond: info.duration_in_millisecond,
+            duration_in_day: info.duration_in_millisecond,
             os_canister: info.os_canister,
         }
     }
