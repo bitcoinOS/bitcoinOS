@@ -1,4 +1,6 @@
-use crate::{domain::TxId, error::WalletError, repositories};
+use wallet::domain::staking::TxId;
+
+use crate::{error::WalletError, repositories};
 
 use super::sync_and_update_staking_record;
 

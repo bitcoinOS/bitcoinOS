@@ -1,10 +1,8 @@
 use ic_cdk::api::management_canister::main::CanisterId;
 
-use crate::{
-    domain::{request::RegisterStakingRequest, StakingRecord, StakingStatus},
-    error::StakingError,
-    repositories,
-};
+use crate::{domain::request::RegisterStakingRequest, error::StakingError, repositories};
+
+use wallet::domain::staking::{StakingRecord, StakingStatus};
 
 pub(crate) fn serve(
     sender_canister: CanisterId,

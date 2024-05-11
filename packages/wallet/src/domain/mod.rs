@@ -1,4 +1,5 @@
 pub mod response;
+pub mod staking;
 
 use bitcoin::{Address, ScriptBuf};
 use candid::CandidType;

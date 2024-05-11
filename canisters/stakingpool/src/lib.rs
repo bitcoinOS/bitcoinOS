@@ -9,7 +9,7 @@ use crate::context::STATE;
 use crate::domain::{
     request::{RedeemRequest, RegisterStakingRequest},
     response::NetworkResponse,
-    Metadata, RedeemLog, StakingRecord,
+    Metadata, RedeemLog,
 };
 use crate::error::StakingError;
 
@@ -19,6 +19,7 @@ use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi, UtxoFil
 use ic_cdk::export_candid;
 use serde::Deserialize;
 use wallet::domain::response::UtxosResponse;
+use wallet::domain::staking::StakingRecord;
 use wallet::domain::EcdsaKeyIds;
 use wallet::utils::ic_time;
 

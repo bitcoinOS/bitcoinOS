@@ -12,11 +12,12 @@ mod utxos;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi, UtxoFilter};
 use ic_cdk::{query, update};
 use wallet::domain::response::UtxosResponse;
+use wallet::domain::staking::StakingRecord;
 use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
 use crate::domain::request::{RedeemRequest, RegisterStakingRequest};
 use crate::domain::response::NetworkResponse;
-use crate::domain::{Metadata, RedeemLog, StakingRecord};
+use crate::domain::{Metadata, RedeemLog};
 use crate::error::StakingError;
 use crate::repositories;
 

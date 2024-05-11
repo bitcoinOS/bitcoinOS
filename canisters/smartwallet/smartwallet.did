@@ -43,17 +43,18 @@ type Result_9 = variant { Ok : StakingRecord; Err : WalletError };
 type StakingRecord = record {
   status : StakingStatus;
   sender_address : text;
-  duration_in_millisecond : nat64;
   staking_address : text;
   txid : text;
   network : BitcoinNetwork;
   sender : principal;
+  duration_in_day : nat64;
   actual_amount : nat64;
   staking_canister : principal;
   sent_time : nat64;
   sent_amount : nat64;
   sender_canister : principal;
   updated_time : nat64;
+  annual_interest_rate : nat16;
 };
 type StakingRequest = record {
   staking_address : text;

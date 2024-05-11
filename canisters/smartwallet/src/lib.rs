@@ -10,18 +10,18 @@ use crate::context::STATE;
 use crate::domain::{
     request::{RegisterStakingRequest, StakingRequest, TransferRequest},
     response::{NetworkResponse, PublicKeyResponse},
-    Metadata, StakingRecord, TransactionLog,
+    Metadata, TransactionLog,
 };
 use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
 use constants::DAILY_LIMIET_SATOSHI;
-use domain::TxId;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::export_candid;
 
 use serde::Deserialize;
 use wallet::domain::response::UtxosResponse;
+use wallet::domain::staking::{StakingRecord, TxId};
 use wallet::domain::EcdsaKeyIds;
 use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 

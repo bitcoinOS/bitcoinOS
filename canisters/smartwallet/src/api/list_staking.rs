@@ -1,4 +1,6 @@
-use crate::{domain::StakingRecord, repositories};
+use wallet::domain::staking::StakingRecord;
+
+use crate::repositories;
 
 pub(super) fn serve() -> Vec<StakingRecord> {
     repositories::staking_record::list_staking()

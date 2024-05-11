@@ -13,5 +13,6 @@ hex = { workspace = true }
 ic-cdk = { workspace = true }
 ripemd ={ workspace = true }
 serde = { workspace = true }
-thiserror ={ workspace = true }
 sha2 = { workspace = true }
+ic-stable-structures = { workspace = true }
+thiserror ={ workspace = true }

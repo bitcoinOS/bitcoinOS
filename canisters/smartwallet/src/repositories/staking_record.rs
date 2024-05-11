@@ -1,8 +1,6 @@
-use crate::{
-    context::STATE,
-    domain::{StakingRecord, TxId},
-    error::WalletError,
-};
+use wallet::domain::staking::{StakingRecord, TxId};
+
+use crate::{context::STATE, error::WalletError};
 
 pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {
     STATE.with(|s| {

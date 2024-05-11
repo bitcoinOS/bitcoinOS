@@ -19,6 +19,7 @@ mod utxos;
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
 use wallet::domain::response::UtxosResponse;
+use wallet::domain::staking::{StakingRecord, TxId};
 use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time};
 
 use candid::Principal;
@@ -31,7 +32,7 @@ use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TransferInfo, TransferRequest,
 };
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, StakingRecord, TransactionLog, TxId};
+use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
 use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};

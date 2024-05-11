@@ -1,10 +1,7 @@
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
-use crate::{
-    context::STATE,
-    domain::{StakingRecord, StakingStatus, TxId},
-    error::StakingError,
-};
+use crate::{context::STATE, error::StakingError};
+use wallet::domain::staking::{StakingRecord, StakingStatus, TxId};
 
 /// Get staking record by txid
 pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {

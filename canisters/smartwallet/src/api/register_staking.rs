@@ -1,7 +1,6 @@
-use crate::{
-    domain::{request::RegisterStakingRequest, StakingRecord},
-    error::WalletError,
-};
+use wallet::domain::staking::StakingRecord;
+
+use crate::{domain::request::RegisterStakingRequest, error::WalletError};
 
 pub(super) async fn serve(req: RegisterStakingRequest) -> Result<StakingRecord, WalletError> {
     let resp: Result<(StakingRecord,), _> =

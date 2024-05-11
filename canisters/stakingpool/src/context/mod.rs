@@ -2,10 +2,12 @@ pub mod memory;
 
 use std::cell::RefCell;
 
-use crate::domain::{Metadata, RawWallet, RedeemLog, SelfCustodyKey, StakingRecord, TxId};
+use crate::domain::{Metadata, RawWallet, RedeemLog, SelfCustodyKey};
 
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
 use serde::{Deserialize, Serialize};
+
+use wallet::domain::staking::{StakingRecord, TxId};
 
 use self::memory::Memory;
 

@@ -4,7 +4,8 @@ use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use serde::Deserialize;
 use wallet::utils::str_to_bitcoin_address;
 
-use crate::{domain::TxId, error::StakingError};
+use crate::error::StakingError;
+use wallet::domain::staking::TxId;
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct RegisterStakingRequest {
