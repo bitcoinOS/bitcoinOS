@@ -54,8 +54,17 @@ async fn init(arg: InitArgument) {
     });
 
     // TODO: schedule a task to check tx status is confirmed or not very hour, update staking record status when tx is confirmed for 6 blocks
-    // TODO: schedule a task to calculate the rewards for each staking record very date at 0 o'clock
+    // let timer_id = ic_cdk_timers::set_timer_interval(ONE_HOURS, move || {
+    //     ic_cdk::spawn(async move {
+    //        sync_staking_record_from_pending_to_confirmed().await.expect("Failed to sync staking record task!")
+    //     })
+    // });
 }
+
+// #[ic_cdk::post_upgrade]
+// async fn post_upgrade() {
+
+// }
 
 export_candid!();
 

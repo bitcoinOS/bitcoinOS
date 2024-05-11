@@ -6,17 +6,6 @@ use crate::{
     error::StakingError,
 };
 
-pub(crate) fn append_redeem_log(log: &RedeemLog) -> Result<(), StakingError> {
-    STATE.with(|s| {
-        s.borrow_mut()
-            .redeem_logs
-            .append(log)
-            .map_err(|e| StakingError::AppendRedeemLogError(format!("{:?}", e)))?;
-
-        Ok(())
-    })
-}
-
 pub(crate) fn build_and_append_redeem_log(req: RedeemRequest) -> Result<(), StakingError> {
     let sender = ic_caller();
     let send_time = ic_time();
@@ -27,4 +16,15 @@ pub(crate) fn build_and_append_redeem_log(req: RedeemRequest) -> Result<(), Stak
     };
 
     append_redeem_log(&log)
+}
+
+fn append_redeem_log(log: &RedeemLog) -> Result<(), StakingError> {
+    STATE.with(|s| {
+        s.borrow_mut()
+            .redeem_logs
+            .append(log)
+            .map_err(|e| StakingError::AppendRedeemLogError(format!("{:?}", e)))?;
+
+        Ok(())
+    })
 }

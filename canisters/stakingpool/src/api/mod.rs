@@ -1,4 +1,5 @@
 mod balance;
+mod confirm_staking_record;
 mod get_staking;
 mod list_staking;
 mod logs;
@@ -6,10 +7,12 @@ mod p2pkh_address;
 mod public_key;
 mod redeem;
 mod register_staking;
+mod staker_save;
 mod tvl;
 mod utxos;
 
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use ic_cdk::api::is_controller;
 use ic_cdk::{query, update};
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
@@ -76,6 +79,8 @@ async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
     let duration = metadata.duration_in_day;
     let interest_rate = metadata.annual_interest_rate;
 
+    staker_save::serve(sender_canister, updated_time);
+
     register_staking::serve(
         sender_canister,
         updated_time,
@@ -85,15 +90,29 @@ async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
         staking_canister,
         staking_address,
     )
-    .expect("msg: failed to register staking record")
+    .expect("Failed to register staking record")
 
     // TODO: Schedule a task to check the txid confirmed for 6 blocks by bitcoin network, and update the staking record to `Confirmed`
+}
+
+/// Sync the staking record confirmed or not
+#[update]
+async fn confirm_staking_record() -> Result<(), StakingError> {
+    let caller = ic_caller();
+
+    if !is_controller(&caller) {
+        return Err(StakingError::UnAuthorized(caller.to_string()));
+    }
+
+    let metadata = get_metadata();
+    confirm_staking_record::serve(metadata).await
 }
 
 /// Redeem btc from this canister, and return the txid,
 /// When user redeems, it will redeems the amount that is received amount + interest
 /// NOTE: Must validate the staker and amount is valid
 /// NOTE: Only staker canister can redeem now, this will change to wrapper token in the future
+/// NOTE: After osBTC issued, this will change
 #[update]
 pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     check_network(req.network)?;
@@ -103,6 +122,19 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     let redeem_time = ic_time();
 
     redeem::serve(sender, metadata, req, redeem_time).await
+}
+
+/// Redeemed the redeem record status to Redeemed after the redeem
+#[update]
+async fn redeemed_staking_record() -> Result<(), StakingError> {
+    let caller = ic_caller();
+
+    if !is_controller(&caller) {
+        return Err(StakingError::UnAuthorized(caller.to_string()));
+    }
+
+    let metadata = get_metadata();
+    confirm_staking_record::serve(metadata).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
