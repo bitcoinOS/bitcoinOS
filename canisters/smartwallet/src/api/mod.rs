@@ -18,9 +18,10 @@ mod utxos;
 
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
+use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::{StakingRecord, TxId};
-use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time};
+use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time, str_to_bitcoin_address};
 
 use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
@@ -52,9 +53,13 @@ pub async fn p2pkh_address() -> String {
 
 /// Returns the utxos of this canister default bitcoin address
 #[update]
-pub async fn utxos() -> Result<UtxosResponse, WalletError> {
-    let network = metadata::get_metadata().network;
-    let address = p2pkh_address().await;
+pub async fn utxos(req: UtxosRequest) -> Result<UtxosResponse, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let network = metadata.network;
+    let address = req.address;
+
+    str_to_bitcoin_address(&address, network)?;
 
     utxos::serve(address, network).await
 }
@@ -86,7 +91,10 @@ pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
 /// Percentiles are computed from the last 10,000 transactions (if available).
 #[update]
 pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, WalletError> {
-    let network = metadata::get_metadata().network;
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let network = metadata.network;
+
     current_fee_percentiles::serve(network).await
 }
 

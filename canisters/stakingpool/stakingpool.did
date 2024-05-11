@@ -55,6 +55,7 @@ type StakingError = variant {
   UnAuthorized : text;
   CreateWalletError : text;
   InvalidNetwork;
+  InvalidBitcoinAddress : text;
   InsufficientFunds;
   StakingRecordNotFound : text;
 };
@@ -77,6 +78,7 @@ type StakingRecord = record {
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
 type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
+type UtxosRequest = record { filter : opt UtxoFilter; address : text };
 type UtxosResponse = record {
   next_page : opt blob;
   tip_height : nat32;
@@ -95,5 +97,5 @@ service : (InitArgument) -> {
   redeem_logs : () -> (Result_4) query;
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
   tvl : () -> (nat64) query;
-  utxos : (opt UtxoFilter) -> (Result_5);
+  utxos : (UtxosRequest) -> (Result_5);
 }

@@ -20,6 +20,7 @@ use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerB
 use ic_cdk::export_candid;
 
 use serde::Deserialize;
+use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::{StakingRecord, TxId};
 use wallet::domain::EcdsaKeyIds;

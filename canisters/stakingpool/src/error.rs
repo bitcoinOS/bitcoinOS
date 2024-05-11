@@ -14,6 +14,9 @@ pub enum StakingError {
     #[error("Bitcoin address {0:?} network is unmatched")]
     BitcoinAddressNetworkUnmatch(String),
 
+    #[error("Invalid bitcoin address: {0:?}")]
+    InvalidBitcoinAddress(String),
+
     #[error("Append redeem log error: {0:?}")]
     AppendRedeemLogError(String),
 

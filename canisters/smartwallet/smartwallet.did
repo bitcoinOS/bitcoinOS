@@ -70,6 +70,8 @@ type TransactionLog = record {
 type TransferInfo = record { recipient : text; amount : nat64 };
 type TransferRequest = record { txs : vec TransferInfo };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
+type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
+type UtxosRequest = record { filter : opt UtxoFilter; address : text };
 type UtxosResponse = record {
   next_page : opt blob;
   tip_height : nat32;
@@ -79,7 +81,6 @@ type UtxosResponse = record {
 type WalletError = variant {
   NetworkAlreadyExists;
   StakingRecordAlreadyExists : text;
-  BaseError : text;
   RegisterECDSAKeyError;
   ECDSAKeyUpdateError;
   AppendTransferLogError : text;
@@ -90,6 +91,7 @@ type WalletError = variant {
   WalletAlreadyExists : text;
   UnAuthorized : text;
   WalletNotFound : text;
+  WalletError : text;
   CreateWalletError : text;
   StakingRecordCantUpdate : text;
   SyncStakingRecordError : text;
@@ -114,5 +116,5 @@ service : (InitArgument) -> {
   staking_to_pool : (StakingRequest) -> (Result_3);
   sync_staking_record_status : (text) -> (Result_10);
   transfer_from_p2pkh : (TransferRequest) -> (Result_3);
-  utxos : () -> (Result_11);
+  utxos : (UtxosRequest) -> (Result_11);
 }

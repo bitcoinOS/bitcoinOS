@@ -9,11 +9,12 @@ mod register_staking;
 mod tvl;
 mod utxos;
 
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi, UtxoFilter};
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use ic_cdk::{query, update};
+use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
-use wallet::utils::{check_normal_principal, ic_caller, ic_time};
+use wallet::utils::{check_normal_principal, ic_caller, ic_time, str_to_bitcoin_address};
 
 use crate::domain::request::{RedeemRequest, RegisterStakingRequest};
 use crate::domain::response::NetworkResponse;
@@ -36,12 +37,14 @@ pub async fn p2pkh_address() -> String {
 
 /// Returns the utxos of this staking pool canister
 #[update]
-pub async fn utxos(filter: Option<UtxoFilter>) -> Result<UtxosResponse, StakingError> {
+pub async fn utxos(req: UtxosRequest) -> Result<UtxosResponse, StakingError> {
     let metadata = get_metadata();
     let network = metadata.network;
-    let address = p2pkh_address::serve(metadata).await?;
+    let address = req.address;
 
-    utxos::serve(address, network, filter).await
+    str_to_bitcoin_address(&address, network)?;
+
+    utxos::serve(address, network, req.filter).await
 }
 
 /// Returns the balance of this staking pool
@@ -49,7 +52,7 @@ pub async fn utxos(filter: Option<UtxoFilter>) -> Result<UtxosResponse, StakingE
 pub async fn balance(address: String) -> Result<Satoshi, StakingError> {
     let metadata = get_metadata();
     let network = metadata.network;
-  
+
     balance::serve(address, network).await
 }
 

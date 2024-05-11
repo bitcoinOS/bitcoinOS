@@ -15,9 +15,10 @@ use crate::error::StakingError;
 
 use candid::{CandidType, Principal};
 
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi, UtxoFilter};
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use ic_cdk::export_candid;
 use serde::Deserialize;
+use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::EcdsaKeyIds;
