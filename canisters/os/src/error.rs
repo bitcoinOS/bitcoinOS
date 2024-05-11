@@ -16,10 +16,14 @@ pub enum Error {
     StakingPoolAlreadyExists { staking_pool_id: String },
     #[error("Create wallet canister failed: {msg:?}")]
     GetStakingPoolAddressFailed { msg: String },
-    #[error("UnAuthorized: {0:?}")]
-    UnAuthorized(String),
+    #[error("Confirm Staking Record error: {0:?}")]
+    ConfirmStakingError(String),
+    #[error("Redeemed Staking Record error: {0:?}")]
+    RedeemedStakingError(String),
     #[error("Candid encode error: {0:?}")]
     CandidEncodeError(String),
+    #[error("UnAuthorized: {0:?}")]
+    UnAuthorized(String),
     #[error("Unknown error")]
     Unknown,
 }

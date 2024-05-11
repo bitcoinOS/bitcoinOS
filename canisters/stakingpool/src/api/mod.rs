@@ -97,15 +97,15 @@ async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
 
 /// Sync the staking record confirmed or not
 #[update]
-async fn confirm_staking_record() -> Result<(), StakingError> {
+async fn confirm_staking_record() -> bool {
     let caller = ic_caller();
 
     if !is_controller(&caller) {
-        return Err(StakingError::UnAuthorized(caller.to_string()));
+        return false;
     }
 
     let metadata = get_metadata();
-    confirm_staking_record::serve(metadata).await
+    confirm_staking_record::serve(metadata).await.is_ok()
 }
 
 /// Redeem btc from this canister, and return the txid,
@@ -126,15 +126,15 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
 
 /// Redeemed the redeem record status to Redeemed after the redeem
 #[update]
-async fn redeemed_staking_record() -> Result<(), StakingError> {
+async fn redeemed_staking_record() -> bool {
     let caller = ic_caller();
 
     if !is_controller(&caller) {
-        return Err(StakingError::UnAuthorized(caller.to_string()));
+        return false;
     }
 
     let metadata = get_metadata();
-    confirm_staking_record::serve(metadata).await
+    confirm_staking_record::serve(metadata).await.is_ok()
 }
 
 /// --------------------- Queries interface of this canister -------------------

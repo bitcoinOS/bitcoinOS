@@ -41,7 +41,7 @@ impl StakingRecord {
             && self.sender_address == other.sender_address
             && self.sender_canister == other.sender_canister
             && self.sent_amount == other.sent_amount
-            && self.actual_amount == other.actual_amount
+            && self.sent_amount >= other.actual_amount
             && self.network == other.network
             && self.updated_time < other.updated_time
     }

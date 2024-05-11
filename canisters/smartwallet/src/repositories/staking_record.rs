@@ -32,7 +32,7 @@ pub(crate) fn list_staking() -> Vec<StakingRecord> {
 pub(crate) fn update(info: StakingRecord) -> Result<(), WalletError> {
     STATE.with_borrow_mut(|s| match s.staking_records.get(&info.txid) {
         Some(record) => {
-            if info.can_update(&record) {
+            if record.can_update(&info) {
                 s.staking_records.insert(info.txid.clone(), info);
                 Ok(())
             } else {

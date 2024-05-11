@@ -16,7 +16,9 @@ type Error = variant {
   CreateCanisterFailed : record { msg : text };
   StableSetError : record { msg : text };
   Unknown;
+  ConfirmStakingError : text;
   StakingPoolAlreadyExists : record { staking_pool_id : text };
+  RedeemedStakingError : text;
 };
 type InitArgument = record {
   network : BitcoinNetwork;
@@ -28,10 +30,11 @@ type Metadata = record {
   steward_canister : principal;
   wallet_cycles : nat64;
 };
-type Result = variant { Ok : StakingPoolInfo; Err : Error };
-type Result_1 = variant { Ok : principal; Err : Error };
-type Result_2 = variant { Ok : nat64; Err : Error };
-type Result_3 = variant { Ok; Err : text };
+type Result = variant { Ok : bool; Err : Error };
+type Result_1 = variant { Ok : StakingPoolInfo; Err : Error };
+type Result_2 = variant { Ok : principal; Err : Error };
+type Result_3 = variant { Ok : nat64; Err : Error };
+type Result_4 = variant { Ok; Err : text };
 type StakingPoolInfo = record {
   bitcoin_address : text;
   os_canister : principal;
@@ -43,7 +46,6 @@ type StakingPoolInfo = record {
   staking_pool_canister : principal;
   annual_interest_rate : nat16;
 };
-type Tokens = record { e8s : nat64 };
 type WalletAction = record {
   action : Action;
   operator : principal;
@@ -59,20 +61,21 @@ type WalletInfo = record {
   steward_canister : principal;
 };
 service : (InitArgument) -> {
-  canister_balance : () -> (Tokens);
+  confirm_staking_record : (principal) -> (Result);
   count_staking_pool : () -> (nat) query;
   count_wallet : () -> (nat64) query;
-  create_staking_pool_canister : (CreateStakingPoolRequest) -> (Result);
-  create_wallet_canister : (text) -> (Result_1);
+  create_staking_pool_canister : (CreateStakingPoolRequest) -> (Result_1);
+  create_wallet_canister : (text) -> (Result_2);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
   list_staking_pool : () -> (vec StakingPoolInfo) query;
   list_wallet : () -> (vec WalletInfo) query;
   list_wallet_types : () -> (vec text) query;
   metadata : () -> (Metadata) query;
   my_wallets : () -> (vec WalletInfo) query;
-  set_wallet_cycles : (nat64) -> (Result_2);
+  redeemed_staking_record : (principal) -> (Result);
+  set_wallet_cycles : (nat64) -> (Result_3);
   timestamp : () -> (nat64) query;
-  upgrade_staking_pool_wasm : (principal) -> (Result_3);
-  upgrade_wallet_wasm : (principal) -> (Result_3);
+  upgrade_staking_pool_wasm : (principal) -> (Result_4);
+  upgrade_wallet_wasm : (principal) -> (Result_4);
   wallet_counter : () -> (nat) query;
 }

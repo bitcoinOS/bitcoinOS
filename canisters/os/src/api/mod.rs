@@ -1,4 +1,5 @@
 mod append_wallet_action;
+mod confirm_staking_record;
 mod count_staking_pool;
 mod count_wallet;
 mod create_staking_pool;
@@ -8,6 +9,7 @@ mod list_staking_pool;
 mod list_wallet;
 mod list_wallet_types;
 mod my_wallet;
+mod redeemed_staking_record;
 mod registry_staking_pool;
 mod registry_wallet;
 mod set_wallet_cycles;
@@ -20,9 +22,6 @@ use candid::Principal;
 use ic_cdk::{
     api::{is_controller, management_canister::main::CanisterId},
     export_candid, init,
-};
-use ic_ledger_types::{
-    AccountBalanceArgs, AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT, MAINNET_LEDGER_CANISTER_ID,
 };
 
 use crate::{
@@ -45,7 +44,7 @@ async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
 
-    let metadata = repositories::metadata::get_metadata();
+    let metadata = get_metadata();
 
     let wallet_canister = create_wallet::serve(
         name.clone(),
@@ -102,7 +101,7 @@ async fn create_staking_pool_canister(
 
     let os_canister = ic_cdk::id();
     let created_at = ic_cdk::api::time();
-    let metadata = repositories::metadata::get_metadata();
+    let metadata = get_metadata();
 
     let staking_pool_id = create_staking_pool::serve(
         arg.name.clone(),
@@ -149,21 +148,6 @@ async fn upgrade_staking_pool_wasm(staking_pool_canister: CanisterId) -> Result<
     }
 }
 
-/// Returns the ICP balance of  this canister
-#[ic_cdk::update]
-async fn canister_balance() -> Tokens {
-    match ic_ledger_types::account_balance(
-        MAINNET_LEDGER_CANISTER_ID,
-        AccountBalanceArgs {
-            account: AccountIdentifier::new(&ic_cdk::api::id(), &DEFAULT_SUBACCOUNT),
-        },
-    )
-    .await
-    {
-        Ok(t) => t,
-        _ => Tokens::from_e8s(0),
-    }
-}
 
 /// Update the default cycles for a wallet canister when creating a wallet
 /// NOTE: Only controller can update
@@ -174,6 +158,30 @@ fn set_wallet_cycles(wallet_cycles: u64) -> Result<u64, Error> {
     } else {
         Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
     }
+}
+
+/// Sync the staking record confirmed or not
+#[ic_cdk::update]
+async fn confirm_staking_record(staking_canister: CanisterId) -> Result<bool, Error> {
+    let caller = ic_cdk::caller();
+
+    if !is_controller(&caller) {
+        return Err(Error::UnAuthorized(caller.to_string()));
+    }
+
+    confirm_staking_record::serve(staking_canister).await
+}
+
+/// Sync the staking record confirmed or not
+#[ic_cdk::update]
+async fn redeemed_staking_record(staking_canister: CanisterId) -> Result<bool, Error> {
+    let caller = ic_cdk::caller();
+
+    if !is_controller(&caller) {
+        return Err(Error::UnAuthorized(caller.to_string()));
+    }
+
+    redeemed_staking_record::serve(staking_canister).await
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -230,7 +238,7 @@ fn get_wallet_action(idx: u64) -> Option<WalletAction> {
 /// Returns metadata of os canister
 #[ic_cdk::query]
 fn metadata() -> Metadata {
-    repositories::metadata::get_metadata()
+    get_metadata()
 }
 
 /// Returns the timestamp of this canister
@@ -264,4 +272,9 @@ async fn fetch_wallet_address(staking_pool_canister: CanisterId) -> Result<Strin
         });
 
     resp.map(|(address,)| address)
+}
+
+
+fn get_metadata() -> Metadata {
+    repositories::metadata::get_metadata()
 }
