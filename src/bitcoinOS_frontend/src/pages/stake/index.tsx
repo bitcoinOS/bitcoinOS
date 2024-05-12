@@ -91,11 +91,18 @@ export default function Stake() {
         } else {
             setIsWalletInited(true);
         }
+        if (!stakeBackend) {
+            setIsStakePoolInited(true);
+        } else {
+            get_tvl();
+            setIsStakePoolInited(false);
+        }
         if (!osBackend) {
             setIsOsInited(false)
         } else {
             setIsOsInited(true)
             get_wallets()
+            get_wallet_count()
 
         }
     }, [])
@@ -117,6 +124,7 @@ export default function Stake() {
         if (identity && osBackend) {
             get_wallets()
             get_stake_pool()
+            get_wallet_count()
 
         }
     }, [osBackend, identity]);
@@ -130,16 +138,20 @@ export default function Stake() {
     useEffect(() => {
         if (identity && walletBackend) {
             get_tvl()
+            get_balance(wallet)
+            get_stake_balance()
         }
     }, [walletBackend, identity]);
 
-    useEffect(() => {
-        get_balance()
-        get_stake_records()
-    }, [wallet])
+    // useEffect(() => {
+    //     get_balance()
+    //     get_stake_records()
+    // }, [wallet])
 
     function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
         setWallet(event.target.value)
+        get_balance(event.target.value)
+        get_stake_records(event.target.value)
         const selectOption = event.target.selectedOptions[0]
         if (selectOption.dataset.id) {
             setCurrentWallet(selectOption.dataset.id)
@@ -201,9 +213,12 @@ export default function Stake() {
             setIsLoading(false);
         })
     }
-    function get_stake_records() {
+    function get_stake_records(addr:string) {
         if (!walletBackend) return;
-        // if(wallet.length <=1) return;
+        if(!addr ||  addr.length <=1) {
+            setStakeRecords([])
+            return
+        };
         setIsLoading(true);
 
         walletBackend.list_staking().then((v: StakingRecords) => {
@@ -220,14 +235,17 @@ export default function Stake() {
         })
     }
 
-    function get_balance() {
+    function get_balance(addr:string) {
         if (!walletBackend) return;
         // if(wallet.length <=1) return;
         setIsLoading(true);
-        // walletBackend.metadata().then((value) => {
-        //     console.log(value);
-        // })
-        walletBackend.balance().then((value: BalanceResult) => {
+        if(!addr ||  addr.length <1){
+            setBalance(0)
+            setStakeRecords([])
+            setIsLoading(false);
+            return ;
+        }
+        walletBackend.balance(addr).then((value: BalanceResult) => {
             if ('Err' in value) {
                 toast({
                     title: 'Balance',
@@ -324,9 +342,9 @@ export default function Stake() {
     function refresh() {
 
         get_wallets()
-        get_balance()
+        get_balance(wallet)
         get_tvl()
-        get_stake_records()
+        get_stake_records(wallet)
         get_wallet_count()
     }
     function onStake() {
