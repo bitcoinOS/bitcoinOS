@@ -69,7 +69,7 @@ service : (InitArgument) -> {
   get_wallet_action : (nat64) -> (opt WalletAction) query;
   list_staking_pool : () -> (vec StakingPoolInfo) query;
   list_wallet : () -> (vec WalletInfo) query;
-  list_wallet_types : () -> (vec text) query;
+  list_wallet_type : () -> (vec text) query;
   metadata : () -> (Metadata) query;
   my_wallets : () -> (vec WalletInfo) query;
   redeemed_staking_record : (principal) -> (Result);

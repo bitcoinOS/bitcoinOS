@@ -207,7 +207,7 @@ fn my_wallets() -> Vec<WalletInfo> {
 
 /// Returns the list of wallet types
 #[ic_cdk::query]
-fn list_wallet_types() -> Vec<String> {
+fn list_wallet_type() -> Vec<String> {
     list_wallet_types::serve()
 }
 
