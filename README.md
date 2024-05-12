@@ -118,7 +118,6 @@ npm i
 npm run start
 # deploy frontend
 npm run build
-dfx deploy frontend
 ```
 
 Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
