@@ -148,7 +148,7 @@ pub struct StakingPoolInfo {
     pub description: String,
     pub network: BitcoinNetwork,
     pub annual_interest_rate: u16,
-    pub duration_in_millisecond: u64,
+    pub duration_in_day: u64,
     pub os_canister: CanisterId,
     pub created_at: u64,
 }

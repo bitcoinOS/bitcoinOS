@@ -44,7 +44,7 @@ impl From<StakingPoolInfo> for InitStakingPoolArgument {
             description: info.description,
             network: info.network,
             annual_interest_rate: info.annual_interest_rate,
-            duration_in_day: info.duration_in_millisecond,
+            duration_in_day: info.duration_in_day,
             os_canister: info.os_canister,
         }
     }

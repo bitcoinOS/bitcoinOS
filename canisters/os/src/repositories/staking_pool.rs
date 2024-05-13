@@ -43,7 +43,7 @@ pub(crate) fn create_staking_pool(
                 description,
                 network,
                 annual_interest_rate,
-                duration_in_millisecond,
+                duration_in_day: duration_in_millisecond,
                 os_canister,
                 created_at,
                 bitcoin_address,

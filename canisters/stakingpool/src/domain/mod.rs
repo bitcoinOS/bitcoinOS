@@ -134,50 +134,6 @@ impl Storable for RawWallet {
     const BOUND: Bound = Bound::Unbounded;
 }
 
-// /// A Staking record is the record of a staked Bitcoin, its status will be `Pending` or `Confirmed` or `Redeeming` or `Redeemed`.
-// /// When the record is created, it will be `Pending` and received_amount will be 0.
-// /// When the staking transactoin is confirmed for 6 blocks by Bitcoin network, received_amount will be updated and status will be `Confirmed`.
-// /// When the staking record is redeemed, its status will be `Redeeming`.
-// /// When the redeemed tx is confirmed for 6 blocks by Bitcoin network, status will be `Redeemed`.
-// #[derive(Clone, Debug, CandidType, Deserialize)]
-// pub struct StakingRecord {
-//     pub txid: TxId,
-//     pub sender: Principal,
-//     pub sender_canister: CanisterId,
-//     pub sender_address: String,
-//     pub sent_amount: Satoshi,
-//     pub sent_time: u64,
-//     // the annual interest rate of the staking pool will less than 10000, it will divide by 10000 for compute
-//     pub annual_interest_rate: u16,
-//     pub duration_in_day: u64,
-//     pub network: BitcoinNetwork,
-//     pub staking_canister: CanisterId,
-//     pub staking_address: String,
-//     pub actual_amount: Satoshi,
-//     pub status: StakingStatus,
-//     pub updated_time: u64,
-// }
-
-// #[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-// pub enum StakingStatus {
-//     Pending,
-//     Confirmed,
-//     Redeeming,
-//     Redeemed,
-// }
-
-// impl Storable for StakingRecord {
-//     fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-//         std::borrow::Cow::Owned(Encode!(self).unwrap())
-//     }
-
-//     fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-//         Decode!(bytes.as_ref(), Self).unwrap()
-//     }
-
-//     const BOUND: Bound = Bound::Unbounded;
-// }
-
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct RedeemLog {
     pub req: RedeemRequest,
@@ -197,9 +153,4 @@ impl Storable for RedeemLog {
     const BOUND: Bound = Bound::Unbounded;
 }
 
-// #[derive(Clone, Debug, CandidType, Deserialize)]
-// pub struct TransactionLedger {
-//     pub txs: Vec<RedeemRequest>,
-//     pub sender: Principal,
-//     pub send_time: u64,
-// }
+

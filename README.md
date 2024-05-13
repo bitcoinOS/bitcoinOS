@@ -112,6 +112,9 @@ dfx canister call os create_staking_pool_canister '(record { duration_in_millise
 
 just deploy_ii
   
+# Deploy frontend to canister
+just deploy_frontend
+
 # frontend
 dfx generate
 npm i
