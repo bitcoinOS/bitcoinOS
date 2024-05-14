@@ -11,8 +11,8 @@ mod staker_save;
 mod tvl;
 mod utxos;
 
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use ic_cdk::api::is_controller;
+use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use ic_cdk::{query, update};
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
@@ -174,9 +174,10 @@ fn metadata() -> Result<Metadata, StakingError> {
 
 /// Returns all ledger records of this canister if the caller is controller
 /// otherwise return `UnAuthorized`
+/// TODO: FIX large data, Paginate will need
 #[query]
-async fn redeem_logs() -> Result<Vec<RedeemLog>, StakingError> {
-    Ok(logs::serve().await)
+async fn redeem_logs() -> Vec<RedeemLog> {
+    logs::serve().await
 }
 
 /// Returns the counter of this canister

@@ -44,8 +44,7 @@ type Result = variant { Ok : nat64; Err : StakingError };
 type Result_1 = variant { Ok : vec StakingRecord; Err : StakingError };
 type Result_2 = variant { Ok : Metadata; Err : StakingError };
 type Result_3 = variant { Ok : text; Err : StakingError };
-type Result_4 = variant { Ok : vec RedeemLog; Err : StakingError };
-type Result_5 = variant { Ok : UtxosResponse; Err : StakingError };
+type Result_4 = variant { Ok : UtxosResponse; Err : StakingError };
 type StakingError = variant {
   AppendRedeemLogError : text;
   StakingRecordAlreadyExists : text;
@@ -95,9 +94,9 @@ service : (InitArgument) -> {
   network : () -> (NetworkResponse) query;
   p2pkh_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
-  redeem_logs : () -> (Result_4) query;
+  redeem_logs : () -> (vec RedeemLog) query;
   redeemed_staking_record : () -> (bool);
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
   tvl : () -> (nat64) query;
-  utxos : (UtxosRequest) -> (Result_5);
+  utxos : (UtxosRequest) -> (Result_4);
 }

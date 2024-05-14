@@ -1,6 +1,6 @@
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
-use crate::{context::STATE, error::StakingError};
+use crate::{constants::DAY_IN_NANOSECOND, context::STATE, error::StakingError};
 use wallet::domain::staking::{StakingRecord, StakingStatus, TxId};
 
 /// Get staking record by txid
@@ -91,7 +91,7 @@ pub(crate) fn validate_staker_amount(
         match records.get(txid) {
             Some(record) => {
                 if record.sender == staker
-                    && record.sent_time + record.duration_in_day < redeem_time
+                    && record.sent_time + (record.duration_in_day * DAY_IN_NANOSECOND) < redeem_time
                     && record.status == StakingStatus::Confirmed
                 {
                     let amount = record.actual_amount

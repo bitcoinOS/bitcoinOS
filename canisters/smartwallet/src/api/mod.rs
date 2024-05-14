@@ -183,6 +183,7 @@ fn list_staking() -> Result<Vec<StakingRecord>, WalletError> {
 
     Ok(list_staking::serve())
 }
+
 /// Returns ecdsa key of this canister if the caller is controller and the key exists
 /// otherwise return `EcdsaKeyNotFound` or `UnAuthorized`
 #[query]
@@ -252,10 +253,8 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
     } else {
         Err(WalletError::UnAuthorized(owner.to_string()))
     }
-    // Ok(metadata)
 }
 
 async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
 }
-

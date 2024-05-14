@@ -48,4 +48,4 @@ mint_cycles:
     dfx wallet balance
 
 deposit_os:
-    dfx canister deposit-cycles 20000000000000 os
+    dfx canister deposit-cycles 20_000_000_000_000 os

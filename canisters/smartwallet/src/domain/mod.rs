@@ -8,6 +8,7 @@ use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{
     bitcoin::{BitcoinNetwork, Satoshi},
     ecdsa::EcdsaKeyId,
+    main::CanisterId,
 };
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
@@ -94,7 +95,7 @@ impl From<Wallet> for RawWallet {
 pub struct SelfCustodyKey {
     pub network: BitcoinNetwork,
     pub owner: Principal,
-    pub steward_canister: Principal,
+    pub steward_canister: CanisterId,
     pub wallet_type: WalletType,
     pub address_type: AddressType,
 }
@@ -154,9 +155,9 @@ impl Storable for TransactionLog {
     const BOUND: Bound = Bound::Unbounded;
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize)]
-pub struct TransactionLedger {
-    pub txs: Vec<TransferInfo>,
-    pub sender: Principal,
-    pub send_time: u64,
-}
+// #[derive(Clone, Debug, CandidType, Deserialize)]
+// pub struct TransactionLedger {
+//     pub txs: Vec<TransferInfo>,
+//     pub sender: Principal,
+//     pub send_time: u64,
+// }

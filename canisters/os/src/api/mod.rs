@@ -148,7 +148,6 @@ async fn upgrade_staking_pool_wasm(staking_pool_canister: CanisterId) -> Result<
     }
 }
 
-
 /// Update the default cycles for a wallet canister when creating a wallet
 /// NOTE: Only controller can update
 #[ic_cdk::update]
@@ -273,7 +272,6 @@ async fn fetch_wallet_address(staking_pool_canister: CanisterId) -> Result<Strin
 
     resp.map(|(address,)| address)
 }
-
 
 fn get_metadata() -> Metadata {
     repositories::metadata::get_metadata()

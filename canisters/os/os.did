@@ -38,11 +38,11 @@ type Result_4 = variant { Ok; Err : text };
 type StakingPoolInfo = record {
   bitcoin_address : text;
   os_canister : principal;
-  duration_in_millisecond : nat64;
   name : text;
   network : BitcoinNetwork;
   description : text;
   created_at : nat64;
+  duration_in_day : nat64;
   staking_pool_canister : principal;
   annual_interest_rate : nat16;
 };

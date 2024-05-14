@@ -152,5 +152,3 @@ impl Storable for RedeemLog {
 
     const BOUND: Bound = Bound::Unbounded;
 }
-
-

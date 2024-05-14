@@ -14,5 +14,7 @@ pub const DAILY_LIMIET_SATOSHI: u64 = 10_000_000_000;
 
 pub const DAY_IN_MILLISECOND: u64 = 86_400_000;
 
+pub const DAY_IN_NANOSECOND: u64 = 86_400_000_000_000;
+
 /// One hours for staking pool schecdule
 pub const ONE_HOURS: Duration = Duration::from_secs(60 * 60);
