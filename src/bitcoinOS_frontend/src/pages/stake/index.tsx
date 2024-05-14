@@ -213,9 +213,9 @@ export default function Stake() {
             setIsLoading(false);
         })
     }
-    function get_stake_records(addr:string) {
+    function get_stake_records(addr: string) {
         if (!walletBackend) return;
-        if(!addr ||  addr.length <=1) {
+        if (!addr || addr.length <= 1) {
             setStakeRecords([])
             return
         };
@@ -235,15 +235,15 @@ export default function Stake() {
         })
     }
 
-    function get_balance(addr:string) {
+    function get_balance(addr: string) {
         if (!walletBackend) return;
         // if(wallet.length <=1) return;
         setIsLoading(true);
-        if(!addr ||  addr.length <1){
+        if (!addr || addr.length < 1) {
             setBalance(0)
             setStakeRecords([])
             setIsLoading(false);
-            return ;
+            return;
         }
         walletBackend.balance(addr).then((value: BalanceResult) => {
             if ('Err' in value) {
@@ -355,6 +355,9 @@ export default function Stake() {
         const l = s.length
         return s.substring(0, 3) + "..." + s.substring(l - 3, l);
     }
+    function test() {
+        console.log("test")
+    }
     return (
         <>
             <Flex direction='column' ml='20%' >
@@ -398,7 +401,7 @@ export default function Stake() {
                                     }
                                 </Select>
                             </Flex>
-                            {wallet.length >0 && <Text fontSize='sm' mt="2">{(wallet)}</Text>}
+                            {wallet.length > 0 && <Text fontSize='sm' mt="2">{(wallet)}</Text>}
                         </Flex>
                         <Button
                             bgColor="orange.400"
