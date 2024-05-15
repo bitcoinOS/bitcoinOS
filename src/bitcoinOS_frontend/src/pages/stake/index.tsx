@@ -22,7 +22,8 @@ import {
     FormControl,
     ModalBody,
     FormLabel,
-    Spinner
+    Spinner,
+    Center
 }
     from '@chakra-ui/react'
 import {
@@ -42,10 +43,10 @@ import {
 } from 'react-icons/bs'
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react"
 import { Select } from "@chakra-ui/react"
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { WalletStore, StakepoolStore } from "../../store/index"
-import { useWalletBackend, Result_1 as BalanceResult, StakingRequest, Result_3 as StakeResult, StakingRecords, StakingRecord } from "../../ic/WalletActors";
-import { useOsBackend, WalletInfo, StakingPoolInfo } from "../../ic/OsActors";
+import { Metadata, useWalletBackend, Result_1 as BalanceResult, StakingRequest, Result_3 as StakeResult, StakingRecords, StakingRecord, MetadataRecords } from "../../ic/WalletActors";
+import { useOsBackend, WalletInfo, Result as StakingPoolResult, StakingPoolInfo, CreateStakingPoolRequest } from "../../ic/OsActors";
 import { useSatkePoolBackend } from "../../ic/StakePoolActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
 import { Principal } from "@dfinity/principal"
@@ -55,9 +56,13 @@ export default function Stake() {
     const { actor: osBackend } = useOsBackend();
     const { actor: stakeBackend } = useSatkePoolBackend();
     const { identity } = useInternetIdentity();
+    /*--- wallet Info ---*/
     const [walletList, setWalletList] = useState<WalletInfo[]>([])
+    const [walletSelect, setWalletSelect] = useState([])
     const [wallet, setWallet] = useState<string>("")
+    const [walletMetadata, setWalletMetadata] = useState([])
     const [balance, setBalance] = useState<number>(0)
+    const { isOpen: isWalletOpen, onOpen: onWalletOpen, onClose: onWalletClose } = useDisclosure();
 
     const [totalBalance, setTotalBalance] = useState<number>(0)
 
@@ -73,13 +78,17 @@ export default function Stake() {
     const [isWalletInited, setIsWalletInited] = useState<boolean>(false)
     const [isOsInited, setIsOsInited] = useState<boolean>(false)
     const [isStakePoolInited, setIsStakePoolInited] = useState<boolean>(false)
-    const { isOpen, onOpen, onClose } = useDisclosure()
+    const { isOpen: isCreateOpen, onOpen: onCreateOpen, onClose: onCreateClose } = useDisclosure();
     const [walletName, setWalletName] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false)
+
+    /*--- stake pool Info ---*/
+    const [stakeList, setStakeList] = useState<StakingPoolInfo[]>([])
+    const [stakeSelect, setStakeSelect] = useState([])
     const [stakeAddress, setStakeAddress] = useState<string>("")
     const [stakeCanister, setStakeCanister] = useState<Principal>();
     const [stakeRecords, setStakeRecords] = useState<StakingRecord[]>([])
-
+    const [initialLoadDone, setInitialLoadDone] = useState(false);
     const btc = 100000000
     useEffect(() => {
 
@@ -108,6 +117,18 @@ export default function Stake() {
     }, [])
 
     useEffect(() => {
+        if (!initialLoadDone && walletList.length > 0 && stakeList.length > 0) {
+            // Trigger onChangeWallet with the first wallet's value
+            const firstWallet = walletList[0];
+            onChangeWallet({ target: { value: firstWallet.bitcoin_address, selectedOptions: [{ dataset: { id: firstWallet.wallet_canister.toText() } }] } });
+            // Trigger onChangeStake with the first stake pool's value
+            const firstStake = stakeList[0];
+            onChangeStake({ target: { value: firstStake.bitcoin_address, selectedOptions: [{ dataset: { id: firstStake.os_canister.toText() } }] } });
+            setInitialLoadDone(true);
+        }
+    }, [walletList, stakeList, initialLoadDone]);
+
+    useEffect(() => {
         if (identity) {
             setIslogin(true)
         } else {
@@ -123,6 +144,7 @@ export default function Stake() {
         }
         if (identity && osBackend) {
             get_wallets()
+            console.log('-------------------------------------111')
             get_stake_pool()
             get_wallet_count()
 
@@ -149,12 +171,31 @@ export default function Stake() {
     // }, [wallet])
 
     function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
+        console.log(event.target.value)
         setWallet(event.target.value)
         get_balance(event.target.value)
         get_stake_records(event.target.value)
+        get_stake_pool()
+        // 查找选中的 wallet 项
+        const selectedItem = walletList.find(item => item.bitcoin_address === event.target.value);
+        // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
+        if (selectedItem) {
+            setWalletSelect([selectedItem]);
+        }
+
         const selectOption = event.target.selectedOptions[0]
         if (selectOption.dataset.id) {
             setCurrentWallet(selectOption.dataset.id)
+        }
+    }
+    /*--- change stake select ---*/
+    function onChangeStake(event: React.ChangeEvent<HTMLSelectElement>) {
+        get_stake_pool()
+        // 查找选中的 wallet 项
+        const selectedItem = stakeList.find(item => item.bitcoin_address === event.target.value);
+        // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
+        if (selectedItem) {
+            setStakeSelect([selectedItem]);
         }
     }
     function handleChangeStake(event: React.ChangeEvent<HTMLInputElement>) {
@@ -173,7 +214,10 @@ export default function Stake() {
     function get_stake_pool() {
         if (!osBackend) return;
         setIsLoading(true)
+        console.log('-------------------------------222')
         osBackend.list_staking_pool().then((value: StakingPoolInfo[]) => {
+            console.log(value)
+            setStakeList(value)
             if (value.length > 0) {
                 const stakePool = value[0]
                 setStakeAddress(stakePool.bitcoin_address)
@@ -190,6 +234,16 @@ export default function Stake() {
             setWalletList(value);
             setIsLoading(false)
         })
+    }
+    function get_wallets_metadata() {
+        if (!walletBackend) return;
+        walletBackend.metadata().then((value) => {
+            if ('Ok' in value) {
+                setWalletMetadata(value.Ok)
+            }
+        })
+        console.log("------------------!!!")
+        console.log(walletMetadata)
     }
 
     function get_wallet_count() {
@@ -231,6 +285,7 @@ export default function Stake() {
                 })
                 setTotalBalance(Number(r) * 1.0 / btc)
             }
+            console.log("nogoods1")
             setIsLoading(false);
         })
     }
@@ -323,7 +378,7 @@ export default function Stake() {
     //     })
     // }
     function onCreateWallet() {
-        onClose()
+        onCreateClose()
         if (!osBackend || !identity) {
             return
         }
@@ -357,7 +412,14 @@ export default function Stake() {
     }
     function test() {
         console.log("test")
+        console.log(walletList)
+        console.log("-------------------")
+        get_wallets_metadata()
     }
+    const formatDate = (bigintTimestamp) => {
+        const date = new Date(Number(bigintTimestamp / 1000000n)); // Assuming the timestamp is in nanoseconds, convert to milliseconds
+        return date.toLocaleString();
+    };
     return (
         <>
             <Flex direction='column' ml='20%' >
@@ -395,24 +457,47 @@ export default function Stake() {
                         <Flex direction='column'>
                             <Flex>
                                 <Text mr={2}>Wallets:</Text>
-                                <Select onChange={onChangeWallet} mr={10} width="100%" placeholder='Select Wallet'>
+                                <Select onChange={onChangeWallet} mr={10} width="100%">
+                                    {
+                                        walletList.length === 0
+                                            ? <option value="" disabled>No Wallet</option>
+                                            : null
+                                    }
                                     {
                                         walletList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.wallet_canister.toText()}>{item.name}</option>))
                                     }
                                 </Select>
                             </Flex>
-                            {wallet.length > 0 && <Text fontSize='sm' mt="2">{(wallet)}</Text>}
+                            {wallet.length > 0 && <Text fontSize='sm' mt="2">address:  {(wallet)}</Text>}
+                            {wallet.length > 0 && <Text fontSize='sm' mt="2">canister: {walletSelect.map((item, index) => (
+                                item.wallet_canister.toText()
+                            ))}</Text>}
                         </Flex>
+                        <Flex>
+                            <Text mr={2}>Pools:</Text>
+                            <Select onChange={onChangeStake} mr={10} width="100%">
+                                {
+                                    stakeList.length === 0
+                                        ? <option value="" disabled>No Pool</option>
+                                        : null
+                                }
+                                {
+                                    stakeList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.os_canister.toText()}>{item.name}</option>))
+                                }
+                            </Select>
+                        </Flex>
+                        <Button onClick={onWalletOpen}>Wallet</Button>
+                        <Spacer></Spacer>
                         <Button
                             bgColor="orange.400"
                             color="white"
                             isDisabled={!isLogin || !isOsInited}
                             _hover={{ bg: "orange.200", borderColor: "orange.400" }}
-                            onClick={onOpen}
+                            onClick={onCreateOpen}
+                            mr='10'
                         >
                             Create Wallet
                         </Button>
-                        <Spacer></Spacer>
                         <Button
                             bgColor="orange.400"
                             color="white"
@@ -422,8 +507,8 @@ export default function Stake() {
                             <BsArrowClockwise />
                         </Button>
                         <Modal
-                            isOpen={isOpen}
-                            onClose={onClose}
+                            isOpen={isCreateOpen}
+                            onClose={onCreateClose}
                         >
                             <ModalOverlay />
                             <ModalContent>
@@ -444,7 +529,7 @@ export default function Stake() {
                                         mr={3} onClick={onCreateWallet}>
                                         create
                                     </Button>
-                                    <Button color="white" bgColor="gray.500" onClick={onClose}>Cancel</Button>
+                                    <Button color="white" bgColor="gray.500" onClick={onCreateClose}>Cancel</Button>
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
@@ -454,6 +539,7 @@ export default function Stake() {
                     <Flex>
                         <Tabs>
                             <TabList>
+                                <Tab mr={10} _selected={{ color: 'orange.400' }}>Transfer</Tab>
                                 <Tab mr={10} _selected={{ color: 'orange.400' }}>Stake</Tab>
                                 <Tab mr={10} _selected={{ color: 'orange.400' }}>Unstake</Tab>
                                 <Tab mr={10} _selected={{ color: 'orange.400' }}>Detail</Tab>
@@ -461,7 +547,48 @@ export default function Stake() {
 
                             <TabPanels>
                                 <TabPanel>
-                                    <Flex mt={2}>
+                                    <Flex mt={2} justifyContent="center">
+                                        <VStack align='left'>
+                                            <HStack align='end'>
+                                                <Text fontSize='sm'>BTC Balance:{balance}</Text>
+                                                <Spacer></Spacer>
+                                                <Flex>
+                                                    <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
+                                                    {/* <Button
+                                                    bgColor="orange.400"
+                                                    color="white"
+                                                    size='sm'
+                                                    _hover={{ bg: "orange.200", borderColor: "orange.400" }}
+                                                    onClick={refresh}>
+                                                    <BsBoxArrowUpRight  />
+                                                </Button> */}
+                                                </Flex>
+                                            </HStack>
+                                            <HStack bg="gray.200" p={1} borderRadius="lg">
+                                                <InputGroup>
+                                                    <InputLeftElement
+                                                        pointerEvents="none"
+                                                    >
+                                                        <Image src='./favicon.png' boxSize="1.2rem" />
+                                                    </InputLeftElement>
+                                                    <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
+
+                                                    <InputRightElement  >
+                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
+                                                    </InputRightElement>
+                                                </InputGroup>
+                                            </HStack>
+                                            <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
+                                            <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
+                                            <Flex width='100%' direction='column' align="center" pt={4}>
+                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Transfer</Button>}
+                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }}>Login</Button>}
+                                            </Flex>
+                                        </VStack>
+                                    </Flex>
+                                </TabPanel>
+                                <TabPanel>
+                                    <Flex mt={2} justifyContent="center">
                                         <VStack align='left'>
                                             <HStack align='end'>
                                                 <Text fontSize='sm'>BTC Balance:{balance}</Text>
@@ -502,7 +629,45 @@ export default function Stake() {
                                     </Flex>
                                 </TabPanel>
                                 <TabPanel>
-                                    <Text p={4} color="purple.500">Please note that unstaking will come soon</Text>
+                                    <Flex mt={2} justifyContent="center">
+                                        <VStack align='left'>
+                                            <HStack align='end'>
+                                                <Text fontSize='sm'>BTC Balance:{balance}</Text>
+                                                <Spacer></Spacer>
+                                                <Flex>
+                                                    <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
+                                                    {/* <Button
+                                                    bgColor="orange.400"
+                                                    color="white"
+                                                    size='sm'
+                                                    _hover={{ bg: "orange.200", borderColor: "orange.400" }}
+                                                    onClick={refresh}>
+                                                    <BsBoxArrowUpRight  />
+                                                </Button> */}
+                                                </Flex>
+                                            </HStack>
+                                            <HStack bg="gray.200" p={1} borderRadius="lg">
+                                                <InputGroup>
+                                                    <InputLeftElement
+                                                        pointerEvents="none"
+                                                    >
+                                                        <Image src='./favicon.png' boxSize="1.2rem" />
+                                                    </InputLeftElement>
+                                                    <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
+
+                                                    <InputRightElement  >
+                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
+                                                    </InputRightElement>
+                                                </InputGroup>
+                                            </HStack>
+                                            <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
+                                            <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
+                                            <Flex width='100%' direction='column' align="center" pt={4}>
+                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Unstake</Button>}
+                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }}>Login</Button>}
+                                            </Flex>
+                                        </VStack>
+                                    </Flex>
                                 </TabPanel>
                                 <TabPanel>
                                     <TableContainer>
@@ -531,8 +696,85 @@ export default function Stake() {
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
+                        <Flex ml="10%">
+
+                            {stakeSelect.length > 0 && (
+                                <Table variant='simple' size='xl'>
+                                    <Thead>
+                                        <Tr>
+                                            <Th>Stake Pool</Th>
+                                        </Tr>
+                                    </Thead>
+                                    <Tbody>
+                                        {stakeSelect.map((item, index) => (
+                                            <React.Fragment key={index}>
+                                                <Tr>
+                                                    <Td>Name:</Td>
+                                                    <Td>{item.name}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Canister ID:</Td>
+                                                    <Td>{item.staking_pool_canister.toText()}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Address:</Td>
+                                                    <Td>{item.bitcoin_address}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Description:</Td>
+                                                    <Td>{item.description}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Duration Day:</Td>
+                                                    <Td>{item.duration_in_day.toString()}</Td>
+                                                </Tr>
+                                            </React.Fragment>
+                                        ))}
+                                    </Tbody>
+                                </Table>
+                            )}
+                        </Flex>
                     </Flex>
                 </Box>
+                <Modal isOpen={isWalletOpen} onClose={onWalletClose} isCentered={true}>
+                    <ModalOverlay />
+                    <ModalContent maxW="35%">
+                        <ModalHeader>Wallet Info</ModalHeader>
+                        <ModalCloseButton />
+                        <ModalBody>
+                            {walletSelect.length > 0 && (
+                                <Table variant='simple' size='xl'>
+                                    <Tbody>
+                                        {walletSelect.map((item, index) => (
+                                            <React.Fragment key={index}>
+                                                <Tr>
+                                                    <Td>Name:</Td>
+                                                    <Td>{item.name}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Address:</Td>
+                                                    <Td>{item.bitcoin_address}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Wallet canister:</Td>
+                                                    <Td>{item.wallet_canister.toText()}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Create time</Td>
+                                                    <Td>{formatDate(item.created_at)}</Td>
+                                                </Tr>
+                                                <Tr>
+                                                    <Td>Balance</Td>
+                                                    <Td>{balance}</Td>
+                                                </Tr>
+                                            </React.Fragment>
+                                        ))}
+                                    </Tbody>
+                                </Table>
+                            )}
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
             </Flex>
         </>
     )

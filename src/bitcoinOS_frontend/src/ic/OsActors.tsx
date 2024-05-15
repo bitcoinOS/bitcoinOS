@@ -18,7 +18,7 @@ import { useInternetIdentity } from "ic-use-internet-identity";
 const actorContext = createActorContext<_SERVICE>();
 export const useOsBackend = createUseActorHook<_SERVICE>(actorContext);
 
-export  {type  WalletInfo ,type StakingPoolInfo}  from "../../../declarations/os/os.did";
+export { type WalletInfo, type Result, type StakingPoolInfo, type CreateStakingPoolRequest } from "../../../declarations/os/os.did";
 
 export default function OsActors({ children }: { children: ReactNode }) {
   const { identity, clear } = useInternetIdentity();
