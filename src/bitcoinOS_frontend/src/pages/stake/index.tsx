@@ -300,7 +300,7 @@ export default function Stake() {
             setIsLoading(false);
             return;
         }
-        walletBackend.balance(addr).then((value: BalanceResult) => {
+        walletBackend.balance().then((value: BalanceResult) => {
             if ('Err' in value) {
                 toast({
                     title: 'Balance',
@@ -414,7 +414,7 @@ export default function Stake() {
         console.log("test")
         console.log(walletList)
         console.log("-------------------")
-        get_wallets_metadata()
+        get_balance(wallet)
     }
     const formatDate = (bigintTimestamp) => {
         const date = new Date(Number(bigintTimestamp / 1000000n)); // Assuming the timestamp is in nanoseconds, convert to milliseconds
@@ -443,6 +443,7 @@ export default function Stake() {
                     </Flex> */}
                 </Flex>
                 <Flex mt={5}>
+                    <Button onClick={test}>test</Button>
                     <Text pr={3}>
                         TVL: {tvl}
                     </Text>
