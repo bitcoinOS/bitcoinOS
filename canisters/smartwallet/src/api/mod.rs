@@ -11,6 +11,7 @@ mod public_key;
 mod register_staking;
 mod staking_to_pool;
 mod sync_staking_record_status;
+mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
 // mod update_staking_record;
@@ -27,7 +28,7 @@ use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
 use crate::domain::request::{
-    RegisterStakingRequest, StakingRequest, TransferInfo, TransferRequest,
+    RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
@@ -175,6 +176,18 @@ async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
 
 /// --------------------- Queries interface of this canister -------------------
 ///
+/// Returns the total staking amount of this canister
+#[query]
+fn total_staking(req: TotalStakingRequest) -> Result<Satoshi, WalletError> {
+    let owner = ic_caller();
+    validate_owner(owner)?;
+
+    Ok(total_staking::serve(
+        req.sender_address,
+        req.staking_canister,
+    ))
+}
+
 /// Returns all staking record lists of this canister
 #[query]
 fn list_staking() -> Result<Vec<StakingRecord>, WalletError> {

@@ -62,6 +62,10 @@ type StakingRequest = record {
   amount : nat64;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
+type TotalStakingRequest = record {
+  sender_address : text;
+  staking_canister : principal;
+};
 type TransactionLog = record {
   txs : vec TransferInfo;
   send_time : nat64;
@@ -115,6 +119,7 @@ service : (InitArgument) -> {
   register_staking : (RegisterStakingRequest) -> (Result_9);
   staking_to_pool : (StakingRequest) -> (Result_3);
   sync_staking_record_status : (text) -> (Result_10);
+  total_staking : (TotalStakingRequest) -> (Result_1) query;
   transfer_from_p2pkh : (TransferRequest) -> (Result_3);
   utxos : (UtxosRequest) -> (Result_11);
 }

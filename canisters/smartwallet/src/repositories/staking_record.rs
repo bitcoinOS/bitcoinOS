@@ -1,3 +1,4 @@
+use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::domain::staking::{StakingRecord, TxId};
 
 use crate::{context::STATE, error::WalletError};
@@ -12,6 +13,16 @@ pub(crate) fn save(record: StakingRecord) -> Result<(), WalletError> {
             records.insert(key, record);
             Ok(())
         }
+    })
+}
+
+pub(crate) fn total_staking(address: String, staking_canister: CanisterId) -> u64 {
+    STATE.with_borrow(|s| {
+        s.staking_records
+            .iter()
+            .filter(|(_, r)| r.sender_address == address && r.staking_canister == staking_canister)
+            .map(|(_, r)| r.sent_amount)
+            .sum()
     })
 }
 

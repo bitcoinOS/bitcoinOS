@@ -105,7 +105,7 @@ dfx wallet balance
 dfx canister deposit-cycles 2000000000000 os
 
 # Create staking pool canister by os canister
-dfx canister call os create_staking_pool_canister '(record { duration_in_millisecond = 86; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10 })'
+dfx canister call os create_staking_pool_canister '(record { duration_in_day = 1:nat64; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16 })'
 
 # If you want to deploy smartwall for test by manually, In normal, the smartwallet will be install by os canister
 # just deploy_wallet

@@ -8,7 +8,7 @@ pub mod rgb;
 
 use crate::context::STATE;
 use crate::domain::{
-    request::{RegisterStakingRequest, StakingRequest, TransferRequest},
+    request::{RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferRequest},
     response::{NetworkResponse, PublicKeyResponse},
     Metadata, TransactionLog,
 };
