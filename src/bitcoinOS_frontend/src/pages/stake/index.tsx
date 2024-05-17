@@ -45,7 +45,7 @@ import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react"
 import { Select } from "@chakra-ui/react"
 import React, { useEffect, useState, useRef } from 'react';
 import { WalletStore, StakepoolStore } from "../../store/index"
-import { Metadata, useWalletBackend, Result_1 as BalanceResult, StakingRequest, Result_3 as StakeResult, StakingRecords, StakingRecord, MetadataRecords } from "../../ic/WalletActors";
+import { Metadata, useWalletBackend, Result_1 as BalanceResult, StakingRequest, Result_3 as StakeResult, StakingRecords, StakingRecord, MetadataRecords, TransferRequest } from "../../ic/WalletActors";
 import { useOsBackend, WalletInfo, Result as StakingPoolResult, StakingPoolInfo, CreateStakingPoolRequest } from "../../ic/OsActors";
 import { useSatkePoolBackend } from "../../ic/StakePoolActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
@@ -82,6 +82,9 @@ export default function Stake() {
     const [walletName, setWalletName] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false)
 
+    /*--- transfer Info ---*/
+    const [transferBalance, setTransferBalance] = useState<number>(0)
+    const [transferAddress, setTransferAddress] = useState<string>("")
     /*--- stake pool Info ---*/
     const [stakeList, setStakeList] = useState<StakingPoolInfo[]>([])
     const [stakeSelect, setStakeSelect] = useState([])
@@ -91,7 +94,6 @@ export default function Stake() {
     const [initialLoadDone, setInitialLoadDone] = useState(false);
     const btc = 100000000
     useEffect(() => {
-
         if (identity) {
             setIslogin(true)
         }
@@ -117,6 +119,7 @@ export default function Stake() {
     }, [])
 
     useEffect(() => {
+
         if (!initialLoadDone && walletList.length > 0 && stakeList.length > 0) {
             // Trigger onChangeWallet with the first wallet's value
             const firstWallet = walletList[0];
@@ -144,7 +147,6 @@ export default function Stake() {
         }
         if (identity && osBackend) {
             get_wallets()
-            console.log('-------------------------------------111')
             get_stake_pool()
             get_wallet_count()
 
@@ -156,7 +158,7 @@ export default function Stake() {
             get_tvl()
         }
     }, [stakeBackend, identity]);
-
+    /*
     useEffect(() => {
         if (identity && walletBackend) {
             get_tvl()
@@ -164,18 +166,19 @@ export default function Stake() {
             get_stake_balance()
         }
     }, [walletBackend, identity]);
+    */
 
     // useEffect(() => {
     //     get_balance()
     //     get_stake_records()
     // }, [wallet])
 
-    function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
-        console.log(event.target.value)
+    async function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
         setWallet(event.target.value)
-        get_balance(event.target.value)
-        get_stake_records(event.target.value)
-        get_stake_pool()
+        setTransferAddress('')
+        setTransferBalance(0)
+        setStakeBalance(0)
+        await updateWalletData(event.target.value)
         // 查找选中的 wallet 项
         const selectedItem = walletList.find(item => item.bitcoin_address === event.target.value);
         // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
@@ -198,6 +201,24 @@ export default function Stake() {
             setStakeSelect([selectedItem]);
         }
     }
+    /*--- change transfer info ---*/
+    function handleChangeTransferAddress(event: React.ChangeEvent<HTMLInputElement>) {
+        const value = parseFloat(event.target.value)
+
+        setTransferAddress(event.target.value)
+        setBalanceError("")
+
+    }
+    function handleChangeTransfer(event: React.ChangeEvent<HTMLInputElement>) {
+        const value = parseFloat(event.target.value)
+        if (value >= balance) {
+            setBalanceError("*BTC balance is insufficient ")
+        } else {
+            setTransferBalance(parseFloat(event.target.value))
+            setBalanceError("")
+        }
+
+    }
     function handleChangeStake(event: React.ChangeEvent<HTMLInputElement>) {
         const value = parseFloat(event.target.value)
         if (value >= balance) {
@@ -210,6 +231,7 @@ export default function Stake() {
     }
     function onMaxClick() {
         setStakeBalance(balance)
+        setTransferBalance(balance)
     }
     function get_stake_pool() {
         if (!osBackend) return;
@@ -267,40 +289,107 @@ export default function Stake() {
             setIsLoading(false);
         })
     }
-    function get_stake_records(addr: string) {
+
+    async function updateWalletData(addr: string) {
         if (!walletBackend) return;
-        if (!addr || addr.length <= 1) {
-            setStakeRecords([])
-            return
-        };
+
+        // 初始化加载状态
         setIsLoading(true);
 
-        walletBackend.list_staking().then((v: StakingRecords) => {
-            if ('Ok' in v) {
-                const records: StakingRecord[] = v.Ok
-                setStakeRecords(records)
-                let r: bigint = 0n
-                records.map((v) => {
-                    r = r + (v.sent_amount)
-                })
-                setTotalBalance(Number(r) * 1.0 / btc)
-            }
-            console.log("nogoods1")
+        // 初始化状态值
+        if (!addr || addr.length < 1) {
+            setBalance(0);
+            setStakeRecords([]);
             setIsLoading(false);
-        })
+            return;
+        }
+
+        try {
+            // 并行调用 get_balance 和 get_stake_records
+            const [balanceResult, stakeRecordsResult] = await Promise.all([
+                walletBackend.balance(addr),
+                walletBackend.list_staking()
+            ]);
+
+            // 处理余额结果
+            if ('Err' in balanceResult) {
+                toast({
+                    title: 'Balance',
+                    description: "get balance error",
+                    status: 'error',
+                    position: 'top',
+                    duration: 9000,
+                    isClosable: true,
+                });
+            } else {
+                const b: bigint = balanceResult.Ok;
+                setBalance(Number(b) / btc);
+            }
+
+            // 处理 staking 记录结果
+            if ('Ok' in stakeRecordsResult) {
+                const records: StakingRecord[] = stakeRecordsResult.Ok;
+                setStakeRecords(records);
+                let r: bigint = 0n;
+                records.forEach((record) => {
+                    r += record.sent_amount;
+                });
+                setTotalBalance(Number(r) * 1.0 / btc);
+            }
+
+        } catch (error) {
+            console.error('Error updating wallet data:', error);
+            toast({
+                title: 'Error',
+                description: "Error updating wallet data",
+                status: 'error',
+                position: 'top',
+                duration: 9000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    async function get_stake_records(addr: string) {
+        if (!walletBackend) return;
+        if (!addr || addr.length <= 1) {
+            setStakeRecords([]);
+            return;
+        }
+        setIsLoading(true);
+
+        try {
+            const v: StakingRecords = await walletBackend.list_staking();
+            if ('Ok' in v) {
+                const records: StakingRecord[] = v.Ok;
+                setStakeRecords(records);
+                let r: bigint = 0n;
+                records.forEach((record) => {
+                    r += record.sent_amount;
+                });
+                setTotalBalance(Number(r) * 1.0 / btc);
+            }
+        } catch (error) {
+            console.error('Error getting stake records:', error);
+        } finally {
+            setIsLoading(false);
+        }
     }
 
-    function get_balance(addr: string) {
+    async function get_balance(addr: string) {
         if (!walletBackend) return;
         // if(wallet.length <=1) return;
         setIsLoading(true);
         if (!addr || addr.length < 1) {
-            setBalance(0)
-            setStakeRecords([])
+            setBalance(0);
+            setStakeRecords([]);
             setIsLoading(false);
             return;
         }
-        walletBackend.balance().then((value: BalanceResult) => {
+
+        try {
+            const value: BalanceResult = await walletBackend.balance(addr);
             if ('Err' in value) {
                 toast({
                     title: 'Balance',
@@ -309,13 +398,28 @@ export default function Stake() {
                     position: "top",
                     duration: 9000,
                     isClosable: true,
-                })
+                });
             } else {
-                const b: bigint = value.Ok
-                setBalance(Number(b) / btc)
+                console.log("-------------111")
+                const b: bigint = value.Ok;
+                setBalance(Number(b) / btc);
+                console.log(addr)
+                console.log(balance)
+                console.log(Number(b) / btc)
             }
+        } catch (error) {
+            console.error('Error getting balance:', error);
+            toast({
+                title: 'Balance',
+                description: "get balance error",
+                status: 'error',
+                position: "top",
+                duration: 9000,
+                isClosable: true,
+            });
+        } finally {
             setIsLoading(false);
-        })
+        }
     }
     function get_stake_balance() {
         if (!osBackend) return;
@@ -333,6 +437,46 @@ export default function Stake() {
     //         })
     //     }
     // }
+    function transfer_balance() {
+        if (!walletBackend) return
+        setIsLoading(true)
+        const TransferInfo: TransferRequest = {
+            txs: [
+                {
+                    recipient: transferAddress,
+                    amount: BigInt(transferBalance * btc)
+                }
+            ]
+        }
+        walletBackend.transfer_from_p2pkh(TransferInfo).then((result) => {
+            if ('Err' in result) {
+                toast({
+                    title: 'Transfer',
+                    description: 'transfer balance error',
+                    status: 'error',
+                    duration: 9000,
+                    isClosable: true,
+                })
+            } else {
+                toast({
+                    title: 'Transfer',
+                    status: 'success',
+                    position: "top",
+                    duration: 9000,
+                    isClosable: true,
+                    render: () => (
+                        <Box color='white' p={3} bg='green.500'>
+                            <Text>transfer balance success</Text>
+                            <Text>{"txid:" + result.Ok}</Text>
+                        </Box>
+                    )
+                })
+            }
+            refresh()
+            setTransferBalance(0)
+            setIsLoading(false);
+        })
+    }
     function stake_balance() {
         if (!walletBackend) return
         if (!stakeCanister) return
@@ -368,6 +512,7 @@ export default function Stake() {
                 })
             }
             refresh()
+            setStakeBalance(0)
             setIsLoading(false);
         })
     }
@@ -412,9 +557,9 @@ export default function Stake() {
     }
     function test() {
         console.log("test")
-        console.log(walletList)
-        console.log("-------------------")
-        get_balance(wallet)
+        console.log("------~~")
+        console.log(balance)
+        console.log(totalBalance)
     }
     const formatDate = (bigintTimestamp) => {
         const date = new Date(Number(bigintTimestamp / 1000000n)); // Assuming the timestamp is in nanoseconds, convert to milliseconds
@@ -472,6 +617,11 @@ export default function Stake() {
                             {wallet.length > 0 && <Text fontSize='sm' mt="2">address:  {(wallet)}</Text>}
                             {wallet.length > 0 && <Text fontSize='sm' mt="2">canister: {walletSelect.map((item, index) => (
                                 item.wallet_canister.toText()
+                            ))}</Text>}
+                            {wallet.length > 0 && <Text fontSize='sm' mt="2">{walletSelect.map((item, index) => (
+                                Object.keys(item.network).map((key) => (
+                                    <p key={key}>Network: {key}</p>
+                                ))
                             ))}</Text>}
                         </Flex>
                         <Flex>
@@ -566,13 +716,22 @@ export default function Stake() {
                                                 </Flex>
                                             </HStack>
                                             <HStack bg="gray.200" p={1} borderRadius="lg">
+
+                                                <InputGroup>
+
+                                                    <Input type="string" value={transferAddress} border="none" placeholder='address' isDisabled={!isLogin} onChange={handleChangeTransferAddress}></Input >
+
+                                                </InputGroup>
+                                            </HStack>
+                                            <HStack bg="gray.200" p={1} borderRadius="lg">
                                                 <InputGroup>
                                                     <InputLeftElement
                                                         pointerEvents="none"
                                                     >
                                                         <Image src='./favicon.png' boxSize="1.2rem" />
                                                     </InputLeftElement>
-                                                    <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
+
+                                                    <Input type="number" value={transferBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeTransfer}></Input >
 
                                                     <InputRightElement  >
                                                         <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
@@ -582,7 +741,7 @@ export default function Stake() {
                                             <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
                                             <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
-                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Transfer</Button>}
+                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={transferBalance <= 0 || !isOsInited} onClick={transfer_balance}>Transfer</Button>}
                                                 {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }}>Login</Button>}
                                             </Flex>
                                         </VStack>
