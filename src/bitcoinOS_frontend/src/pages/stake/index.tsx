@@ -588,7 +588,6 @@ export default function Stake() {
                     </Flex> */}
                 </Flex>
                 <Flex mt={5}>
-                    <Button onClick={test}>test</Button>
                     <Text pr={3}>
                         TVL: {tvl}
                     </Text>
