@@ -16,7 +16,7 @@ import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
 import { WalletStore } from "../store/index"
 
-export { type Metadata, type Result_1, type StakingRequest, type Result_3, type Result_4 as StakingRecords, type Result_6 as MetadataRecords, type StakingRecord } from "../../../declarations/smartwallet/smartwallet.did";
+export { type Metadata, type Result_1, type StakingRequest, type Result_3, type Result_4 as StakingRecords, type Result_6 as MetadataRecords, type StakingRecord, type TransferRequest } from "../../../declarations/smartwallet/smartwallet.did";
 
 const actorContext = createActorContext<_SERVICE>();
 export const useWalletBackend = createUseActorHook<_SERVICE>(actorContext);
