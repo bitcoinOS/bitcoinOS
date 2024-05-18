@@ -14,10 +14,12 @@ import { ReactNode } from "react";
 import { _SERVICE } from "../../../declarations/stakingpool/stakingpool.did";
 import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
-import {StakepoolStore} from "../store/index"
+import { StakepoolStore } from "../store/index"
 
 const actorContext = createActorContext<_SERVICE>();
 export const useSatkePoolBackend = createUseActorHook<_SERVICE>(actorContext);
+
+export { type RedeemRequest, type Result_3 as RedeemResponse } from "../../../declarations/stakingpool/stakingpool.did";
 
 export default function StakePoolActors({ children }: { children: ReactNode }) {
   const { identity, clear } = useInternetIdentity();

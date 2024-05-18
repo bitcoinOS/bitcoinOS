@@ -23,7 +23,7 @@ export function LoginButton() {
   const text = () => {
     if (identity) {
       const p = identity.getPrincipal().toString()
-      return p.substring(0,5)+"..."+p.substring(p.length-3,p.length);
+      return p.substring(0, 5) + "..." + p.substring(p.length - 3, p.length);
     } else if (isLoggingIn) {
       return (
         <>
@@ -41,7 +41,7 @@ export function LoginButton() {
       bgColor="orange.400"
       _hover={{ bg: "orange.200", borderColor: "orange.400" }}
       onClick={handleClick}
-      >
+    >
       {text()}
     </Button>
   );
