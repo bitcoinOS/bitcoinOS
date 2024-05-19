@@ -105,37 +105,37 @@ export default function Stake() {
         if (identity) {
             setIslogin(true)
         }
-        if (isLogin) {
-            if (!walletBackend) {
-                setIsWalletInited(false);
-            } else {
-                setIsWalletInited(true);
-            }
-            if (!stakeBackend) {
-                setIsStakePoolInited(true);
-            } else {
-                get_tvl();
-                setIsStakePoolInited(false);
-            }
-            if (!osBackend) {
-                setIsOsInited(false)
-            } else {
-                setIsOsInited(true)
-                get_wallets()
-                get_wallet_count()
+        if (!walletBackend) {
+            setIsWalletInited(false);
+        } else {
+            setIsWalletInited(true);
+        }
+        if (!stakeBackend) {
+            setIsStakePoolInited(true);
+        } else {
+            get_tvl();
+            setIsStakePoolInited(false);
+        }
+        if (!osBackend) {
+            setIsOsInited(false)
+        } else {
+            setIsOsInited(true)
+            get_wallets()
+            get_wallet_count()
 
-            }
         }
     }, [])
 
     useEffect(() => {
         if (!initialLoadDone && walletList.length > 0 && stakeList.length > 0) {
             // Trigger onChangeWallet with the first wallet's value
-            const firstWallet = walletList[0];
-            onChangeWallet({ target: { value: firstWallet.bitcoin_address, selectedOptions: [{ dataset: { id: firstWallet.wallet_canister.toText() } }] } });
+
             // Trigger onChangeStake with the first stake pool's value
             const firstStake = stakeList[0];
             onChangeStake({ target: { value: firstStake.bitcoin_address, selectedOptions: [{ dataset: { id: firstStake.os_canister.toText() } }] } });
+
+            const firstWallet = walletList[0];
+            onChangeWallet({ target: { value: firstWallet.bitcoin_address, selectedOptions: [{ dataset: { id: firstWallet.wallet_canister.toText() } }] } });
             setInitialLoadDone(true);
         }
     }, [walletList, stakeList, initialLoadDone]);
@@ -144,7 +144,6 @@ export default function Stake() {
         if (identity) {
             setIslogin(true)
         } else {
-            console.log("------------------------------------------------------")
             setIsLoading(false)
             setIslogin(false)
         }
@@ -155,6 +154,9 @@ export default function Stake() {
         debugger
         if (osBackend) {
             setIsOsInited(true)
+        }
+        if (walletBackend) {
+            setIsWalletInited(true);
         }
         if (identity && osBackend) {
             get_wallets()
@@ -169,9 +171,6 @@ export default function Stake() {
             get_tvl()
         }
     }, [stakeBackend, identity]);
-    useEffect(() => {
-        console.log(isstakeBalance); // { num: 1 } 数据已更新
-    }, [isstakeBalance])
     /*
     useEffect(() => {
         if (identity && walletBackend) {
@@ -186,14 +185,6 @@ export default function Stake() {
     //     get_balance()
     //     get_stake_records()
     // }, [wallet])
-    useEffect(() => {
-        if (currentWallet) {
-            const updateData = async () => {
-                await updateWalletData(wallet);
-            };
-            updateData();
-        }
-    }, [currentWallet]);
     async function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
         setWallet(event.target.value)
         setTransferAddress('')
@@ -209,8 +200,10 @@ export default function Stake() {
 
         const selectOption = event.target.selectedOptions[0]
         if (selectOption.dataset.id) {
-            await setCurrentWallet(selectOption.dataset.id)
+            setCurrentWallet(selectOption.dataset.id)
         }
+        await updateWalletData(event.target.value);
+
     }
     /*--- change stake select ---*/
     function onChangeStake(event: React.ChangeEvent<HTMLSelectElement>) {
@@ -268,7 +261,19 @@ export default function Stake() {
                 setStakepoolCanister(stakePool.staking_pool_canister.toText())
             }
             setIsLoading(false)
-        })
+        }).catch((error) => {
+            toast({
+                title: 'Info',
+                description: "get stake error",
+                status: 'error',
+                position: 'top',
+                duration: 9000,
+                isClosable: true,
+            });
+            console.error("Error fetching staking pool:", error);
+        }).finally(() => {
+            setIsLoading(false);
+        });
     }
     function get_wallets() {
         if (!osBackend) return;
@@ -276,7 +281,19 @@ export default function Stake() {
         osBackend.my_wallets().then((value: WalletInfo[]) => {
             setWalletList(value);
             setIsLoading(false)
-        })
+        }).catch((error) => {
+            toast({
+                title: 'Info',
+                description: "get wallet error",
+                status: 'error',
+                position: 'top',
+                duration: 9000,
+                isClosable: true,
+            });
+            console.error("Error fetching walletList:", error);
+        }).finally(() => {
+            setIsLoading(false);
+        });
     }
     function get_wallets_metadata() {
         if (!walletBackend) return;
@@ -285,7 +302,6 @@ export default function Stake() {
                 setWalletMetadata(value.Ok)
             }
         })
-        console.log("------------------!!!")
         console.log(walletMetadata)
     }
 
@@ -295,7 +311,19 @@ export default function Stake() {
         osBackend.count_wallet().then((value: BigInt) => {
             setUsers(Number(value));
             setIsLoading(false)
-        })
+        }).catch((error) => {
+            toast({
+                title: 'Info',
+                description: "get walletCount error",
+                status: 'error',
+                position: 'top',
+                duration: 9000,
+                isClosable: true,
+            });
+            console.error("Error fetching wallet count:", error);
+        }).finally(() => {
+            setIsLoading(false);
+        });
     }
 
     function get_tvl() {
@@ -308,12 +336,15 @@ export default function Stake() {
         stakeBackend.tvl().then((v: BigInt) => {
             setTvl(Number(v) * 1.0 / btc)
             setIsLoading(false);
-        })
+        }).catch((error) => {
+            console.error("Error fetching wallet count:", error);
+        }).finally(() => {
+            setIsLoading(false);
+        });
     }
 
     async function updateWalletData(addr: string) {
-        if (!walletBackend) return;
-
+        if (!walletBackend) { return };
         // 初始化加载状态
         setIsLoading(true);
 
@@ -709,13 +740,16 @@ export default function Stake() {
         return s.substring(0, 3) + "..." + s.substring(l - 3, l);
     }
     function test() {
-        const updatedWalletList = walletList.map(wallet => {
+
+        /*const updatedWalletList = walletList.map(wallet => {
             if (wallet.bitcoin_address === 'mpHDyVUSXuKkyySbU2mrG1GK1nauEiqjuo') {
                 return { ...wallet, balance: 1 };
             }
             return wallet;
         });
         setWalletList(updatedWalletList);
+        console.log(walletList)
+        */
         console.log(walletList)
     }
     const formatDate = (bigintTimestamp) => {
@@ -777,7 +811,7 @@ export default function Stake() {
                             ))}</Text>}
                             {wallet.length > 0 && <Text fontSize='sm' mt="2">{walletSelect.map((item, index) => (
                                 Object.keys(item.network).map((key) => (
-                                    <p key={key}>Network: {key}</p>
+                                    <Box key={key}>Network: {key}</Box>
                                 ))
                             ))}</Text>}
                         </Flex>
