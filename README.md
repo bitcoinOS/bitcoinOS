@@ -8,19 +8,41 @@
 
 ## What's `bitcoinOS`
 
-`bitcoinOS` is an innovative project that combines `Bitcoin` with `AI`. It serves as a `Bitcoin Layer2` asset issuance and management system, incorporating the security of `Bitcoin`, the privacy and smart contract capabilities of `RGB`, and the linear scalability of the `ICP` network. Additionally, it provides individual data sovereignty and data assets, supporting AI innovation platforms with the capability to utilize `GPT` Large Language Models.
+`bitcoinOS` A Bitcoin Native Smart Contract & Finance Layer.
 
-`Bitcoin` is a peer-to-peer electronic cash system designed to create a decentralized financial ecosystem, providing individuals with sovereignty over their identity and digital assets. 
+- `Bitcoin Wallet as a Smart Contract`
+  - The first Turing-complete native smart contract solution of Bitcoin.
+  - An UTXO as an program unit
+  - A programmable Bitcoin wallet with PSBT, Miniscript & descriptor as a smart contract
+  - A programmable Bitcoin wallet as a Account Abstract
 
-`bitcoinOS`, on the other hand, takes `Bitcoin` as its core and adds sovereignty protection for data assets on top of it. `bitcoinOS` is a modular blockchain network that uses Bitcoin L1 as the settlement layer and builds Bitcoin L2: `Fastnet` with `RGB` smart contracts and `ICP` network technology at its core. 
+- `Bitcoin Native Finance Platform`
+    - Bitcoin as M0 of crypto world
+    - Decentralized bank of Bitcoin
+    - Bitcoin native staking/loan
+    - Bitcoin native atomic swap
+    - Bitcoin fast pay with ckBTC
+    - Bitcoin derivatives 
+    - Bitcoin credits
 
-While the `Bitcoin` network primarily focuses on asset platforms and payment applications, `bitcoinOS` expands the scope of Bitcoin's ecosystem and enhances user experience by fully integrating Bitcoin L1 assets and combining them with the ICP network through the `SmartWallet`.
+- `Bitcoin Multi-assets Issuance`
+    - Ordinals assets Issuance
+    - Runes assets Issuance
+    - RGB assets Issuance
+    - RWA with Bitcoin Binding
+    - Stablecoin based Bitcoin
+    - osBTC 1:1 BTC (Principal Token)
+    - BOS for Yield Token
+  
+- `100% on chain with ICP`          
+    - bitcoinOS run on the best cryptography network.
+    - Chain-Key & Threshold Cryptography
+    - Modular blockchain network
+    - Smart contract container
+    - WebAssembly
+    - Best privacy
+    - Data sovereignty
 
-`bitcoinOS` maintains the identity and asset sovereignty of Bitcoin while also increasing support and protection for data sovereignty, enhancing privacy and scalability, thereby facilitating rapid payments and transactions for all Bitcoin assets.
-
-In the era of artificial intelligence, data is considered the most important means of production and factor. Through data sovereignty provided by `bitcoinOS`, legitimate data owners are given the first step of protection. 
-
-Similar to Bitcoin's empowerment of identity and currency, `bitcoinOS's` data empowerment can activate innovation for everyone by utilizing massive data with Large Language Models (`LLMs`) or Large World Models (`LWMs`). This not only promotes the rapid integration of Web2 and Web3 but also drives the widespread adoption of Bitcoin and blockchain technology.
 
 [White paper](./whitepaper/bitcoinOS-whitepaper.pdf)
 
