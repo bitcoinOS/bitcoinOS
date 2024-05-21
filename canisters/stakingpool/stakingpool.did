@@ -68,6 +68,7 @@ type StakingRecord = record {
   duration_in_day : nat64;
   actual_amount : nat64;
   staking_canister : principal;
+  redeem_id : opt text;
   sent_time : nat64;
   sent_amount : nat64;
   sender_canister : principal;

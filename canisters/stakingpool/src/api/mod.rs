@@ -6,6 +6,7 @@ mod logs;
 mod p2pkh_address;
 mod public_key;
 mod redeem;
+mod redeemed_staking_record;
 mod register_staking;
 mod staker_save;
 mod tvl;
@@ -134,7 +135,7 @@ async fn redeemed_staking_record() -> bool {
     }
 
     let metadata = get_metadata();
-    confirm_staking_record::serve(metadata).await.is_ok()
+    redeemed_staking_record::serve(metadata).await.is_ok()
 }
 
 /// --------------------- Queries interface of this canister -------------------

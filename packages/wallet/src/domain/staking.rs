@@ -30,6 +30,7 @@ pub struct StakingRecord {
     pub staking_address: String,
     pub actual_amount: Satoshi,
     pub status: StakingStatus,
+    pub redeemed_txid: Option<TxId>,
     pub updated_time: u64,
 }
 

@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
 use crate::{constants::DAY_IN_NANOSECOND, context::STATE, error::StakingError};
@@ -11,6 +13,22 @@ pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {
 /// List all staking records
 pub(crate) fn list_staking_records() -> Vec<StakingRecord> {
     STATE.with_borrow(|s| s.staking_records.iter().map(|(_, r)| r).collect())
+}
+
+/// List all staking record keys
+pub(crate) fn keys() -> BTreeSet<TxId> {
+    STATE.with_borrow(|s| s.staking_records.iter().map(|(key, _)| key).collect())
+}
+
+/// List all staking record keys of Redeeming  status
+pub(crate) fn redeeming_keys() -> BTreeSet<TxId> {
+    STATE.with_borrow(|s| {
+        s.staking_records
+            .iter()
+            .filter(|(_, record)| record.status == StakingStatus::Redeeming)
+            .map(|(key, _)| key)
+            .collect()
+    })
 }
 
 /// Calculate the total amount staked
@@ -38,6 +56,7 @@ fn update_status(
     status: StakingStatus,
     updated_time: u64,
     received_amount: Option<Satoshi>,
+    redeemed_txid: Option<TxId>,
 ) -> Result<(), StakingError> {
     STATE.with_borrow_mut(|s| {
         let records = &mut s.staking_records;
@@ -48,6 +67,7 @@ fn update_status(
                     updated_time,
                     status,
                     actual_amount: received_amount.unwrap_or(record.actual_amount),
+                    redeemed_txid,
                     ..record
                 };
 
@@ -69,15 +89,26 @@ pub(crate) fn confirmed_record(
         StakingStatus::Confirmed,
         updated_time,
         Some(received_amount),
+        None,
     )
 }
 
 pub(crate) fn redeeming_record(txid: TxId, updated_time: u64) -> Result<(), StakingError> {
-    update_status(txid, StakingStatus::Redeeming, updated_time, None)
+    update_status(txid, StakingStatus::Redeeming, updated_time, None, None)
 }
 
-pub(crate) fn redeemed_record(txid: TxId, updated_time: u64) -> Result<(), StakingError> {
-    update_status(txid, StakingStatus::Redeemed, updated_time, None)
+pub(crate) fn redeemed_record(
+    txid: TxId,
+    updated_time: u64,
+    redeem_txid: TxId,
+) -> Result<(), StakingError> {
+    update_status(
+        txid,
+        StakingStatus::Redeemed,
+        updated_time,
+        None,
+        Some(redeem_txid),
+    )
 }
 
 /// Validate the sender is the staker and the amount is valid
