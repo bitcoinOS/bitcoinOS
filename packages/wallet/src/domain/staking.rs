@@ -36,7 +36,8 @@ pub struct StakingRecord {
 
 impl StakingRecord {
     pub fn can_update(&self, other: &Self) -> bool {
-        self.status.next() == Some(other.status)
+        // self.status.next() == Some(other.status)
+        other.status.after(&self.status)
             && self.txid == other.txid
             && self.sender == other.sender
             && self.sender_address == other.sender_address
@@ -57,12 +58,24 @@ pub enum StakingStatus {
 }
 
 impl StakingStatus {
-    pub fn next(&self) -> Option<Self> {
-        match self {
-            StakingStatus::Pending => Some(StakingStatus::Confirmed),
-            StakingStatus::Confirmed => Some(StakingStatus::Redeeming),
-            StakingStatus::Redeeming => Some(StakingStatus::Redeemed),
-            StakingStatus::Redeemed => None,
+    // pub fn next(&self) -> Option<Self> {
+    //     match self {
+    //         StakingStatus::Pending => Some(StakingStatus::Confirmed),
+    //         StakingStatus::Confirmed => Some(StakingStatus::Redeeming),
+    //         StakingStatus::Redeeming => Some(StakingStatus::Redeemed),
+    //         StakingStatus::Redeemed => None,
+    //     }
+    // }
+
+    pub fn after(&self, other: &Self) -> bool {
+        match (other, self) {
+            (_, StakingStatus::Pending) => false,
+            (StakingStatus::Pending, _) => true,
+            (_, StakingStatus::Confirmed) => false,
+            (StakingStatus::Confirmed, _) => true,
+            (_, StakingStatus::Redeeming) => false,
+            (StakingStatus::Redeeming, _) => true,
+            (_, StakingStatus::Redeemed) => false,
         }
     }
 }
@@ -77,4 +90,29 @@ impl Storable for StakingRecord {
     }
 
     const BOUND: Bound = Bound::Unbounded;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn staking_status_should_works() {
+        let pending = StakingStatus::Pending;
+        let confirmed = StakingStatus::Confirmed;
+        let redeeming = StakingStatus::Redeeming;
+        let redeemed = StakingStatus::Redeemed;
+
+        assert!(!pending.after(&pending));
+        assert!(confirmed.after(&pending));
+        assert!(redeeming.after(&pending));
+        assert!(redeemed.after(&pending));
+
+        assert!(!confirmed.after(&confirmed));
+        assert!(!pending.after(&confirmed));
+        assert!(redeeming.after(&confirmed));
+        assert!(redeemed.after(&confirmed));
+
+        assert!(redeemed.after(&redeeming));
+    }
 }

@@ -20,17 +20,6 @@ pub(crate) fn keys() -> BTreeSet<TxId> {
     STATE.with_borrow(|s| s.staking_records.iter().map(|(key, _)| key).collect())
 }
 
-/// List all staking record keys of Redeeming  status
-pub(crate) fn redeeming_keys() -> BTreeSet<TxId> {
-    STATE.with_borrow(|s| {
-        s.staking_records
-            .iter()
-            .filter(|(_, record)| record.status == StakingStatus::Redeeming)
-            .map(|(key, _)| key)
-            .collect()
-    })
-}
-
 /// Calculate the total amount staked
 /// TODO: FIX using `actual_amount`
 pub(crate) fn sum_staking_amount() -> Satoshi {

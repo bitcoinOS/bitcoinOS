@@ -40,18 +40,22 @@ pub(crate) fn list_staking() -> Vec<StakingRecord> {
     })
 }
 
-pub(crate) fn update(info: StakingRecord) -> Result<(), WalletError> {
-    STATE.with_borrow_mut(|s| match s.staking_records.get(&info.txid) {
-        Some(record) => {
-            if record.can_update(&info) {
-                s.staking_records.insert(info.txid.clone(), info);
+pub(crate) fn update(pool_record: StakingRecord) -> Result<(), WalletError> {
+    STATE.with_borrow_mut(|s| match s.staking_records.get(&pool_record.txid) {
+        Some(local_record) => {
+            if local_record.can_update(&pool_record) {
+                s.staking_records
+                    .insert(pool_record.txid.clone(), pool_record);
                 Ok(())
             } else {
-                Err(WalletError::StakingRecordCantUpdate(info.txid.clone()))
+                Err(WalletError::StakingRecordCantUpdate(
+                    pool_record.txid.clone(),
+                ))
             }
         }
         None => {
-            s.staking_records.insert(info.txid.clone(), info);
+            s.staking_records
+                .insert(pool_record.txid.clone(), pool_record);
             Ok(())
         }
     })

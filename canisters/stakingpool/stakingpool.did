@@ -60,6 +60,7 @@ type StakingError = variant {
 };
 type StakingRecord = record {
   status : StakingStatus;
+  redeemed_txid : opt text;
   sender_address : text;
   staking_address : text;
   txid : text;
@@ -68,7 +69,6 @@ type StakingRecord = record {
   duration_in_day : nat64;
   actual_amount : nat64;
   staking_canister : principal;
-  redeem_id : opt text;
   sent_time : nat64;
   sent_amount : nat64;
   sender_canister : principal;

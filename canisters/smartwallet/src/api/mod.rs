@@ -3,6 +3,7 @@ mod balance;
 mod counter_increment_one;
 mod current_fee_percentiles;
 mod ecdsa_key;
+mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
@@ -195,6 +196,15 @@ fn list_staking() -> Result<Vec<StakingRecord>, WalletError> {
     validate_owner(owner)?;
 
     Ok(list_staking::serve())
+}
+
+/// Returns the staking record for the given txid
+#[query]
+fn get_staking(txid: TxId) -> Result<Option<StakingRecord>, WalletError> {
+    let owner = ic_caller();
+    validate_owner(owner)?;
+
+    Ok(get_staking::serve(&txid))
 }
 
 /// Returns ecdsa key of this canister if the caller is controller and the key exists

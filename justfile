@@ -6,6 +6,9 @@ create_all_canisters:
 deploy_os:
     dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"aaaaa-aa\"; })" 
 
+generate_did:
+    ./scripts/did.sh
+    
 build_staking:
     cargo build -p stakingpool --release --target wasm32-unknown-unknown
 
