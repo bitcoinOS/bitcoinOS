@@ -1,5 +1,6 @@
 mod all_addresses;
 mod balance;
+mod confirm_staking_record_one;
 mod counter_increment_one;
 mod current_fee_percentiles;
 mod ecdsa_key;
@@ -15,13 +16,13 @@ mod sync_staking_record_status;
 mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
-// mod update_staking_record;
 mod utxos;
 
 use wallet::bitcoins;
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::staking::StakingRecord;
+use wallet::domain::TxId;
 use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time, str_to_bitcoin_address};
 
 use candid::Principal;
@@ -166,6 +167,16 @@ async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
     validate_owner(owner)?;
 
     sync_staking_record_status::serve(txid).await.map(|_| true)
+}
+
+/// Check staking record status for given txid
+#[update]
+async fn confirm_staking_record_one(txid: TxId) -> Result<Option<StakingRecord>, WalletError> {
+    let caller = ic_caller();
+
+    validate_owner(caller)?;
+
+    confirm_staking_record_one::serve(txid).await
 }
 
 /// --------------------- Queries interface of this canister -------------------

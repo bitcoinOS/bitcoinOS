@@ -8,7 +8,7 @@ pub mod rgb;
 
 use crate::context::STATE;
 use crate::domain::{
-    request::{RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferRequest},
+    request::{StakingRequest, TotalStakingRequest, TransferRequest},
     response::{NetworkResponse, PublicKeyResponse},
     Metadata, TransactionLog,
 };
@@ -22,8 +22,8 @@ use ic_cdk::export_candid;
 use serde::Deserialize;
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
-use wallet::domain::staking::{StakingRecord, TxId};
-use wallet::domain::EcdsaKeyIds;
+use wallet::domain::staking::StakingRecord;
+use wallet::domain::{EcdsaKeyIds, TxId};
 use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 
 /// Create a wallet when init the wallet canister

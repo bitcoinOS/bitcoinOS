@@ -1,5 +1,5 @@
 use ic_cdk::api::management_canister::main::CanisterId;
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::{staking::StakingRecord, TxId};
 
 use crate::{context::STATE, error::WalletError};
 

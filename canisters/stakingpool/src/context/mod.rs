@@ -8,7 +8,7 @@ use ic_cdk::api::management_canister::main::CanisterId;
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell, Log as StableLog};
 use serde::{Deserialize, Serialize};
 
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::{staking::StakingRecord, TxId};
 
 use self::memory::Memory;
 

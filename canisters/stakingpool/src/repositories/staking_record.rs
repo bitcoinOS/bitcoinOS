@@ -1,9 +1,10 @@
-use std::collections::BTreeSet;
-
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
 use crate::{constants::DAY_IN_NANOSECOND, context::STATE, error::StakingError};
-use wallet::domain::staking::{StakingRecord, StakingStatus, TxId};
+use wallet::domain::{
+    staking::{StakingRecord, StakingStatus},
+    TxId,
+};
 
 /// Get staking record by txid
 pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {
@@ -13,11 +14,6 @@ pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {
 /// List all staking records
 pub(crate) fn list_staking_records() -> Vec<StakingRecord> {
     STATE.with_borrow(|s| s.staking_records.iter().map(|(_, r)| r).collect())
-}
-
-/// List all staking record keys
-pub(crate) fn keys() -> BTreeSet<TxId> {
-    STATE.with_borrow(|s| s.staking_records.iter().map(|(key, _)| key).collect())
 }
 
 /// Calculate the total amount staked

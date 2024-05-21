@@ -1,4 +1,4 @@
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::{staking::StakingRecord, TxId};
 
 use crate::repositories;
 

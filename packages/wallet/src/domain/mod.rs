@@ -12,6 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
 
+/// Bitcoin Txid String
+pub type TxId = String;
+
 #[derive(Clone, Debug)]
 pub struct Wallet {
     // The witness script of the wallet.

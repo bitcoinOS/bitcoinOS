@@ -1,5 +1,5 @@
 use ic_cdk::api::management_canister::main::CanisterId;
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::{staking::StakingRecord, TxId};
 
 use crate::{error::WalletError, repositories};
 
@@ -40,6 +40,6 @@ pub(crate) async fn sync_staking_status(
         .map_err(|e| WalletError::SyncStakingRecordError(format!("{e:?}")))
 }
 
-fn update_staking_record(pool_record: StakingRecord) -> Result<(), WalletError> {
+pub(super) fn update_staking_record(pool_record: StakingRecord) -> Result<(), WalletError> {
     repositories::staking_record::update(pool_record)
 }

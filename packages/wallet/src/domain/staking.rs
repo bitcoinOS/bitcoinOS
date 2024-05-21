@@ -6,8 +6,7 @@ use ic_cdk::api::management_canister::{
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::Deserialize;
 
-/// Bitcoin Txid String
-pub type TxId = String;
+use super::TxId;
 
 /// A Staking record is the record of a staked Bitcoin, its status will be `Pending` or `Confirmed` or `Redeeming` or `Redeemed`.
 /// When the record is created, it will be `Pending` and received_amount will be 0.
@@ -58,15 +57,6 @@ pub enum StakingStatus {
 }
 
 impl StakingStatus {
-    // pub fn next(&self) -> Option<Self> {
-    //     match self {
-    //         StakingStatus::Pending => Some(StakingStatus::Confirmed),
-    //         StakingStatus::Confirmed => Some(StakingStatus::Redeeming),
-    //         StakingStatus::Redeeming => Some(StakingStatus::Redeemed),
-    //         StakingStatus::Redeemed => None,
-    //     }
-    // }
-
     pub fn after(&self, other: &Self) -> bool {
         match (other, self) {
             (_, StakingStatus::Pending) => false,
