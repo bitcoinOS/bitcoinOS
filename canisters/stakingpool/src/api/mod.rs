@@ -6,7 +6,7 @@ mod logs;
 mod p2pkh_address;
 mod public_key;
 mod redeem;
-mod redeemed_staking_record;
+// mod redeemed_staking_record;
 mod register_staking;
 mod staker_save;
 mod tvl;
@@ -66,9 +66,9 @@ pub async fn balance(address: String) -> Result<Satoshi, StakingError> {
 #[update]
 async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
     let sender_canister = ic_caller();
-    check_normal_principal(sender_canister).expect("msg: caller is not normal principal");
+    check_normal_principal(sender_canister).expect("caller is not normal principal");
 
-    check_network(req.network).expect("msg: invalid network");
+    check_network(req.network).expect("invalid network");
 
     let staking_canister = ic_cdk::id();
     let staking_address = p2pkh_address::serve(get_metadata())
@@ -125,18 +125,18 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     redeem::serve(sender, metadata, req, redeem_time).await
 }
 
-/// Redeemed the redeem record status to Redeemed after the redeem
-#[update]
-async fn redeemed_staking_record() -> bool {
-    let caller = ic_caller();
+// /// Redeemed the redeem record status to Redeemed after the redeem
+// #[update]
+// async fn redeemed_staking_record() -> bool {
+//     let caller = ic_caller();
 
-    if !is_controller(&caller) {
-        return false;
-    }
+//     if !is_controller(&caller) {
+//         return false;
+//     }
 
-    let metadata = get_metadata();
-    redeemed_staking_record::serve(metadata).await.is_ok()
-}
+//     let metadata = get_metadata();
+//     redeemed_staking_record::serve(metadata).await.is_ok()
+// }
 
 /// --------------------- Queries interface of this canister -------------------
 ///

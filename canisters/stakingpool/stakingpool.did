@@ -96,7 +96,6 @@ service : (InitArgument) -> {
   p2pkh_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
   redeem_logs : () -> (vec RedeemLog) query;
-  redeemed_staking_record : () -> (bool);
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
   tvl : () -> (nat64) query;
   utxos : (UtxosRequest) -> (Result_4);

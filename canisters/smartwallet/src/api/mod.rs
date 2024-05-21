@@ -81,7 +81,6 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
 pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
-    // let address = p2pkh_address().await;
 
     balance::serve(address, metadata).await
 }
@@ -158,12 +157,6 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     // TIMER_IDS.with_borrow_mut(|t| t.insert(timer_id, ic_time()));
 
     Ok(txid)
-}
-
-/// Register staking record to staking pool by manual if staking btc from a standard bitcoin wallet
-#[update]
-async fn register_staking(req: RegisterStakingRequest) -> Result<StakingRecord, WalletError> {
-    register_staking::serve(req).await
 }
 
 /// Sync staking record status from Staking pool canister

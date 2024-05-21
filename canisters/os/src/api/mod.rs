@@ -9,7 +9,6 @@ mod list_staking_pool;
 mod list_wallet;
 mod list_wallet_types;
 mod my_wallet;
-mod redeemed_staking_record;
 mod registry_staking_pool;
 mod registry_wallet;
 mod set_wallet_cycles;
@@ -169,20 +168,6 @@ async fn confirm_staking_record(staking_canister: CanisterId) -> Result<bool, Er
     }
 
     confirm_staking_record::serve(staking_canister).await
-}
-
-/// Sync the staking record confirmed or not
-#[ic_cdk::update]
-#[deprecated]
-async fn redeemed_staking_record(staking_canister: CanisterId) -> Result<bool, Error> {
-    let caller = ic_cdk::caller();
-
-    // if !is_controller(&caller) {
-    //     return Err(Error::UnAuthorized(caller.to_string()));
-    // }
-
-    // redeemed_staking_record::serve(staking_canister).await
-    Err(Error::UnAuthorized(caller.to_string()))
 }
 
 /// --------------------- Queries interface of this canister -------------------
