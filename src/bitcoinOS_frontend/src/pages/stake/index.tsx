@@ -99,7 +99,8 @@ export default function Stake() {
     const [stakeAddress, setStakeAddress] = useState<string>("")
     const [stakeCanister, setStakeCanister] = useState<Principal>();
     const [stakeRecords, setStakeRecords] = useState<StakingRecord[]>([])
-    const [initialLoadDone, setInitialLoadDone] = useState(false);
+    const [initialLoadDoneWallet, setInitialLoadDoneWallet] = useState(false);
+    const [initialLoadDoneStake, setInitialLoadDoneStake] = useState(false);
     const [initialLoadDoneOs, setInitialLoadDoneOs] = useState(false);
     const btc = 100000000
     useEffect(() => {
@@ -127,20 +128,10 @@ export default function Stake() {
     }, [])
 
     useEffect(() => {
-        if (!initialLoadDone && walletList.length > 0 && stakeList.length > 0) {
+        if (!initialLoadDoneWallet && walletList.length > 0) {
             const firstStake = stakeList[0];
             const firstWallet = walletList[0];
             setWallet(walletList[0].bitcoin_address)
-            // Trigger onChangeStake with the first stake pool's value
-            get_stake_pool()
-            // 查找选中的 wallet 项
-            if (stakeList[0].bitcoin_address) {
-                const selectedItem = stakeList.find(item => item.bitcoin_address === stakeList[0].bitcoin_address);
-                // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
-                if (selectedItem) {
-                    setStakeSelect([selectedItem]);
-                }
-            }
             // Trigger onChangeWallet with the first wallet's value
             // 查找选中的 wallet 项
             if (walletList[0].bitcoin_address) {
@@ -152,10 +143,26 @@ export default function Stake() {
 
                 updateWalletData(walletList[0].bitcoin_address);
             }
-            setInitialLoadDone(true);
+            setInitialLoadDoneWallet(true);
         }
-    }, [walletList, stakeList, initialLoadDone]);
+    }, [walletList, initialLoadDoneWallet]);
 
+    useEffect(() => {
+        if (!initialLoadDoneStake && stakeList.length > 0) {
+            const firstStake = stakeList[0];
+            const firstWallet = walletList[0];
+            get_stake_pool()
+            // 查找选中的 wallet 项
+            if (stakeList[0].bitcoin_address) {
+                const selectedItem = stakeList.find(item => item.bitcoin_address === stakeList[0].bitcoin_address);
+                // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
+                if (selectedItem) {
+                    setStakeSelect([selectedItem]);
+                }
+            }
+            setInitialLoadDoneStake(true);
+        }
+    }, [stakeList, initialLoadDoneStake]);
 
     useEffect(() => {
         if (identity) {
@@ -300,6 +307,7 @@ export default function Stake() {
         if (!osBackend) return;
         setIsLoading(true)
         osBackend.my_wallets().then((value: WalletInfo[]) => {
+            setWallet(value[0].bitcoin_address)
             setWalletList(value);
             setCurrentWallet(value[0].wallet_canister.toText());
             setIsLoading(false)
@@ -775,11 +783,8 @@ export default function Stake() {
         setWalletList(updatedWalletList);
         console.log(walletList)
         */
-        console.log(walletList[0].wallet_canister.toText())
-        console.log("--------------:", stakeAddress)
-        console.log(stakeCanister)
-        console.log(stakeSelect)
-        console.log(stakeSelect[0].staking_pool_canister)
+        console.log("--------------:", walletList)
+        console.log(walletSelect)
     }
     const formatDate = (bigintTimestamp) => {
         const date = new Date(Number(bigintTimestamp / 1000000n)); // Assuming the timestamp is in nanoseconds, convert to milliseconds
@@ -808,7 +813,7 @@ export default function Stake() {
                     </Flex> */}
                 </Flex>
                 <Flex mt={5}>
-                    <Button onClick={test}>test</Button>
+                    {/*<Button onClick={test}>test</Button>*/}
                     <Text pr={3}>
                         TVL: {tvl}
                     </Text>
@@ -835,14 +840,6 @@ export default function Stake() {
                                 </Select>
                             </Flex>
                             {wallet.length > 0 && <Text fontSize='sm' mt="2">address:  {(wallet)}</Text>}
-                            {wallet.length > 0 && <Text fontSize='sm' mt="2">canister: {walletSelect.map((item, index) => (
-                                item.wallet_canister.toText()
-                            ))}</Text>}
-                            {wallet.length > 0 && <Text fontSize='sm' mt="2">{walletSelect.map((item, index) => (
-                                Object.keys(item.network).map((key) => (
-                                    <Box key={key}>Network: {key}</Box>
-                                ))
-                            ))}</Text>}
                         </Flex>
                         <Flex>
                             <Text mr={2}>Pools:</Text>
