@@ -100,6 +100,7 @@ export default function Stake() {
     const [stakeCanister, setStakeCanister] = useState<Principal>();
     const [stakeRecords, setStakeRecords] = useState<StakingRecord[]>([])
     const [initialLoadDone, setInitialLoadDone] = useState(false);
+    const [initialLoadDoneOs, setInitialLoadDoneOs] = useState(false);
     const btc = 100000000
     useEffect(() => {
         if (identity) {
@@ -122,23 +123,39 @@ export default function Stake() {
             setIsOsInited(true)
             get_wallets()
             get_wallet_count()
-
         }
     }, [])
 
     useEffect(() => {
         if (!initialLoadDone && walletList.length > 0 && stakeList.length > 0) {
-            // Trigger onChangeWallet with the first wallet's value
-
-            // Trigger onChangeStake with the first stake pool's value
             const firstStake = stakeList[0];
-            onChangeStake({ target: { value: firstStake.bitcoin_address, selectedOptions: [{ dataset: { id: firstStake.os_canister.toText() } }] } });
-
             const firstWallet = walletList[0];
-            onChangeWallet({ target: { value: firstWallet.bitcoin_address, selectedOptions: [{ dataset: { id: firstWallet.wallet_canister.toText() } }] } });
+            setWallet(walletList[0].bitcoin_address)
+            // Trigger onChangeStake with the first stake pool's value
+            get_stake_pool()
+            // 查找选中的 wallet 项
+            if (stakeList[0].bitcoin_address) {
+                const selectedItem = stakeList.find(item => item.bitcoin_address === stakeList[0].bitcoin_address);
+                // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
+                if (selectedItem) {
+                    setStakeSelect([selectedItem]);
+                }
+            }
+            // Trigger onChangeWallet with the first wallet's value
+            // 查找选中的 wallet 项
+            if (walletList[0].bitcoin_address) {
+                const walletselectedItem = walletList.find(item => item.bitcoin_address === walletList[0].bitcoin_address);
+                // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
+                if (walletselectedItem) {
+                    setWalletSelect([walletselectedItem]);
+                }
+
+                updateWalletData(walletList[0].bitcoin_address);
+            }
             setInitialLoadDone(true);
         }
     }, [walletList, stakeList, initialLoadDone]);
+
 
     useEffect(() => {
         if (identity) {
@@ -152,25 +169,28 @@ export default function Stake() {
     // Get the principal from the backend when an identity is available
     useEffect(() => {
         debugger
+        console.log("-222goooooooooo111111111111111")
+        console.log(osBackend)
         if (osBackend) {
+            console.log("-222goooooooooo11111111111111122222222")
             setIsOsInited(true)
         }
-        if (walletBackend) {
-            setIsWalletInited(true);
-        }
-        if (identity && osBackend) {
+        if (!initialLoadDoneOs && identity && osBackend) {
             get_wallets()
             get_stake_pool()
             get_wallet_count()
+            setInitialLoadDoneOs(true)
 
         }
-    }, [osBackend, identity]);
+    }, [osBackend, identity, initialLoadDoneOs]);
 
     useEffect(() => {
         if (identity && stakeBackend) {
             get_tvl()
         }
     }, [stakeBackend, identity]);
+
+
     /*
     useEffect(() => {
         if (identity && walletBackend) {
@@ -213,6 +233,7 @@ export default function Stake() {
         // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
         if (selectedItem) {
             setStakeSelect([selectedItem]);
+            setStakeAddress(selectedItem.bitcoin_address)
         }
     }
     /*--- change transfer info ---*/
@@ -280,6 +301,7 @@ export default function Stake() {
         setIsLoading(true)
         osBackend.my_wallets().then((value: WalletInfo[]) => {
             setWalletList(value);
+            setCurrentWallet(value[0].wallet_canister.toText());
             setIsLoading(false)
         }).catch((error) => {
             toast({
@@ -295,6 +317,7 @@ export default function Stake() {
             setIsLoading(false);
         });
     }
+    /*
     function get_wallets_metadata() {
         if (!walletBackend) return;
         walletBackend.metadata().then((value) => {
@@ -304,7 +327,7 @@ export default function Stake() {
         })
         console.log(walletMetadata)
     }
-
+    */
     function get_wallet_count() {
         if (!osBackend) return;
         setIsLoading(true)
@@ -344,7 +367,9 @@ export default function Stake() {
     }
 
     async function updateWalletData(addr: string) {
+        console.log("---------------nnn")
         if (!walletBackend) { return };
+        console.log('---------gggggg')
         // 初始化加载状态
         setIsLoading(true);
 
@@ -533,7 +558,7 @@ export default function Stake() {
                 'filter': [],
                 'address': addr,
             }
-            const value: utxosRecords[] = await walletBackend.utxos(stakeRequest);
+            const value: utxosRecords = await walletBackend.utxos(stakeRequest);
             if ('Err' in value) {
                 toast({
                     title: 'utxo',
@@ -546,8 +571,8 @@ export default function Stake() {
             } else {
                 console.log("-------mmm", value)
                 if ('Ok' in value) {
-                    const result = value.Ok as UtxosResponse[];
-                    setWalletUtxos(result)
+                    const result: UtxosResponse = value.Ok;
+                    setWalletUtxos([result])
                 }
                 console.log("--------------------```")
                 console.log(walletUtxos)
@@ -627,8 +652,8 @@ export default function Stake() {
         if (!stakeCanister) return
         setIsLoading(true);
         const stakeRequest: StakingRequest = {
-            'staking_address': stakeAddress,
-            'staking_canister': stakeCanister,
+            'staking_address': stakeSelect[0].bitcoin_address,
+            'staking_canister': stakeSelect[0].staking_pool_canister,
             'amount': BigInt(stakeBalance * btc),
         }
         walletBackend.staking_to_pool(stakeRequest).then((result: StakeResult) => {
@@ -750,7 +775,11 @@ export default function Stake() {
         setWalletList(updatedWalletList);
         console.log(walletList)
         */
-        console.log(walletList)
+        console.log(walletList[0].wallet_canister.toText())
+        console.log("--------------:", stakeAddress)
+        console.log(stakeCanister)
+        console.log(stakeSelect)
+        console.log(stakeSelect[0].staking_pool_canister)
     }
     const formatDate = (bigintTimestamp) => {
         const date = new Date(Number(bigintTimestamp / 1000000n)); // Assuming the timestamp is in nanoseconds, convert to milliseconds
