@@ -16,20 +16,23 @@
     "src/bitcoinOS_frontend"
   ],
   "dependencies": {
-    "react-hot-toast": "^2.4.1",
-    "react-icons": "^5.2.0",
-    "react-router-dom": "^6.23.0",
-    "zustand": "^4.5.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@chakra-ui/react": "^2.8.2",
     "@dfinity/agent": "^1.0.1",
     "@dfinity/candid": "^1.0.1",
     "@dfinity/principal": "^1.0.1",
-    "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "framer-motion": "^11.1.7",
     "ic-use-actor": "^0.0.9",
-    "ic-use-internet-identity": "^0.0.9"
+    "ic-use-internet-identity": "^0.0.9",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-icons": "^5.2.0",
+    "react-router-dom": "^6.23.0",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
   }
 }

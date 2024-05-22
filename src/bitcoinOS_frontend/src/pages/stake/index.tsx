@@ -656,7 +656,7 @@ export default function Stake() {
             'staking_canister': stakeSelect[0].staking_pool_canister,
             'amount': BigInt(stakeBalance * btc),
         }
-        walletBackend.staking_to_pool(stakeRequest).then((result: StakeResult) => {
+        walletBackend.staking_to_pool(stakeRequest).then((result) => {
             if ('Err' in result) {
                 toast({
                     title: 'Stake',
@@ -1124,7 +1124,7 @@ export default function Stake() {
                                 <Text fontSize="2xl" textAlign="center" mb={4}>
                                     UTXO Table
                                 </Text>
-                                {walletUtxos && Array.isArray(walletUtxos.utxos) && walletUtxos.utxos.length > 0 && (
+                                {walletUtxos && walletUtxos.length > 0 && walletUtxos.some(response => response.utxos.length > 0) && (
                                     <Table variant='simple' size='sm'>
                                         <Thead>
                                             <Tr>
@@ -1133,13 +1133,15 @@ export default function Stake() {
                                             </Tr>
                                         </Thead>
                                         <Tbody>
-                                            {walletUtxos.utxos.map((item, index) => (
-                                                <React.Fragment key={index}>
-                                                    <Tr>
-                                                        <Td>{item.height}</Td>
-                                                        <Td>{item.outpoint.txid}</Td>
-                                                    </Tr>
-                                                </React.Fragment>
+                                            {walletUtxos.map((response, index) => (
+                                                response.utxos.map((item, utxoIndex) => (
+                                                    <React.Fragment key={`${index}-${utxoIndex}`}>
+                                                        <Tr>
+                                                            <Td>{item.height}</Td>
+                                                            <Td>{item.outpoint.txid}</Td>
+                                                        </Tr>
+                                                    </React.Fragment>
+                                                ))
                                             ))}
                                         </Tbody>
                                     </Table>
