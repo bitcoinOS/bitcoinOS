@@ -840,6 +840,11 @@ export default function Stake() {
                                 </Select>
                             </Flex>
                             {wallet.length > 0 && <Text fontSize='sm' mt="2">address:  {(wallet)}</Text>}
+                            {wallet.length > 0 && <Text fontSize='sm' mt="2">{walletSelect.map((item, index) => (
+                                Object.keys(item.network).map((key) => (
+                                    <Box key={key}>Network: {key}</Box>
+                                ))
+                            ))}</Text>}
                         </Flex>
                         <Flex>
                             <Text mr={2}>Pools:</Text>
