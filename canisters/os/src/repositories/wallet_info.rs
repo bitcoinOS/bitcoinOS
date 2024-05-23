@@ -60,6 +60,11 @@ pub(crate) fn find_info_by_owner(owner: Principal) -> Vec<WalletInfo> {
     })
 }
 
+/// Count the wallet info list by owner
+pub(crate) fn count_wallet_by_owner(owner: Principal) -> usize {
+    find_info_by_owner(owner).len()
+}
+
 fn range_owner_filter(owner: Principal) -> impl RangeBounds<WalletInfoKey> {
     let start = WalletInfoKey {
         owner,

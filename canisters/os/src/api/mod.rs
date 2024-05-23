@@ -24,7 +24,7 @@ use ic_cdk::{
 };
 
 use crate::{
-    constants::{DEFAULT_CYCLES_PER_CANISTER, STAKING_POOL_WASM, WALLET_WASM},
+    constants::{DEFAULT_CYCLES_PER_CANISTER, MAX_WALLET_PER_USER, STAKING_POOL_WASM, WALLET_WASM},
     context::STATE,
     domain::{
         request::{CreateStakingPoolRequest, InitArgument},
@@ -42,6 +42,8 @@ async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
     let os = ic_cdk::id();
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
+
+    check_wallet_count(owner)?;
 
     let metadata = get_metadata();
 
@@ -262,4 +264,11 @@ async fn fetch_wallet_address(staking_pool_canister: CanisterId) -> Result<Strin
 
 fn get_metadata() -> Metadata {
     repositories::metadata::get_metadata()
+}
+
+fn check_wallet_count(owner: Principal) -> Result<(), Error> {
+    if repositories::wallet_info::count_wallet_by_owner(owner) > MAX_WALLET_PER_USER {
+        return Err(Error::UnAuthorized(format!("Too many wallets created: {:?}, by {}", MAX_WALLET_PER_USER, owner)));
+    }
+    Ok(())
 }
