@@ -1,11 +1,13 @@
 mod balance;
 mod confirm_staking_record;
+mod confirm_staking_record_one;
 mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
 mod public_key;
 mod redeem;
+
 mod register_staking;
 mod staker_save;
 mod tvl;
@@ -17,6 +19,7 @@ use ic_cdk::{query, update};
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
+use wallet::domain::TxId;
 use wallet::utils::{check_normal_principal, ic_caller, ic_time, str_to_bitcoin_address};
 
 use crate::domain::request::{RedeemRequest, RegisterStakingRequest};
@@ -65,9 +68,9 @@ pub async fn balance(address: String) -> Result<Satoshi, StakingError> {
 #[update]
 async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
     let sender_canister = ic_caller();
-    check_normal_principal(sender_canister).expect("msg: caller is not normal principal");
+    check_normal_principal(sender_canister).expect("caller is not normal principal");
 
-    check_network(req.network).expect("msg: invalid network");
+    check_network(req.network).expect("invalid network");
 
     let staking_canister = ic_cdk::id();
     let staking_address = p2pkh_address::serve(get_metadata())
@@ -95,7 +98,7 @@ async fn register_staking_record(req: RegisterStakingRequest) -> StakingRecord {
     // TODO: Schedule a task to check the txid confirmed for 6 blocks by bitcoin network, and update the staking record to `Confirmed`
 }
 
-/// Sync the staking record confirmed or not
+/// Sync all `Pending` staking record to `Confirmed`
 #[update]
 async fn confirm_staking_record() -> bool {
     let caller = ic_caller();
@@ -106,6 +109,18 @@ async fn confirm_staking_record() -> bool {
 
     let metadata = get_metadata();
     confirm_staking_record::serve(metadata).await.is_ok()
+}
+
+/// Sysnc a staking record `Pending` to `Confirmed` for a given txid
+#[update]
+async fn confirm_staking_record_one(txid: TxId) -> Option<StakingRecord> {
+    let caller = ic_caller();
+
+    let metadata = get_metadata();
+
+    confirm_staking_record_one::serve(caller, txid, metadata)
+        .await
+        .expect("Failed to confirm staking record")
 }
 
 /// Redeem btc from this canister, and return the txid,
@@ -122,19 +137,6 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     let redeem_time = ic_time();
 
     redeem::serve(sender, metadata, req, redeem_time).await
-}
-
-/// Redeemed the redeem record status to Redeemed after the redeem
-#[update]
-async fn redeemed_staking_record() -> bool {
-    let caller = ic_caller();
-
-    if !is_controller(&caller) {
-        return false;
-    }
-
-    let metadata = get_metadata();
-    confirm_staking_record::serve(metadata).await.is_ok()
 }
 
 /// --------------------- Queries interface of this canister -------------------

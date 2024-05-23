@@ -14,6 +14,7 @@ import { ReactNode } from "react";
 import { _SERVICE } from "../../../declarations/os/os.did";
 import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
+import { WalletStore } from "../store/index"
 
 const actorContext = createActorContext<_SERVICE>();
 export const useOsBackend = createUseActorHook<_SERVICE>(actorContext);
@@ -22,7 +23,7 @@ export { type WalletInfo, type Result, type StakingPoolInfo, type CreateStakingP
 
 export default function OsActors({ children }: { children: ReactNode }) {
   const { identity, clear } = useInternetIdentity();
-
+  const { currentWallet, setCurrentWallet } = WalletStore();
   const handleRequest = (data: InterceptorRequestData) => {
     console.log("onRequest", data.args, data.methodName);
     return data.args;

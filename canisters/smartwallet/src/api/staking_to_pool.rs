@@ -50,6 +50,7 @@ pub(super) async fn serve(
         staking_address: req.staking_address,
         actual_amount: 0,
         status: StakingStatus::Pending,
+        redeemed_txid: None,
         updated_time: ic_time(),
     };
 

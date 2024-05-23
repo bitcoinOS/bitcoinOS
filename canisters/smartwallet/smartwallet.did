@@ -19,29 +19,21 @@ type Metadata = record {
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : text; vout : nat32 };
 type PublicKeyResponse = record { public_key_hex : text };
-type RegisterStakingRequest = record {
-  sender_address : text;
-  txid : text;
-  network : BitcoinNetwork;
-  sender : principal;
-  staking_canister : principal;
-  sent_time : nat64;
-  sent_amount : nat64;
-};
 type Result = variant { Ok : vec text; Err : WalletError };
 type Result_1 = variant { Ok : nat64; Err : WalletError };
 type Result_10 = variant { Ok : bool; Err : WalletError };
 type Result_11 = variant { Ok : UtxosResponse; Err : WalletError };
-type Result_2 = variant { Ok : vec nat64; Err : WalletError };
-type Result_3 = variant { Ok : text; Err : WalletError };
-type Result_4 = variant { Ok : vec StakingRecord; Err : WalletError };
-type Result_5 = variant { Ok : vec TransactionLog; Err : WalletError };
-type Result_6 = variant { Ok : Metadata; Err : WalletError };
-type Result_7 = variant { Ok : principal; Err : WalletError };
-type Result_8 = variant { Ok : PublicKeyResponse; Err : WalletError };
-type Result_9 = variant { Ok : StakingRecord; Err : WalletError };
+type Result_2 = variant { Ok : opt StakingRecord; Err : WalletError };
+type Result_3 = variant { Ok : vec nat64; Err : WalletError };
+type Result_4 = variant { Ok : text; Err : WalletError };
+type Result_5 = variant { Ok : vec StakingRecord; Err : WalletError };
+type Result_6 = variant { Ok : vec TransactionLog; Err : WalletError };
+type Result_7 = variant { Ok : Metadata; Err : WalletError };
+type Result_8 = variant { Ok : principal; Err : WalletError };
+type Result_9 = variant { Ok : PublicKeyResponse; Err : WalletError };
 type StakingRecord = record {
   status : StakingStatus;
+  redeemed_txid : opt text;
   sender_address : text;
   staking_address : text;
   txid : text;
@@ -62,6 +54,10 @@ type StakingRequest = record {
   amount : nat64;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
+type TotalStakingRequest = record {
+  sender_address : text;
+  staking_canister : principal;
+};
 type TransactionLog = record {
   txs : vec TransferInfo;
   send_time : nat64;
@@ -102,19 +98,21 @@ type WalletError = variant {
 service : (InitArgument) -> {
   addresses : () -> (Result) query;
   balance : (text) -> (Result_1);
+  confirm_staking_record_one : (text) -> (Result_2);
   counter : () -> (nat) query;
-  current_fee_percentiles : () -> (Result_2);
-  ecdsa_key : () -> (Result_3) query;
-  list_staking : () -> (Result_4) query;
-  logs : () -> (Result_5) query;
-  metadata : () -> (Result_6) query;
+  current_fee_percentiles : () -> (Result_3);
+  ecdsa_key : () -> (Result_4) query;
+  get_staking : (text) -> (Result_2) query;
+  list_staking : () -> (Result_5) query;
+  logs : () -> (Result_6) query;
+  metadata : () -> (Result_7) query;
   network : () -> (NetworkResponse) query;
-  owner : () -> (Result_7) query;
+  owner : () -> (Result_8) query;
   p2pkh_address : () -> (text);
-  public_key : () -> (Result_8);
-  register_staking : (RegisterStakingRequest) -> (Result_9);
-  staking_to_pool : (StakingRequest) -> (Result_3);
+  public_key : () -> (Result_9);
+  staking_to_pool : (StakingRequest) -> (Result_4);
   sync_staking_record_status : (text) -> (Result_10);
-  transfer_from_p2pkh : (TransferRequest) -> (Result_3);
+  total_staking : (TotalStakingRequest) -> (Result_1) query;
+  transfer_from_p2pkh : (TransferRequest) -> (Result_4);
   utxos : (UtxosRequest) -> (Result_11);
 }

@@ -5,7 +5,7 @@ use serde::Deserialize;
 use wallet::utils::str_to_bitcoin_address;
 
 use crate::error::StakingError;
-use wallet::domain::staking::TxId;
+use wallet::domain::TxId;
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct RegisterStakingRequest {

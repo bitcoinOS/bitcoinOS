@@ -1,5 +1,5 @@
 use ic_cdk::api::management_canister::main::CanisterId;
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::{staking::StakingRecord, TxId};
 
 use crate::{error::WalletError, repositories};
 
@@ -8,7 +8,7 @@ pub(super) async fn serve(txid: TxId) -> Result<(), WalletError> {
 
     match record {
         Some(r) => {
-            sync_and_update_staking_record(r.staking_canister, r.txid).await;
+            sync_and_update_staking_record(r.staking_canister, txid).await;
             Ok(())
         }
         None => Err(WalletError::StakingRecordNotFound(txid)),
@@ -22,7 +22,9 @@ pub(crate) async fn sync_and_update_staking_record(staking_canister: CanisterId,
 
     match sync_res {
         None => ic_cdk::print(format!("Staking record {txid:?} not found")),
-        Some(record) => update_staking_record(record).expect("Failed to update staking record"),
+        Some(pool_record) => {
+            update_staking_record(pool_record).expect("Failed to update staking record")
+        }
     }
 }
 
@@ -38,6 +40,6 @@ pub(crate) async fn sync_staking_status(
         .map_err(|e| WalletError::SyncStakingRecordError(format!("{e:?}")))
 }
 
-fn update_staking_record(staking_record: StakingRecord) -> Result<(), WalletError> {
-    repositories::staking_record::update(staking_record)
+pub(super) fn update_staking_record(pool_record: StakingRecord) -> Result<(), WalletError> {
+    repositories::staking_record::update(pool_record)
 }

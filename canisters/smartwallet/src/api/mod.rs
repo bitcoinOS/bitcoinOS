@@ -1,8 +1,10 @@
 mod all_addresses;
 mod balance;
+mod confirm_staking_record_one;
 mod counter_increment_one;
 mod current_fee_percentiles;
 mod ecdsa_key;
+mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
@@ -11,15 +13,16 @@ mod public_key;
 mod register_staking;
 mod staking_to_pool;
 mod sync_staking_record_status;
+mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
-// mod update_staking_record;
 mod utxos;
 
 use wallet::bitcoins;
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
-use wallet::domain::staking::{StakingRecord, TxId};
+use wallet::domain::staking::StakingRecord;
+use wallet::domain::TxId;
 use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time, str_to_bitcoin_address};
 
 use candid::Principal;
@@ -27,7 +30,7 @@ use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
 use crate::domain::request::{
-    RegisterStakingRequest, StakingRequest, TransferInfo, TransferRequest,
+    RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
@@ -79,7 +82,6 @@ pub async fn public_key() -> Result<PublicKeyResponse, WalletError> {
 pub async fn balance(address: String) -> Result<Satoshi, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
-    // let address = p2pkh_address().await;
 
     balance::serve(address, metadata).await
 }
@@ -158,12 +160,6 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     Ok(txid)
 }
 
-/// Register staking record to staking pool by manual if staking btc from a standard bitcoin wallet
-#[update]
-async fn register_staking(req: RegisterStakingRequest) -> Result<StakingRecord, WalletError> {
-    register_staking::serve(req).await
-}
-
 /// Sync staking record status from Staking pool canister
 #[update]
 async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
@@ -173,8 +169,30 @@ async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
     sync_staking_record_status::serve(txid).await.map(|_| true)
 }
 
+/// Check staking record status for given txid
+#[update]
+async fn confirm_staking_record_one(txid: TxId) -> Result<Option<StakingRecord>, WalletError> {
+    let caller = ic_caller();
+
+    validate_owner(caller)?;
+
+    confirm_staking_record_one::serve(txid).await
+}
+
 /// --------------------- Queries interface of this canister -------------------
 ///
+/// Returns the total staking amount of this canister
+#[query]
+fn total_staking(req: TotalStakingRequest) -> Result<Satoshi, WalletError> {
+    let owner = ic_caller();
+    validate_owner(owner)?;
+
+    Ok(total_staking::serve(
+        req.sender_address,
+        req.staking_canister,
+    ))
+}
+
 /// Returns all staking record lists of this canister
 #[query]
 fn list_staking() -> Result<Vec<StakingRecord>, WalletError> {
@@ -182,6 +200,15 @@ fn list_staking() -> Result<Vec<StakingRecord>, WalletError> {
     validate_owner(owner)?;
 
     Ok(list_staking::serve())
+}
+
+/// Returns the staking record for the given txid
+#[query]
+fn get_staking(txid: TxId) -> Result<Option<StakingRecord>, WalletError> {
+    let owner = ic_caller();
+    validate_owner(owner)?;
+
+    Ok(get_staking::serve(&txid))
 }
 
 /// Returns ecdsa key of this canister if the caller is controller and the key exists

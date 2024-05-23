@@ -43,17 +43,17 @@ pub(super) async fn serve(
     counter::increment_one();
 
     // Update the staking record status as `Redeeming`
-    repositories::staking_record::redeeming_record(txid, redeem_time)?;
+    repositories::staking_record::redeeming_record(txid.clone(), redeem_time)?;
 
-    let txid = send_p2pkh_transaction(metadata, tx)
+    let redeemed_txid = send_p2pkh_transaction(metadata, tx)
         .await
         .map(|txid| txid.to_string())?;
 
-    ic_cdk::print(format!("Redeemed tx is {txid:?} \n"));
+    repositories::staking_record::redeemed_record(txid, redeem_time, redeemed_txid.clone())?;
 
-    // TODO: Schedule a task to update the staking record status as `Redeemed` if the txid is confirmed for 6 blocks by Bitcoin network
+    ic_cdk::print(format!("Redeemed tx is {redeemed_txid:?} \n"));
 
-    Ok(txid)
+    Ok(redeemed_txid)
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient

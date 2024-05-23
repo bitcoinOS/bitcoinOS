@@ -29,6 +29,7 @@ pub(crate) fn serve(
         staking_address,
         actual_amount: 0,
         status: StakingStatus::Pending,
+        redeemed_txid: None,
         updated_time,
     };
 

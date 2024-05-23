@@ -78,3 +78,9 @@ pub struct RegisterStakingRequest {
     pub network: BitcoinNetwork,
     pub staking_canister: CanisterId,
 }
+
+#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
+pub struct TotalStakingRequest {
+    pub sender_address: String,
+    pub staking_canister: CanisterId,
+}

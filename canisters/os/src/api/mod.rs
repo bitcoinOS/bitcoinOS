@@ -9,7 +9,6 @@ mod list_staking_pool;
 mod list_wallet;
 mod list_wallet_types;
 mod my_wallet;
-mod redeemed_staking_record;
 mod registry_staking_pool;
 mod registry_wallet;
 mod set_wallet_cycles;
@@ -25,7 +24,7 @@ use ic_cdk::{
 };
 
 use crate::{
-    constants::{DEFAULT_CYCLES_PER_CANISTER, STAKING_POOL_WASM, WALLET_WASM},
+    constants::{DEFAULT_CYCLES_PER_CANISTER, MAX_WALLET_PER_USER, STAKING_POOL_WASM, WALLET_WASM},
     context::STATE,
     domain::{
         request::{CreateStakingPoolRequest, InitArgument},
@@ -43,6 +42,8 @@ async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
     let os = ic_cdk::id();
     let owner = ic_cdk::caller();
     let created_at = ic_cdk::api::time();
+
+    check_wallet_count(owner)?;
 
     let metadata = get_metadata();
 
@@ -171,18 +172,6 @@ async fn confirm_staking_record(staking_canister: CanisterId) -> Result<bool, Er
     confirm_staking_record::serve(staking_canister).await
 }
 
-/// Sync the staking record confirmed or not
-#[ic_cdk::update]
-async fn redeemed_staking_record(staking_canister: CanisterId) -> Result<bool, Error> {
-    let caller = ic_cdk::caller();
-
-    if !is_controller(&caller) {
-        return Err(Error::UnAuthorized(caller.to_string()));
-    }
-
-    redeemed_staking_record::serve(staking_canister).await
-}
-
 /// --------------------- Queries interface of this canister -------------------
 ///
 /// Returns wallet counter, it will always increment by one
@@ -275,4 +264,11 @@ async fn fetch_wallet_address(staking_pool_canister: CanisterId) -> Result<Strin
 
 fn get_metadata() -> Metadata {
     repositories::metadata::get_metadata()
+}
+
+fn check_wallet_count(owner: Principal) -> Result<(), Error> {
+    if repositories::wallet_info::count_wallet_by_owner(owner) > MAX_WALLET_PER_USER {
+        return Err(Error::UnAuthorized(format!("Too many wallets created: {:?}, by {}", MAX_WALLET_PER_USER, owner)));
+    }
+    Ok(())
 }

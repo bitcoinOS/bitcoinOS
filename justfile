@@ -6,6 +6,9 @@ create_all_canisters:
 deploy_os:
     dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"aaaaa-aa\"; })" 
 
+generate_did:
+    ./scripts/did.sh
+    
 build_staking:
     cargo build -p stakingpool --release --target wasm32-unknown-unknown
 
@@ -38,7 +41,10 @@ deploy_frontend:
     dfx deploy bitcoinOS_frontend 
 
 create_staking_pool:
-    dfx canister call os create_staking_pool_canister '(record { duration_in_day = 1:nat64; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16 })'
+    dfx canister call os create_staking_pool_canister '(record { duration_in_day = 1:nat64; name = "staking pool test2"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16 })'
+
+create_wallet:
+    dfx canister call os create_wallet_canister '("smartwallet")'
 
 mint_cycles:
     #!/usr/bin/env bash

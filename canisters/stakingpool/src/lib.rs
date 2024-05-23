@@ -21,7 +21,7 @@ use serde::Deserialize;
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
-use wallet::domain::EcdsaKeyIds;
+use wallet::domain::{EcdsaKeyIds, TxId};
 use wallet::utils::ic_time;
 
 /// Create a wallet when init the wallet canister
