@@ -1,6 +1,6 @@
 use candid::Principal;
 
-pub const DEFAULT_CYCLES_PER_CANISTER: u64 = 100_000_000_000;
+pub const DEFAULT_CYCLES_PER_CANISTER: u64 = 500_000_000_000;
 
 pub const METADATA_SIZE: u64 = 128;
 

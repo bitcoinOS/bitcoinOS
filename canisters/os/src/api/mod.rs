@@ -5,6 +5,7 @@ mod count_wallet;
 mod create_staking_pool;
 mod create_wallet;
 mod get_wallet_action;
+mod install_staking_pool_wasm;
 mod list_staking_pool;
 mod list_wallet;
 mod list_wallet_types;
@@ -13,6 +14,7 @@ mod registry_staking_pool;
 mod registry_wallet;
 mod set_wallet_cycles;
 mod staking_pool_increment_one;
+mod update_staking_pool_bitcoin_address;
 mod upgrade_staking_pool_wasm;
 mod upgrade_wallet_wasm;
 mod wallet_counter_increment_one;
@@ -27,7 +29,10 @@ use crate::{
     constants::{DEFAULT_CYCLES_PER_CANISTER, MAX_WALLET_PER_USER, STAKING_POOL_WASM, WALLET_WASM},
     context::STATE,
     domain::{
-        request::{CreateStakingPoolRequest, InitArgument},
+        request::{
+            CreateStakingPoolRequest, InitArgument, RegisterStakingPoolRequest,
+            UpdateBitcoinAddressRequest,
+        },
         Action, Metadata, StakingPoolInfo, WalletAction, WalletInfo,
     },
     error::Error,
@@ -136,6 +141,71 @@ async fn create_staking_pool_canister(
     staking_pool_increment_one::serve()?;
 
     Ok(info)
+}
+
+/// Register a new staking pool canister if create new staking pool failed before
+#[ic_cdk::update]
+fn register_staking_pool(arg: RegisterStakingPoolRequest) -> Result<StakingPoolInfo, Error> {
+    let owner = ic_cdk::caller();
+
+    if !is_controller(&owner) {
+        return Err(Error::UnAuthorized(owner.to_string()));
+    }
+
+    let os_canister = ic_cdk::id();
+    let created_at = ic_cdk::api::time();
+    let metadata = get_metadata();
+
+    ic_cdk::print("Created staking pool canister ----------- \n");
+
+    // let staking_pool_address = fetch_wallet_address(staking_pool_id).await?;
+
+    let info = registry_staking_pool::serve(
+        arg.staking_pool_canister,
+        metadata.network,
+        os_canister,
+        created_at,
+        arg.name,
+        arg.description,
+        arg.annual_interest_rate,
+        arg.duration_in_day,
+        arg.bitcoin_address,
+    )?;
+
+    staking_pool_increment_one::serve()?;
+
+    Ok(info)
+}
+
+/// Update staking pool with new wasm file for tests
+/// TODO: Remove this once tests when deploy to mainnet
+#[ic_cdk::update]
+async fn install_staking_pool_wasm(
+    staking_pool_canister: CanisterId,
+    reinstall: bool,
+) -> Result<(), String> {
+    if is_controller(&ic_cdk::caller()) {
+        install_staking_pool_wasm::serve(
+            staking_pool_canister,
+            STAKING_POOL_WASM.to_owned(),
+            reinstall,
+        )
+        .await
+    } else {
+        Err("UnAuthorized".to_string())
+    }
+}
+
+/// Update Staking pool bitcoin address if neccessary
+#[ic_cdk::update]
+fn update_staking_pool_bitcoin_address(
+    req: UpdateBitcoinAddressRequest,
+) -> Result<StakingPoolInfo, Error> {
+    if is_controller(&ic_cdk::caller()) {
+        update_staking_pool_bitcoin_address::serve(req.staking_pool_canister, req.bitcoin_address)
+    } else {
+        Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
+    }
 }
 
 /// Update staking pool with new wasm file for tests
@@ -268,7 +338,10 @@ fn get_metadata() -> Metadata {
 
 fn check_wallet_count(owner: Principal) -> Result<(), Error> {
     if repositories::wallet_info::count_wallet_by_owner(owner) > MAX_WALLET_PER_USER {
-        return Err(Error::UnAuthorized(format!("Too many wallets created: {:?}, by {}", MAX_WALLET_PER_USER, owner)));
+        return Err(Error::UnAuthorized(format!(
+            "Too many wallets created: {:?}, by {}",
+            MAX_WALLET_PER_USER, owner
+        )));
     }
     Ok(())
 }

@@ -54,3 +54,26 @@ pub(crate) fn create_staking_pool(
         }
     })
 }
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn update_bitcoin_address(
+    canister_id: CanisterId,
+    bitcoin_address: String,
+) -> Result<StakingPoolInfo, Error> {
+    STATE.with_borrow_mut(|state| {
+        let staking_pools = &mut state.staking_pools;
+
+        match staking_pools.get(&canister_id) {
+            Some(info) => {
+                let new_info = StakingPoolInfo {
+                    bitcoin_address,
+                    ..info
+                };
+                staking_pools.insert(canister_id, new_info.clone());
+
+                Ok(new_info)
+            }
+            None => Err(Error::UnAuthorized(canister_id.to_string())),
+        }
+    })
+}

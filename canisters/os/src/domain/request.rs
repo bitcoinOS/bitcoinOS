@@ -49,3 +49,19 @@ impl From<StakingPoolInfo> for InitStakingPoolArgument {
         }
     }
 }
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct RegisterStakingPoolRequest {
+    pub name: String,
+    pub description: String,
+    pub annual_interest_rate: u16,
+    pub duration_in_day: u64,
+    pub staking_pool_canister: CanisterId,
+    pub bitcoin_address: String,
+}
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct UpdateBitcoinAddressRequest {
+    pub staking_pool_canister: CanisterId,
+    pub bitcoin_address: String,
+}

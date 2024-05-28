@@ -30,11 +30,19 @@ type Metadata = record {
   steward_canister : principal;
   wallet_cycles : nat64;
 };
+type RegisterStakingPoolRequest = record {
+  bitcoin_address : text;
+  name : text;
+  description : text;
+  duration_in_day : nat64;
+  staking_pool_canister : principal;
+  annual_interest_rate : nat16;
+};
 type Result = variant { Ok : bool; Err : Error };
 type Result_1 = variant { Ok : StakingPoolInfo; Err : Error };
 type Result_2 = variant { Ok : principal; Err : Error };
-type Result_3 = variant { Ok : nat64; Err : Error };
-type Result_4 = variant { Ok; Err : text };
+type Result_3 = variant { Ok; Err : text };
+type Result_4 = variant { Ok : nat64; Err : Error };
 type StakingPoolInfo = record {
   bitcoin_address : text;
   os_canister : principal;
@@ -45,6 +53,10 @@ type StakingPoolInfo = record {
   duration_in_day : nat64;
   staking_pool_canister : principal;
   annual_interest_rate : nat16;
+};
+type UpdateBitcoinAddressRequest = record {
+  bitcoin_address : text;
+  staking_pool_canister : principal;
 };
 type WalletAction = record {
   action : Action;
@@ -67,14 +79,19 @@ service : (InitArgument) -> {
   create_staking_pool_canister : (CreateStakingPoolRequest) -> (Result_1);
   create_wallet_canister : (text) -> (Result_2);
   get_wallet_action : (nat64) -> (opt WalletAction) query;
+  install_staking_pool_wasm : (principal, bool) -> (Result_3);
   list_staking_pool : () -> (vec StakingPoolInfo) query;
   list_wallet : () -> (vec WalletInfo) query;
   list_wallet_type : () -> (vec text) query;
   metadata : () -> (Metadata) query;
   my_wallets : () -> (vec WalletInfo) query;
-  set_wallet_cycles : (nat64) -> (Result_3);
+  register_staking_pool : (RegisterStakingPoolRequest) -> (Result_1);
+  set_wallet_cycles : (nat64) -> (Result_4);
   timestamp : () -> (nat64) query;
-  upgrade_staking_pool_wasm : (principal) -> (Result_4);
-  upgrade_wallet_wasm : (principal) -> (Result_4);
+  update_staking_pool_bitcoin_address : (UpdateBitcoinAddressRequest) -> (
+      Result_1,
+    );
+  upgrade_staking_pool_wasm : (principal) -> (Result_3);
+  upgrade_wallet_wasm : (principal) -> (Result_3);
   wallet_counter : () -> (nat) query;
 }
