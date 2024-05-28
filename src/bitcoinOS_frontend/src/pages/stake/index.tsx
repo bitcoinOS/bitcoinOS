@@ -123,6 +123,8 @@ export default function Stake() {
         } else {
             setIsOsInited(true)
             get_wallets()
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!")
+            get_stake_pool()
             get_wallet_count()
         }
     }, [])
@@ -176,10 +178,7 @@ export default function Stake() {
     // Get the principal from the backend when an identity is available
     useEffect(() => {
         debugger
-        console.log("-222goooooooooo111111111111111")
-        console.log(osBackend)
         if (osBackend) {
-            console.log("-222goooooooooo11111111111111122222222")
             setIsOsInited(true)
         }
         if (!initialLoadDoneOs && identity && osBackend) {
@@ -278,9 +277,7 @@ export default function Stake() {
     function get_stake_pool() {
         if (!osBackend) return;
         setIsLoading(true)
-        console.log('-------------------------------222')
         osBackend.list_staking_pool().then((value: StakingPoolInfo[]) => {
-            console.log(value)
             setStakeList(value)
             if (value.length > 0) {
                 const stakePool = value[0]
@@ -307,9 +304,11 @@ export default function Stake() {
         if (!osBackend) return;
         setIsLoading(true)
         osBackend.my_wallets().then((value: WalletInfo[]) => {
-            setWallet(value[0].bitcoin_address)
-            setWalletList(value);
-            setCurrentWallet(value[0].wallet_canister.toText());
+            if (value && value.length > 0) {
+                setWallet(value[0].bitcoin_address)
+                setWalletList(value);
+                setCurrentWallet(value[0].wallet_canister.toText());
+            }
             setIsLoading(false)
         }).catch((error) => {
             toast({
@@ -783,7 +782,6 @@ export default function Stake() {
         setWalletList(updatedWalletList);
         console.log(walletList)
         */
-        console.log("--------------:", walletList)
         console.log(walletSelect)
     }
     const formatDate = (bigintTimestamp) => {
