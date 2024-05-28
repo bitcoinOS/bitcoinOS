@@ -83,6 +83,7 @@ export default function Stake() {
     const [tvl, setTvl] = useState<number>(0)
     const [users, setUsers] = useState<number>(0)
 
+    const [btcUnit, setBtcUnit] = useState('btc');
     const [isWalletInited, setIsWalletInited] = useState<boolean>(false)
     const [isOsInited, setIsOsInited] = useState<boolean>(false)
     const [isStakePoolInited, setIsStakePoolInited] = useState<boolean>(false)
@@ -102,7 +103,7 @@ export default function Stake() {
     const [initialLoadDoneWallet, setInitialLoadDoneWallet] = useState(false);
     const [initialLoadDoneStake, setInitialLoadDoneStake] = useState(false);
     const [initialLoadDoneOs, setInitialLoadDoneOs] = useState(false);
-    const btc = 100000000
+    const [btc, setBtc] = useState(100000000); // 初始值
     useEffect(() => {
         if (identity) {
             setIslogin(true)
@@ -241,6 +242,28 @@ export default function Stake() {
             setStakeSelect([selectedItem]);
             setStakeAddress(selectedItem.bitcoin_address)
         }
+    }
+    useEffect(() => {
+        // 使用新的 btc 值更新 balance
+        if (btc === 1) {
+            setBalance(prevBalance => prevBalance * 100000000);
+            setTotalBalance(prevTotalBalance => prevTotalBalance * 100000000);
+        } else if (btc === 100000000) {
+            setBalance(prevBalance => prevBalance / 100000000);
+            setTotalBalance(prevTotalBalance => prevTotalBalance / 100000000);
+        }
+    }, [btc]); // 当 btc 发生变化时触发更新
+    /*--- change btc unit ---*/
+    function onChangebtcunit(event: React.ChangeEvent<HTMLSelectElement>) {
+        const newUnit = event.target.value;
+        setBtcUnit(newUnit);
+        if (event.target.value === 'btc') {
+            setBtc(100000000)
+        }
+        else if (event.target.value === 'satoshi') {
+            setBtc(1)
+        }
+
     }
     /*--- change transfer info ---*/
     function handleChangeTransferAddress(event: React.ChangeEvent<HTMLInputElement>) {
@@ -946,19 +969,32 @@ export default function Stake() {
                                             </HStack>
                                             <HStack bg="gray.200" p={1} borderRadius="lg">
                                                 <InputGroup>
-                                                    <InputLeftElement
-                                                        pointerEvents="none"
-                                                    >
+                                                    <InputLeftElement pointerEvents="none">
                                                         <Image src='./favicon.png' boxSize="1.2rem" />
                                                     </InputLeftElement>
 
-                                                    <Input type="number" value={transferBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeTransfer}></Input >
+                                                    <Input
+                                                        type="number"
+                                                        value={transferBalance}
+                                                        border="none"
+                                                        placeholder='0.0'
+                                                        isDisabled={!isLogin}
+                                                        onChange={handleChangeTransfer}
+                                                        pr="4.5rem" // Add padding to the right to make space for the InputRightElement
+                                                    />
 
-                                                    <InputRightElement  >
-                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
+                                                    <InputRightElement width="auto" display="flex" alignItems="center">
+                                                        <Select value={btcUnit} onChange={onChangebtcunit} width="auto" mr={2}>
+                                                            <option value="btc">btc</option>
+                                                            <option value="satoshi">satoshi</option>
+                                                        </Select>
+                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>
+                                                            MAX
+                                                        </Button>
                                                     </InputRightElement>
                                                 </InputGroup>
                                             </HStack>
+
                                             <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
                                             <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
@@ -995,7 +1031,11 @@ export default function Stake() {
                                                     </InputLeftElement>
                                                     <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
 
-                                                    <InputRightElement  >
+                                                    <InputRightElement width="auto" display="flex" alignItems="center">
+                                                        <Select value={btcUnit} onChange={onChangebtcunit} width="auto" mr={2}>
+                                                            <option value="btc">btc</option>
+                                                            <option value="satoshi">satoshi</option>
+                                                        </Select>
                                                         <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
                                                     </InputRightElement>
                                                 </InputGroup>
