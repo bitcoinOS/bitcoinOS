@@ -103,6 +103,8 @@ export default function Stake() {
     const [initialLoadDoneWallet, setInitialLoadDoneWallet] = useState(false);
     const [initialLoadDoneStake, setInitialLoadDoneStake] = useState(false);
     const [initialLoadDoneOs, setInitialLoadDoneOs] = useState(false);
+
+    const btcunity = 100000000;
     const [btc, setBtc] = useState(100000000); // 初始值
     useEffect(() => {
         if (identity) {
@@ -246,11 +248,9 @@ export default function Stake() {
     useEffect(() => {
         // 使用新的 btc 值更新 balance
         if (btc === 1) {
-            setBalance(prevBalance => prevBalance * 100000000);
-            setTotalBalance(prevTotalBalance => prevTotalBalance * 100000000);
+            console.log(btc)
         } else if (btc === 100000000) {
-            setBalance(prevBalance => prevBalance / 100000000);
-            setTotalBalance(prevTotalBalance => prevTotalBalance / 100000000);
+            console.log(btc)
         }
     }, [btc]); // 当 btc 发生变化时触发更新
     /*--- change btc unit ---*/
@@ -263,7 +263,6 @@ export default function Stake() {
         else if (event.target.value === 'satoshi') {
             setBtc(1)
         }
-
     }
     /*--- change transfer info ---*/
     function handleChangeTransferAddress(event: React.ChangeEvent<HTMLInputElement>) {
@@ -387,7 +386,7 @@ export default function Stake() {
         //     console.log(value);
         // })
         stakeBackend.tvl().then((v: BigInt) => {
-            setTvl(Number(v) * 1.0 / btc)
+            setTvl(Number(v) * 1.0 / btcunity)
             setIsLoading(false);
         }).catch((error) => {
             console.error("Error fetching wallet count:", error);
@@ -431,7 +430,7 @@ export default function Stake() {
                 });
             } else {
                 const b: bigint = balanceResult.Ok;
-                setBalance(Number(b) / btc);
+                setBalance(Number(b) / btcunity);
             }
 
             // 处理 staking 记录结果
@@ -442,7 +441,7 @@ export default function Stake() {
                 records.forEach((record) => {
                     r += record.sent_amount;
                 });
-                setTotalBalance(Number(r) * 1.0 / btc);
+                setTotalBalance(Number(r) * 1.0 / btcunity);
             }
 
         } catch (error) {
@@ -476,7 +475,7 @@ export default function Stake() {
                 records.forEach((record) => {
                     r += record.sent_amount;
                 });
-                setTotalBalance(Number(r) * 1.0 / btc);
+                setTotalBalance(Number(r) * 1.0 / btcunity);
             }
         } catch (error) {
             console.error('Error getting stake records:', error);
@@ -510,10 +509,7 @@ export default function Stake() {
             } else {
                 console.log("-------------111")
                 const b: bigint = value.Ok;
-                setBalance(Number(b) / btc);
-                console.log(addr)
-                console.log(balance)
-                console.log(Number(b) / btc)
+                setBalance(Number(b) / btcunity);
             }
         } catch (error) {
             console.error('Error getting balance:', error);
@@ -785,6 +781,7 @@ export default function Stake() {
         get_tvl()
         get_stake_records(wallet)
         get_wallet_count()
+        get_stake_pool()
     }
     function onStake() {
         stake_balance()
@@ -821,7 +818,7 @@ export default function Stake() {
                 <Flex mt={6} direction='row'>
                     <Flex direction='column'>
                         <Text>
-                            <Heading>bitcoinOS</Heading>  A Bitcoin Native Smart Contract & Finance Layer
+                            <Heading>bitcoinOS</Heading>  A Decentralized Bitcoin Finance & Assets Management Platform
                         </Text>
                         <br />
                         <Text mt={2}>
@@ -943,7 +940,7 @@ export default function Stake() {
                             <TabPanels>
                                 <TabPanel>
                                     <Flex mt={2} justifyContent="center">
-                                        <VStack align='left'>
+                                        <VStack align='left' width='410px'>
                                             <HStack align='end'>
                                                 <Text fontSize='sm'>BTC Balance:{balance}</Text>
                                                 <Spacer></Spacer>
@@ -1006,7 +1003,7 @@ export default function Stake() {
                                 </TabPanel>
                                 <TabPanel>
                                     <Flex mt={2} justifyContent="center">
-                                        <VStack align='left'>
+                                        <VStack align='left' width='410px'>
                                             <HStack align='end'>
                                                 <Text fontSize='sm'>BTC Balance:{balance}</Text>
                                                 <Spacer></Spacer>
@@ -1125,7 +1122,7 @@ export default function Stake() {
                 </Box >
                 <Modal isOpen={isWalletOpen} onClose={onWalletClose} isCentered={true}>
                     <ModalOverlay />
-                    <ModalContent maxW="35%">
+                    <ModalContent maxW="35%" minW="700px">
                         <ModalHeader>Wallet Info</ModalHeader>
                         <ModalCloseButton />
                         <ModalBody>
