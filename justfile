@@ -44,6 +44,9 @@ deploy_ii:
 deploy_frontend:
     dfx deploy bitcoinOS_frontend 
 
+deploy_frontend_ic:
+    dfx deploy bitcoinOS_frontend --ic
+
 create_staking_pool:
     dfx canister call os create_staking_pool_canister '(record { duration_in_day = 1:nat64; name = "staking pool test2"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16 })'
 
