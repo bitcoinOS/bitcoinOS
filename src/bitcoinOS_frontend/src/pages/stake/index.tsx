@@ -61,7 +61,7 @@ export default function Stake() {
     const { actor: walletBackend } = useWalletBackend();
     const { actor: osBackend } = useOsBackend();
     const { actor: stakeBackend } = useSatkePoolBackend();
-    const { identity } = useInternetIdentity();
+    const { identity, login } = useInternetIdentity();
     /*--- wallet Info ---*/
     const [walletList, setWalletList] = useState<WalletInfo[]>([])
     const [walletSelect, setWalletSelect] = useState([])
@@ -996,7 +996,7 @@ export default function Stake() {
                                             <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
                                                 {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={transferBalance <= 0 || !isOsInited} onClick={transfer_balance}>Transfer</Button>}
-                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }}>Login</Button>}
+                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} onClick={login}>Login/Registe</Button>}
                                             </Flex>
                                         </VStack>
                                     </Flex>
@@ -1041,7 +1041,7 @@ export default function Stake() {
                                             <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
                                             <Flex width='100%' direction='column' align="center" pt={4}>
                                                 {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Stake</Button>}
-                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }}>Login</Button>}
+                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} onClick={login}>Login/Registe</Button>}
                                             </Flex>
                                         </VStack>
                                     </Flex>

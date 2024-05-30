@@ -31,7 +31,7 @@ export function LoginButton() {
         </>
       );
     }
-    return "Connect Wallet";
+    return " Login/Register";
   };
 
   return (
