@@ -15,7 +15,7 @@ use crate::domain::{
 use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
-use constants::DAILY_LIMIET_SATOSHI;
+use constants::DAILY_LIMIT_SATOSHI;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::export_candid;
 
@@ -54,7 +54,7 @@ async fn init(args: InitArgument) {
                 network,
                 steward_canister,
                 ecdsa_key_id,
-                daily_limit_satoshi: DAILY_LIMIET_SATOSHI,
+                daily_limit_satoshi: DAILY_LIMIT_SATOSHI,
                 updated_time,
             })
             .expect("Failed to init metadata")

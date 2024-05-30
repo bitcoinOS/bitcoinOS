@@ -12,7 +12,13 @@ pub const METADATA_SIZE: u64 = 4096;
 pub const TRANSACTION_LOG_SIZE: u64 = 2_048_000;
 
 /// The daily limit for a wallet in satoshi
-pub const DAILY_LIMIET_SATOSHI: u64 = 10_000_000_000;
+pub const DAILY_LIMIT_SATOSHI: u64 = 10_000_000_000;
 
 /// One hours for staking pool schecdule
 pub const ONE_HOURS: Duration = Duration::from_secs(60 * 60);
+
+/// max recipient number when transfer btc
+pub const MAX_RECIPIENT_CNT: u8 = 100;
+
+/// min amount in satoshi when transfer btc
+pub const MIN_TRANSFER_AMOUNT_SATOSHI: u64 = 1000;

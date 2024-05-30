@@ -89,6 +89,7 @@ type WalletError = variant {
   WalletNotFound : text;
   WalletError : text;
   CreateWalletError : text;
+  ExceededMaxRecipientError : nat8;
   StakingRecordCantUpdate : text;
   SyncStakingRecordError : text;
   OnlySupportP2pkhSign;

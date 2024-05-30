@@ -17,7 +17,7 @@ use wallet::{
     utils::mgmt_canister_id,
 };
 
-use crate::constants::DAILY_LIMIET_SATOSHI;
+use crate::constants::DAILY_LIMIT_SATOSHI;
 
 use self::request::TransferInfo;
 
@@ -43,7 +43,7 @@ impl Default for Metadata {
             steward_canister: mgmt_canister_id(),
             network,
             ecdsa_key_id,
-            daily_limit_satoshi: DAILY_LIMIET_SATOSHI,
+            daily_limit_satoshi: DAILY_LIMIT_SATOSHI,
             updated_time: 0,
         }
     }

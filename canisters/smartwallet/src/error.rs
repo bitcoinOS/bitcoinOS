@@ -56,6 +56,9 @@ pub enum WalletError {
     #[error("Insufficient funds")]
     InsufficientFunds,
 
+    #[error("Exceeded max recipient {0:?}")]
+    ExceededMaxRecipientError(u8),
+
     #[error("Only support p2pkh sign")]
     OnlySupportP2pkhSign,
 }
