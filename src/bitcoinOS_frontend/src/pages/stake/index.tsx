@@ -634,16 +634,20 @@ export default function Stake() {
     //     }
     // }
     function transfer_balance() {
-        if (!walletBackend) return
-        setIsLoading(true)
+        if (!walletBackend) return;
+        setIsLoading(true);
+
+        const amountInSatoshis = Math.round(transferBalance * btc); // 确保是整数
+
         const TransferInfo: TransferRequest = {
             txs: [
                 {
                     recipient: transferAddress,
-                    amount: BigInt(transferBalance * btc)
+                    amount: BigInt(amountInSatoshis) // 确保是整数
                 }
             ]
-        }
+        };
+
         walletBackend.transfer_from_p2pkh(TransferInfo).then((result) => {
             if ('Err' in result) {
                 toast({
@@ -652,7 +656,7 @@ export default function Stake() {
                     status: 'error',
                     duration: 9000,
                     isClosable: true,
-                })
+                });
             } else {
                 toast({
                     title: 'Transfer',
@@ -666,22 +670,25 @@ export default function Stake() {
                             <Text>{"txid:" + result.Ok}</Text>
                         </Box>
                     )
-                })
+                });
             }
-            refresh()
-            setTransferBalance(0)
+            refresh();
+            setTransferBalance(0);
             setIsLoading(false);
-        })
+        });
     }
     function stake_balance() {
-        if (!walletBackend) return
-        if (!stakeCanister) return
+        if (!walletBackend) return;
+        if (!stakeCanister) return;
         setIsLoading(true);
-        const stakeRequest: StakingRequest = {
+
+        const amountInSatoshis = Math.round(stakeBalance * btc);
+        const stakeRequest = {
             'staking_address': stakeSelect[0].bitcoin_address,
             'staking_canister': stakeSelect[0].staking_pool_canister,
-            'amount': BigInt(stakeBalance * btc),
-        }
+            'amount': BigInt(amountInSatoshis), // 确保是整数
+        };
+
         walletBackend.staking_to_pool(stakeRequest).then((result) => {
             if ('Err' in result) {
                 toast({
@@ -691,7 +698,7 @@ export default function Stake() {
                     position: "top",
                     duration: 9000,
                     isClosable: true,
-                })
+                });
             } else {
                 toast({
                     title: 'Stake',
@@ -705,12 +712,12 @@ export default function Stake() {
                             <Text>{"txid:" + result.Ok}</Text>
                         </Box>
                     )
-                })
+                });
             }
-            refresh()
-            setStakeBalance(0)
+            refresh();
+            setStakeBalance(0);
             setIsLoading(false);
-        })
+        });
     }
     function unstake_balance(txid, addr, network) {
         if (!walletBackend) return
