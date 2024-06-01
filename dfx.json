@@ -36,6 +36,11 @@
       ],
       "type": "assets",
       "workspace": "bitcoinOS_frontend"
+    },
+    "point": {
+      "candid": "canisters/point/point.did",
+      "package": "point",
+      "type": "rust"
     }
   },
   "defaults": {
