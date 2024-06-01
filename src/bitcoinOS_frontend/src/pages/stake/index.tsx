@@ -49,7 +49,7 @@ import { Metadata, useWalletBackend, Result_1 as BalanceResult, StakingRequest, 
 import { TotalStakingRequest, utxosRecords, UtxosRequest, UtxosResponse } from "../../ic/WalletActors";
 import { RedeemRequest } from "../../ic/StakePoolActors"
 import { useOsBackend, WalletInfo, Result as StakingPoolResult, StakingPoolInfo, CreateStakingPoolRequest } from "../../ic/OsActors";
-import { useSatkePoolBackend } from "../../ic/StakePoolActors";
+import { useSatkePoolBackend, StakingRecords as allStakingRecords, StakingRecord as allStakingRecord } from "../../ic/StakePoolActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
 import { Principal } from "@dfinity/principal"
 import { stakingpool } from '../../../../declarations/stakingpool'
@@ -95,11 +95,13 @@ export default function Stake() {
     const [transferBalance, setTransferBalance] = useState<number>(0)
     const [transferAddress, setTransferAddress] = useState<string>("")
     /*--- stake pool Info ---*/
+    const [isFirstCall, setIsFirstCall] = useState(true);
     const [stakeList, setStakeList] = useState<StakingPoolInfo[]>([])
     const [stakeSelect, setStakeSelect] = useState([])
     const [stakeAddress, setStakeAddress] = useState<string>("")
     const [stakeCanister, setStakeCanister] = useState<Principal>();
     const [stakeRecords, setStakeRecords] = useState<StakingRecord[]>([])
+    const [allstakeRecords, setAllstakeRecords] = useState<allStakingRecord[]>([])
     const [initialLoadDoneWallet, setInitialLoadDoneWallet] = useState(false);
     const [initialLoadDoneStake, setInitialLoadDoneStake] = useState(false);
     const [initialLoadDoneOs, setInitialLoadDoneOs] = useState(false);
@@ -157,6 +159,7 @@ export default function Stake() {
             const firstStake = stakeList[0];
             const firstWallet = walletList[0];
             get_stake_pool()
+            get_allstake_records(wallet)
             // 查找选中的 wallet 项
             if (stakeList[0].bitcoin_address) {
                 const selectedItem = stakeList.find(item => item.bitcoin_address === stakeList[0].bitcoin_address);
@@ -234,15 +237,23 @@ export default function Stake() {
         await updateWalletData(event.target.value);
 
     }
+
+    useEffect(() => {
+        console.log('---------bbbbbbbbbbb', stakepoolCanister)
+        get_allstake_records(wallet)
+    }, [stakepoolCanister]);
     /*--- change stake select ---*/
-    function onChangeStake(event: React.ChangeEvent<HTMLSelectElement>) {
-        get_stake_pool()
+    async function onChangeStake(event: React.ChangeEvent<HTMLSelectElement>) {
+        await get_stake_pool()
         // 查找选中的 wallet 项
         const selectedItem = stakeList.find(item => item.bitcoin_address === event.target.value);
         // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
         if (selectedItem) {
             setStakeSelect([selectedItem]);
             setStakeAddress(selectedItem.bitcoin_address)
+            setStakeCanister(selectedItem.staking_pool_canister)
+            setStakepoolCanister(selectedItem.staking_pool_canister.toText())
+            console.log('------ggg', selectedItem.staking_pool_canister.toText())
         }
     }
     useEffect(() => {
@@ -301,11 +312,12 @@ export default function Stake() {
         setIsLoading(true)
         osBackend.list_staking_pool().then((value: StakingPoolInfo[]) => {
             setStakeList(value)
-            if (value.length > 0) {
+            if (isFirstCall && value.length > 0) {
                 const stakePool = value[0]
                 setStakeAddress(stakePool.bitcoin_address)
                 setStakeCanister(stakePool.staking_pool_canister)
                 setStakepoolCanister(stakePool.staking_pool_canister.toText())
+                setIsFirstCall(false);
             }
             setIsLoading(false)
         }).catch((error) => {
@@ -396,9 +408,7 @@ export default function Stake() {
     }
 
     async function updateWalletData(addr: string) {
-        console.log("---------------nnn")
         if (!walletBackend) { return };
-        console.log('---------gggggg')
         // 初始化加载状态
         setIsLoading(true);
 
@@ -476,6 +486,29 @@ export default function Stake() {
                     r += record.sent_amount;
                 });
                 setTotalBalance(Number(r) * 1.0 / btcunity);
+            }
+        } catch (error) {
+            console.error('Error getting stake records:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    async function get_allstake_records(addr: string) {
+        console.log("aaaaaaaaaaammmmmmmbbb", stakepoolCanister)
+        if (!stakeBackend) return;
+        if (!addr || addr.length <= 1) {
+            setAllstakeRecords([]);
+            return;
+        }
+        setIsLoading(true);
+        console.log("aaaaaaaaaaammmmmmm22222", stakepoolCanister)
+        try {
+            const v: allStakingRecords = await stakeBackend.list_staking();
+            if ('Ok' in v) {
+                const records: allStakingRecord[] = v.Ok;
+                setAllstakeRecords(records)
+                console.log("gggggoods", records)
             }
         } catch (error) {
             console.error('Error getting stake records:', error);
@@ -787,6 +820,7 @@ export default function Stake() {
         get_balance(wallet)
         get_tvl()
         get_stake_records(wallet)
+        get_allstake_records(wallet)
         get_wallet_count()
         get_stake_pool()
     }
@@ -809,6 +843,7 @@ export default function Stake() {
         setWalletList(updatedWalletList);
         console.log(walletList)
         */
+        get_allstake_records(wallet)
         console.log(walletSelect)
     }
     const formatDate = (bigintTimestamp) => {
@@ -838,7 +873,7 @@ export default function Stake() {
                     </Flex> */}
                 </Flex>
                 <Flex mt={5}>
-                    {/*<Button onClick={test}>test</Button>*/}
+                    <Button onClick={test}>test</Button>
                     <Text pr={3}>
                         TVL: {tvl}
                     </Text>
@@ -934,7 +969,7 @@ export default function Stake() {
                     </Flex>
 
 
-                    <Flex>
+                    <Flex justify="space-around" alignItems="center" width="100%">
                         <Tabs minHeight="500px" width="100%" maxWidth="600px">
                             <Flex justifyContent="center" borderBottom="1px solid" borderColor="gray.200">
                                 <TabList>
@@ -1087,43 +1122,85 @@ export default function Stake() {
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
-                        <Flex>
+                        <Flex direction="column" >
+                            <Tabs minHeight="500px" width="100%" maxWidth="600px">
+                                <Flex justifyContent="center" borderBottom="1px solid" borderColor="gray.200">
+                                    <TabList>
+                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake Pool Info</Tab>
+                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake Record </Tab>
+                                    </TabList>
+                                </Flex>
+                                <TabPanels>
+                                    <TabPanel>
+                                        {stakeSelect.length > 0 && (
+                                            <Box maxWidth="600px" mx="auto">
 
-                            {stakeSelect.length > 0 && (
-                                <Box maxWidth="600px" mx="auto">
-                                    <Text fontSize="2xl" textAlign="center" mb={4}>
-                                        Stake Pool
-                                    </Text>
-                                    <Table variant='simple' size='sm' maxHeight="380px">
-                                        <Tbody>
-                                            {stakeSelect.map((item, index) => (
-                                                <React.Fragment key={index}>
+                                                <Table variant='simple' size='sm' maxHeight="380px">
+                                                    <Tbody>
+                                                        {stakeSelect.map((item, index) => (
+                                                            <React.Fragment key={index}>
+                                                                <Tr>
+                                                                    <Td>Name:</Td>
+                                                                    <Td>{item.name}</Td>
+                                                                </Tr>
+                                                                <Tr>
+                                                                    <Td>Canister ID:</Td>
+                                                                    <Td>{item.staking_pool_canister.toText()}</Td>
+                                                                </Tr>
+                                                                <Tr>
+                                                                    <Td>Address:</Td>
+                                                                    <Td>{item.bitcoin_address}</Td>
+                                                                </Tr>
+                                                                <Tr>
+                                                                    <Td>Description:</Td>
+                                                                    <Td>{item.description}</Td>
+                                                                </Tr>
+                                                                <Tr>
+                                                                    <Td>Duration Day:</Td>
+                                                                    <Td>{item.duration_in_day.toString()}</Td>
+                                                                </Tr>
+                                                                <Tr>
+                                                                    <Td>Annual Rata:</Td>
+                                                                    <Td>{item.annual_interest_rate}%</Td>
+                                                                </Tr>
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </Tbody>
+                                                </Table>
+                                            </Box>
+                                        )}
+                                    </TabPanel>
+                                    <TabPanel>
+                                        <TableContainer>
+                                            <Table variant='simple' size="sm">
+                                                <Thead>
                                                     <Tr>
-                                                        <Td>Name:</Td>
-                                                        <Td>{item.name}</Td>
+                                                        <Th>Date</Th>
+                                                        <Th>Stake pool</Th>
+                                                        <Th>Ammount(BTC) </Th>
+                                                        <Th>Day</Th>
                                                     </Tr>
-                                                    <Tr>
-                                                        <Td>Canister ID:</Td>
-                                                        <Td>{item.staking_pool_canister.toText()}</Td>
-                                                    </Tr>
-                                                    <Tr>
-                                                        <Td>Address:</Td>
-                                                        <Td>{item.bitcoin_address}</Td>
-                                                    </Tr>
-                                                    <Tr>
-                                                        <Td>Description:</Td>
-                                                        <Td>{item.description}</Td>
-                                                    </Tr>
-                                                    <Tr>
-                                                        <Td>Duration Day:</Td>
-                                                        <Td>{item.duration_in_day.toString()}</Td>
-                                                    </Tr>
-                                                </React.Fragment>
-                                            ))}
-                                        </Tbody>
-                                    </Table>
-                                </Box>
-                            )}
+                                                </Thead>
+                                                <Tbody>
+                                                    {
+                                                        allstakeRecords.map((v, i) => {
+
+                                                            return (
+                                                                <Tr>
+                                                                    <Td>{new Date(Number(v.sent_time) / 1000000).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })}</Td>
+                                                                    <Td>{sub(v.staking_address)}</Td>
+                                                                    <Td>{Number(v.sent_amount) / btc}</Td>
+                                                                    <Td>{v.duration_in_day.toString()}</Td>
+                                                                </Tr>
+                                                            );
+                                                        })
+                                                    }
+                                                </Tbody>
+                                            </Table>
+                                        </TableContainer>
+                                    </TabPanel>
+                                </TabPanels>
+                            </Tabs>
                         </Flex>
                     </Flex>
                 </Box >

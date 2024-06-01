@@ -19,7 +19,7 @@ import { StakepoolStore } from "../store/index"
 const actorContext = createActorContext<_SERVICE>();
 export const useSatkePoolBackend = createUseActorHook<_SERVICE>(actorContext);
 
-export { type RedeemRequest, type Result_3 as RedeemResponse } from "../../../declarations/stakingpool/stakingpool.did";
+export { type RedeemRequest, type Result_3 as RedeemResponse, type Result_1 as StakingRecords, type StakingRecord } from "../../../declarations/stakingpool/stakingpool.did";
 
 export default function StakePoolActors({ children }: { children: ReactNode }) {
   const { identity, clear } = useInternetIdentity();
