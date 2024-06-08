@@ -3,7 +3,7 @@ pub mod period_task;
 mod save_points;
 use crate::domain::PointRecord;
 use ic_cdk::{
-    api::{is_controller, management_canister::main::CanisterId},init,
+    api::{is_controller, management_canister::main::CanisterId},init,export_candid,
 };
 use crate::{
     context::STATE,
@@ -12,6 +12,8 @@ use crate::{
     constants::{DEFAULT_TIME_PER_PERIOD,DEFAULT_POINT_PER_SAT,POINT_DECIMAL}
 };
 use std::time::Duration;
+
+export_candid!();
 
 #[init]
 async fn  init(args: InitPointArgument) {
