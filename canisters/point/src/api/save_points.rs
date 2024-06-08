@@ -28,16 +28,26 @@ pub fn confirm_stake_record() {
 }
 
 pub async fn serve(){
+    ic_cdk::print(format!(
+        "in time period \n"
+    ));
     let metadata = get_metadata();
     let stake_pools =  get_stake_pools(metadata.os_canister).await;
     let mut total_stake_point_per_user :HashMap<Principal,u64> = HashMap::new();
     
+   
     for p in stake_pools{
+        ic_cdk::print(format!(
+            "in  stake pool {p:?}\n"
+        ));
         let resp: Result<(Result<Vec<StakingRecord>, StakingError>,), _> = ic_cdk::call(p.staking_pool_canister,"list_staking",((),)).await;
         resp.map(|b|{
            match b.0{
             Ok(v)=>{
                  for s in v {
+                    ic_cdk::print(format!(
+                        "in stake record {s:?}\n"
+                    ));
                     let sender = s.sender;
                     if let Some(ammout) = total_stake_point_per_user.get(&sender){
                         total_stake_point_per_user.insert(sender.clone(), ammout+s.sent_amount);

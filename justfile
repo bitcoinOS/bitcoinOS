@@ -45,7 +45,7 @@ deploy_ii:
     dfx deploy internet_identity
 
 deploy_point:
-    dfx deploy point --argument '(record { network = variant { regtest }; os_canister = principal "be2us-64aaa-aaaaa-qaabq-cai"; steward_canister = principal "aaaaa-aa";task_period=60 })'
+    dfx deploy point  -m reinstall --argument '(record { network = variant { regtest }; os_canister = principal "be2us-64aaa-aaaaa-qaabq-cai"; steward_canister = principal "aaaaa-aa";task_period=60 })'
 
 deploy_frontend:
     dfx deploy bitcoinOS_frontend 

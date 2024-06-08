@@ -5,6 +5,15 @@ type InitPointArgument = record {
   steward_canister : principal;
   task_period : nat64;
 };
+type Metadata = record {
+  os_canister : principal;
+  point_decimal : nat64;
+  period : nat64;
+  network : BitcoinNetwork;
+  steward_canister : principal;
+  point_per_sat : nat64;
+  updated_time : nat64;
+};
 type PointRecord = record {
   staker : principal;
   network : BitcoinNetwork;
@@ -12,4 +21,8 @@ type PointRecord = record {
   updated_time : nat64;
   points : nat64;
 };
-service : (InitPointArgument) -> { get_point : () -> (vec PointRecord) query }
+service : (InitPointArgument) -> {
+  counter : () -> (nat64) query;
+  get_matadata : () -> (Metadata) query;
+  get_point : () -> (vec PointRecord) query;
+}

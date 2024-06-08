@@ -1,6 +1,5 @@
 use crate::{context::STATE, domain::{PointRecord}, error::Error};
 
-use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::management_canister::{bitcoin::{BitcoinNetwork,Satoshi}, main::CanisterId};
 
 use wallet::utils::ic_time;
