@@ -23,6 +23,6 @@ type PointRecord = record {
 };
 service : (InitPointArgument) -> {
   counter : () -> (nat64) query;
-  get_matadata : () -> (Metadata) query;
+  get_metadata : () -> (Metadata) query;
   get_point : () -> (vec PointRecord) query;
 }

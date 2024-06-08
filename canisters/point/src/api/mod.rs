@@ -56,7 +56,7 @@ fn get_point()-> Vec<PointRecord>{
 }
 
 #[ic_cdk::query]
-fn get_matadata()-> Metadata{
+fn get_metadata()-> Metadata{
     repositories::metadata::get_metadata()
 }
 

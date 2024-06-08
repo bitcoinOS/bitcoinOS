@@ -133,6 +133,8 @@ dfx canister call os create_staking_pool_canister '(record { duration_in_day = 1
 # just deploy_wallet
 
 just deploy_ii
+
+just deploy_point
   
 # Deploy frontend to canister
 just deploy_frontend
