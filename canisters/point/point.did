@@ -1,1 +1,15 @@
-service : {}
+type BitcoinNetwork = variant { mainnet; regtest; testnet };
+type InitPointArgument = record {
+  os_canister : principal;
+  network : BitcoinNetwork;
+  steward_canister : principal;
+  task_period : nat64;
+};
+type PointRecord = record {
+  staker : principal;
+  network : BitcoinNetwork;
+  actual_amount : nat64;
+  updated_time : nat64;
+  points : nat64;
+};
+service : (InitPointArgument) -> { get_point : () -> (vec PointRecord) query }

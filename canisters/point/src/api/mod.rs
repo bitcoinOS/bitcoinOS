@@ -13,7 +13,6 @@ use crate::{
 };
 use std::time::Duration;
 
-export_candid!();
 
 #[init]
 async fn  init(args: InitPointArgument) {
@@ -40,3 +39,6 @@ async fn  init(args: InitPointArgument) {
 fn get_point()-> Vec<PointRecord>{
     get_point::serve()
 }
+
+
+export_candid!();
