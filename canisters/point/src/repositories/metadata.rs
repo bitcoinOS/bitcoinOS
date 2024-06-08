@@ -4,7 +4,7 @@ pub(crate) fn get_metadata() -> Metadata {
     STATE.with(|s| s.borrow().metadata.get().clone())
 }
 
-pub(crate) fn set_period(period: u8) -> Result<u64, Error> {
+pub(crate) fn set_period(period: u64) -> Result<u64, Error> {
     STATE.with_borrow_mut(|s| {
         s.metadata
             .set(Metadata {
@@ -15,10 +15,10 @@ pub(crate) fn set_period(period: u8) -> Result<u64, Error> {
                 msg: format!("{e:?}"),
             })
     })?;
-    Ok(point_per_sat)
+    Ok(period)
 }
 
-pub(crate) fn set_point_per_sat(point_per_sat: u8) -> Result<u64, Error> {
+pub(crate) fn set_point_per_sat(point_per_sat: u64) -> Result<u64, Error> {
     STATE.with_borrow_mut(|s| {
         s.metadata
             .set(Metadata {
@@ -29,7 +29,7 @@ pub(crate) fn set_point_per_sat(point_per_sat: u8) -> Result<u64, Error> {
                 msg: format!("{e:?}"),
             })
     })?;
-    Ok(poinst_per_sat)
+    Ok(point_per_sat)
 }
 
 

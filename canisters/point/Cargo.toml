@@ -22,4 +22,4 @@ ciborium = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 
-pubsub = { path = "../../packages/pubsub" }
+wallet = { path = "../../packages/wallet" }
