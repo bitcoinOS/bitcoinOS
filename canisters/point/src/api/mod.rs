@@ -1,5 +1,7 @@
 pub mod get_point;
 pub mod period_task;
+mod save_points;
+use crate::domain::PointRecord;
 use ic_cdk::{
     api::{is_controller, management_canister::main::CanisterId},init,
 };
@@ -9,9 +11,10 @@ use crate::{
     domain::{Metadata,request::InitPointArgument},
     constants::{DEFAULT_TIME_PER_PERIOD,DEFAULT_POINT_PER_SAT,POINT_DECIMAL}
 };
+use std::time::Duration;
 
 #[init]
-fn init(args: InitPointArgument) {
+async fn  init(args: InitPointArgument) {
 
     STATE.with(|s|{
         let state = &mut s.borrow_mut();
@@ -27,5 +30,11 @@ fn init(args: InitPointArgument) {
                 updated_time:0
             })
             .expect("Failed to init metadata of os canister");
-    })
+    });
+    let _timer_id = ic_cdk_timers::set_timer_interval(Duration::from_secs(args.task_period),|| { save_points::serve();});
+}
+
+#[ic_cdk::query]
+fn get_point()-> Vec<PointRecord>{
+    get_point::serve()
 }

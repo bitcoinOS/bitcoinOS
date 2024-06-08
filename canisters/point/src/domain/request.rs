@@ -7,4 +7,5 @@ pub struct InitPointArgument {
     pub network: BitcoinNetwork,
     pub steward_canister: Principal,
     pub os_canister: Principal,
+    pub task_period:u64,
 }

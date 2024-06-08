@@ -18,6 +18,9 @@ build_staking:
 build_wallet:   
     cargo build -p smartwallet --release --target wasm32-unknown-unknown 
 
+build_point:   
+    cargo build -p point --release --target wasm32-unknown-unknown 
+
 translate_wasm:
     wasi2ic ./target/wasm32-unknown-unknown/release/smartwallet.wasm smartwallet.wasm
 
@@ -40,6 +43,10 @@ deploy_staking:
 
 deploy_ii:
     dfx deploy internet_identity
+
+deploy_point:
+    OS_CANISTER=$(dfx canister id os)
+    dfx deploy stakingpool --argument "(record { network = variant { regtest }; os_canister = principal \"$OS_CANISTER\"; steward_canister = principal "aaaaa-aa";task_period=60 })"
 
 deploy_frontend:
     dfx deploy bitcoinOS_frontend 
