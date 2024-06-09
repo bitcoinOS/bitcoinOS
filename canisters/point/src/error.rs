@@ -2,7 +2,6 @@ use candid::CandidType;
 use serde::Deserialize;
 #[derive(Debug, CandidType, thiserror::Error)]
 pub enum Error {
-     
     #[error("Wallet canister {0:?} not found")]
     WalletNotFound(String),
     #[error("Create wallet canister failed: {msg:?}")]
@@ -27,10 +26,7 @@ pub enum Error {
     Unknown,
 }
 
-
-
-
-#[derive(Debug, thiserror::Error, CandidType,Deserialize)]
+#[derive(Debug, thiserror::Error, CandidType, Deserialize)]
 pub enum StakingError {
     #[error("No Authorize to {0:?}")]
     UnAuthorized(String),

@@ -2,9 +2,7 @@ pub mod memory;
 
 use std::cell::RefCell;
 
-use crate::domain::{
-    Metadata,PointRecord
-};
+use crate::domain::{Metadata, PointRecord};
 
 use candid::Principal;
 use ic_stable_structures::{BTreeMap as StableBTreeMap, Cell as StableCell};
@@ -14,16 +12,12 @@ use self::memory::Memory;
 
 pub type Timestamp = u64;
 
-
-
 /// A WalletInfo stable storage has a key with `User Principal` and `Wallet Canister`
 pub type PointRecordsStable = StableBTreeMap<Principal, PointRecord, Memory>;
- 
+
 thread_local! {
     pub static STATE: RefCell<State> = RefCell::new(State::default());
 }
-
-
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
@@ -40,8 +34,7 @@ impl Default for State {
         Self {
             metadata: init_stable_metadata(),
             point_records: init_stable_point_record(),
-            next_period:init_stable_next_period(),
-           
+            next_period: init_stable_next_period(),
         }
     }
 }
@@ -51,7 +44,6 @@ fn init_stable_metadata() -> StableCell<Metadata, Memory> {
         .expect("failed to initialize the metadata cell")
 }
 
- 
 fn init_stable_point_record() -> PointRecordsStable {
     StableBTreeMap::init(memory::get_point_records_memory())
 }

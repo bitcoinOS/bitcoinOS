@@ -1,18 +1,17 @@
 pub mod get_point;
 pub mod period_task;
 mod save_points;
+use crate::{
+    constants::{DEFAULT_POINT_PER_SAT, DEFAULT_TIME_PER_PERIOD, POINT_DECIMAL},
+    context::STATE,
+    domain::{request::InitPointArgument, Metadata},
+};
 use crate::{domain::PointRecord, repositories};
 use ic_cdk::{
-    api::{is_controller, management_canister::main::CanisterId},init,export_candid,
+    export_candid, init,
 };
-use crate::{
-    context::STATE,
-
-    domain::{Metadata,request::InitPointArgument},
-    constants::{DEFAULT_TIME_PER_PERIOD,DEFAULT_POINT_PER_SAT,POINT_DECIMAL}
-};
-use std::time::Duration;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 static COUNTER: AtomicU64 = AtomicU64::new(0);
 // static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -21,12 +20,10 @@ fn counter() -> u64 {
     COUNTER.load(Ordering::Relaxed)
 }
 
-
-
 #[init]
-async fn  init(args: InitPointArgument) {
+async fn init(args: InitPointArgument) {
     ic_cdk::print(format!("init point:{args:?}"));
-    STATE.with(|s|{
+    STATE.with(|s| {
         let state = &mut s.borrow_mut();
         state
             .metadata
@@ -34,14 +31,14 @@ async fn  init(args: InitPointArgument) {
                 network: args.network,
                 steward_canister: args.steward_canister,
                 os_canister: args.os_canister,
-                period:DEFAULT_TIME_PER_PERIOD,
-                point_per_sat:DEFAULT_POINT_PER_SAT,
-                point_decimal:POINT_DECIMAL,
-                updated_time:0
+                period: DEFAULT_TIME_PER_PERIOD,
+                point_per_sat: DEFAULT_POINT_PER_SAT,
+                point_decimal: POINT_DECIMAL,
+                updated_time: 0,
             })
             .expect("Failed to init metadata of os canister");
     });
-    ic_cdk_timers::set_timer_interval(Duration::from_secs(args.task_period),|| { 
+    ic_cdk_timers::set_timer_interval(Duration::from_secs(args.task_period), || {
         COUNTER.fetch_add(1, Ordering::Relaxed);
         ic_cdk::spawn(save_points::serve());
     });
@@ -51,12 +48,12 @@ async fn  init(args: InitPointArgument) {
 }
 
 #[ic_cdk::query]
-fn get_point()-> Vec<PointRecord>{
+fn get_point() -> Vec<PointRecord> {
     get_point::serve()
 }
 
 #[ic_cdk::query]
-fn get_metadata()-> Metadata{
+fn get_metadata() -> Metadata {
     repositories::metadata::get_metadata()
 }
 
