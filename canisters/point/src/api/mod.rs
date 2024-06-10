@@ -58,8 +58,8 @@ fn get_metadata() -> Metadata {
 }
 
 #[ic_cdk::post_upgrade]
-fn post_upgrade(args: InitPointArgument) {
-    init(args);
+async fn post_upgrade(args: InitPointArgument) {
+     init(args).await;
 }
 
 export_candid!();

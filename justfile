@@ -49,7 +49,7 @@ deploy_point:
     # set -euxo pipefail
     OS_CANISTER=$(dfx canister id os)
     echo "${OS_CANISTER}"
-    dfx deploy point  -m reinstall --argument "(record { network = variant { regtest }; os_canister = principal \"${OS_CANISTER}\"; steward_canister = principal \"aaaaa-aa\";task_period=60 })"
+    dfx deploy point   --argument "(record { network = variant { regtest }; os_canister = principal \"${OS_CANISTER}\"; steward_canister = principal \"aaaaa-aa\";task_period=60 })"
 
 deploy_frontend:
     dfx deploy bitcoinOS_frontend 
