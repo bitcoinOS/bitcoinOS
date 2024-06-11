@@ -26,6 +26,9 @@ pub enum Error {
     #[error("Only support P2PKH sign")]
     OnlySupportP2pkhSign,
 
+    #[error("Only support P2WPKH sign")]
+    OnlySupportP2wpkhSign,
+
     #[error("Bitcoin address unmatch network: {0:?}")]
     BitcoinAddressUnmatchNetwork(String),
 

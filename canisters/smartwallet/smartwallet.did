@@ -110,10 +110,12 @@ service : (InitArgument) -> {
   network : () -> (NetworkResponse) query;
   owner : () -> (Result_8) query;
   p2pkh_address : () -> (text);
+  p2wpkh_address : () -> (text);
   public_key : () -> (Result_9);
   staking_to_pool : (StakingRequest) -> (Result_4);
   sync_staking_record_status : (text) -> (Result_10);
   total_staking : (TotalStakingRequest) -> (Result_1) query;
   transfer_from_p2pkh : (TransferRequest) -> (Result_4);
+  transfer_from_p2wpkh : (TransferRequest) -> (Result_4);
   utxos : (UtxosRequest) -> (Result_11);
 }

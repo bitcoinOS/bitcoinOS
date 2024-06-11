@@ -18,10 +18,11 @@ use ic_cdk::api::call::{call_with_payment, CallResult};
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
 use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 
+use crate::constants::DEFAULT_FEE_MILLI_SATOSHI;
 use crate::domain::response::Utxo;
 use crate::domain::Wallet;
 use crate::error::Error;
-use crate::tx::RecipientAmount;
+use crate::tx::{RecipientAmount, TransactionInfo};
 use crate::{bitcoins, ecdsa};
 
 pub type WalletResult<T> = Result<T, Error>;
@@ -36,6 +37,18 @@ pub async fn create_p2pkh_wallet(
     let public_key = ecdsa::public_key(derivation_path.clone(), key_id, None).await?;
 
     bitcoins::create_p2pkh_wallet(derivation_path, &public_key, network).await
+}
+
+/// Create a new P2WPKH wallet with given arguments
+pub async fn create_p2wpkh_wallet(
+    owner: Principal,
+    key_id: EcdsaKeyId,
+    network: BitcoinNetwork,
+) -> Result<Wallet, Error> {
+    let derivation_path = principal_to_derivation_path(owner);
+    let public_key = ecdsa::public_key(derivation_path.clone(), key_id, None).await?;
+
+    bitcoins::create_p2wpkh_wallet(derivation_path, &public_key, network).await
 }
 
 /// Build a transaction using given parameters
@@ -78,6 +91,33 @@ pub async fn build_transaction(
             total_fee = (signed_tx_bytes_len * fee_per_byte) / 1000;
         }
     }
+}
+
+/// Build a transaction using given parameters
+pub async fn build_unsigned_p2wpkh_transaction(
+    network: BitcoinNetwork,
+    my_wallet: &Wallet,
+    txs: &[RecipientAmount],
+    sighash_type: EcdsaSighashType,
+) -> Result<(TransactionInfo, Vec<Amount>), Error> {
+    let fee_per_byte = bitcoins::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
+
+    // Fetch UTXOs
+    ic_cdk::print("Fetching Utxos... \n");
+
+    // FIXME: UTXOs maybe very large, need to paginate
+    let utxos = bitcoins::get_utxos(my_wallet.address.to_string(), network, None)
+        .await?
+        .utxos;
+
+    bitcoins::p2wpkh::build_p2wpkh_transaction_info(
+        my_wallet,
+        &utxos,
+        txs,
+        fee_per_byte,
+        sighash_type,
+    )
+    .await
 }
 
 /// Calculate the fee for a given arguments, and build the transaction with argument and fee if the amounts in utxos are enough
@@ -220,6 +260,14 @@ pub fn validate_p2pkh_address(address: &Address) -> Result<(), Error> {
     }
 }
 
+pub fn validate_p2wpkh_address(address: &Address) -> Result<(), Error> {
+    if address.address_type() == Some(AddressType::P2wpkh) {
+        Ok(())
+    } else {
+        Err(Error::OnlySupportP2wpkhSign)
+    }
+}
+
 // A mock for rubber-stamping ECDSA signatures for P2PKH
 pub async fn mock_signer(
     _derivation_path: Vec<Vec<u8>>,
@@ -237,6 +285,59 @@ pub fn check_normal_principal(principal: Principal) -> Result<(), Error> {
     } else {
         Err(Error::InvalidPrincipal(principal))
     }
+}
+
+/// Sign a transaction with P2WPKH address
+/// NOTE: Only support P2WPKH
+pub async fn sign_transaction_p2wpkh(
+    public_key: &[u8],
+    sender: &Address,
+    mut tx_info: TransactionInfo,
+    input_amounts: &[Amount],
+    sighash_type: EcdsaSighashType,
+    key_id: EcdsaKeyId,
+    derivation_path: Vec<Vec<u8>>,
+) -> Result<TransactionInfo, Error> {
+    // Check if the sender is P2WPKH
+    validate_p2wpkh_address(sender)?;
+
+    let tx_clone = tx_info.tx.clone();
+
+    let mut sighasher = sighash::SighashCache::new(&tx_clone);
+
+    for (index, input) in tx_info.tx.input.iter_mut().enumerate() {
+        let value = input_amounts.get(index).unwrap();
+
+        let sighash = sighasher
+            .p2wpkh_signature_hash(
+                index,
+                &sender.script_pubkey(),
+                value.to_owned(),
+                sighash_type,
+            )
+            .expect("Creating p2wpkh sighash failed");
+
+        let signature_bytes = ecdsa::sign_with_ecdsa(
+            derivation_path.clone(),
+            key_id.clone(),
+            sighash.to_byte_array().to_vec(),
+        )
+        .await?;
+
+        // Convert the signature to DER format.
+        let mut der_signature = sign_to_der(signature_bytes);
+        der_signature.push(sighash_type.to_u32() as u8);
+
+        let witness = vec![der_signature, public_key.to_vec()];
+
+        input.witness = Witness::from_slice(&witness);
+    }
+
+    TransactionInfo::new(
+        tx_clone,
+        tx_info.witness_script.clone(),
+        tx_info.sig_hashes.clone(),
+    )
 }
 
 /// A helper function to call management canister with payment

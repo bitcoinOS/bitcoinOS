@@ -1,4 +1,6 @@
-use bitcoin::{PublicKey, ScriptBuf};
+pub mod p2wpkh;
+
+use bitcoin::{Address, CompressedPublicKey, PublicKey, ScriptBuf};
 
 use ic_cdk::api::management_canister::bitcoin::{
     bitcoin_get_balance, bitcoin_get_current_fee_percentiles, bitcoin_get_utxos,
@@ -119,7 +121,29 @@ pub async fn create_p2pkh_wallet(
         derivation_path,
         wallet_type: WalletType::Single,
     })
-    // public_key.map(|key| public_key_to_p2pkh_address(network, &key))
+}
+
+/// Returns the P2WPKH address of this canister at the given derivation path.
+pub async fn create_p2wpkh_wallet(
+    derivation_path: Vec<Vec<u8>>,
+    public_key: &[u8],
+    network: BitcoinNetwork,
+) -> WalletResult<Wallet> {
+    let public_key =
+        PublicKey::from_slice(public_key).map_err(|e| Error::Secp256k1Error(e.to_string()))?;
+
+    let compressed_pk = CompressedPublicKey(public_key.inner);
+
+    let address = bitcoin::Address::p2wpkh(&compressed_pk, to_bitcoin_network(network));
+
+    let witness_script = ScriptBuf::new_p2wpkh(&compressed_pk.wpubkey_hash());
+
+    Ok(Wallet {
+        witness_script,
+        address,
+        derivation_path,
+        wallet_type: WalletType::Single,
+    })
 }
 
 /// Create a wallet with p2wsh address from public key
@@ -171,6 +195,22 @@ pub fn public_key_to_p2pkh_address(network: BitcoinNetwork, public_key: &[u8]) -
     full_address.extend(checksum);
 
     bs58::encode(full_address).into_string()
+}
+
+/// Convert public key to P2WPKH address
+pub fn public_key_to_p2wpkh_address(
+    network: BitcoinNetwork,
+    public_key: &[u8],
+) -> WalletResult<Address> {
+    let public_key =
+        PublicKey::from_slice(public_key).map_err(|e| Error::Secp256k1Error(e.to_string()))?;
+
+    let compressed_pk = CompressedPublicKey(public_key.inner);
+
+    Ok(bitcoin::Address::p2wpkh(
+        &compressed_pk,
+        to_bitcoin_network(network),
+    ))
 }
 
 fn ripemd160(data: &[u8]) -> Vec<u8> {

@@ -8,6 +8,7 @@ mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
+mod p2wpkh_address;
 mod public_key;
 
 mod register_staking;
@@ -16,6 +17,7 @@ mod sync_staking_record_status;
 mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
+mod transfer_from_p2wpkh;
 mod utxos;
 
 use wallet::bitcoins;
@@ -29,6 +31,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
+use crate::constants::{MAX_RECIPIENT_CNT, MIN_TRANSFER_AMOUNT_SATOSHI};
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
@@ -47,6 +50,16 @@ pub async fn p2pkh_address() -> String {
     let metadata = get_metadata();
 
     p2pkh_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
+}
+
+/// Returns the P2WPKH address of this canister at a specific derivation path
+#[update]
+pub async fn p2wpkh_address() -> String {
+    let metadata = get_metadata();
+
+    p2wpkh_address::serve(metadata)
         .await
         .expect("A Smart wallet must have a Bitcoin Address")
 }
@@ -105,6 +118,16 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     let public_key = public_key::serve(&metadata).await?;
 
     transfer_from_p2pkh::serve(&public_key, metadata, req).await
+}
+
+/// Transfer btc to a p2wpkh address
+#[update]
+pub async fn transfer_from_p2wpkh(req: TransferRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let public_key = public_key::serve(&metadata).await?;
+
+    transfer_from_p2wpkh::serve(&public_key, metadata, req).await
 }
 
 /// Staking btc to staking pool
@@ -269,6 +292,8 @@ fn counter() -> u128 {
     counter::get_counter()
 }
 
+/// ------------------- Helper functions ------------------- ///
+
 /// Validate the given ownerr if it is owner of canister, return `Metadata` if true,
 /// otherwise return `UnAuthorized`
 fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
@@ -284,4 +309,27 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
 
 async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
+}
+
+pub(crate) fn validate_recipient_cnt_must_less_than_100(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs.len() > MAX_RECIPIENT_CNT as usize {
+        Err(WalletError::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
+    } else {
+        Ok(())
+    }
+}
+
+pub(crate) fn validate_recipient_amount_must_greater_than_1000(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs
+        .iter()
+        .any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI)
+    {
+        Err(WalletError::InsufficientFunds)
+    } else {
+        Ok(())
+    }
 }

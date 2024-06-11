@@ -13,3 +13,9 @@ dfx canister call asrmz-lmaaa-aaaaa-qaaeq-cai staking_to_pool '(record { staking
 
 -- staking to 
 dfx canister call --ic ybrlv-6yaaa-aaaah-qddaq-cai staking_to_pool '(record { staking_canister = principal "tyg77-iiaaa-aaaah-qdc7q-cai"; staking_address = "mpYWkVyc5wZnj5aPZGBeqQWSeB3vfBwm7Q"; amount = 10000:nat64 })'
+
+-- smartwallet transfer p2wpkh
+dfx canister call br5f7-7uaaa-aaaaa-qaaca-cai --candid canisters/smartwallet/smartwallet.did transfer_from_p2wpkh '(record { txs = vec { record { recipient = "mtWKxNnewZHYQCEQvjbbVpCfs2bxm87onq"; amount = 20000000:nat64 }}})'
+
+-- upgrade smartwallet
+dfx canister call os upgrade_wallet_wasm '(principal "br5f7-7uaaa-aaaaa-qaaca-cai")'
