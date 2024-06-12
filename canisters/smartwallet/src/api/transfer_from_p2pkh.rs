@@ -24,7 +24,6 @@ pub(super) async fn serve(
     metadata: Metadata,
     req: TransferRequest,
 ) -> Result<String, WalletError> {
-    
     validate_recipient_cnt_must_less_than_100(&req.txs)?;
     validate_recipient_amount_must_greater_than_1000(&req.txs)?;
 
@@ -106,7 +105,9 @@ async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<T
     Ok(txid)
 }
 
-pub(crate) fn validate_recipient_cnt_must_less_than_100(txs: &[TransferInfo]) -> Result<(), WalletError> {
+pub(crate) fn validate_recipient_cnt_must_less_than_100(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
     if txs.len() > MAX_RECIPIENT_CNT as usize {
         Err(WalletError::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
     } else {
@@ -114,8 +115,13 @@ pub(crate) fn validate_recipient_cnt_must_less_than_100(txs: &[TransferInfo]) ->
     }
 }
 
-pub(super) fn validate_recipient_amount_must_greater_than_1000(txs: &[TransferInfo]) -> Result<(), WalletError> {
-    if txs.iter().any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI) {
+pub(super) fn validate_recipient_amount_must_greater_than_1000(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs
+        .iter()
+        .any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI)
+    {
         Err(WalletError::InsufficientFunds)
     } else {
         Ok(())

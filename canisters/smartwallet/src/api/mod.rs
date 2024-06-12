@@ -8,9 +8,11 @@ mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
+mod p2wsh_multisig22_address;
 mod public_key;
 
 mod register_staking;
+mod set_steward_canister;
 mod staking_to_pool;
 mod sync_staking_record_status;
 mod total_staking;
@@ -18,6 +20,8 @@ mod transaction_log;
 mod transfer_from_p2pkh;
 mod utxos;
 
+use ic_cdk::api::is_controller;
+use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
@@ -47,6 +51,16 @@ pub async fn p2pkh_address() -> String {
     let metadata = get_metadata();
 
     p2pkh_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
+}
+
+/// Returns the P2WSH address of this canister at a specific derivation path
+#[update]
+pub async fn p2wsh_multisig22_address() -> String {
+    let metadata = get_metadata();
+
+    p2wsh_multisig22_address::serve(metadata)
         .await
         .expect("A Smart wallet must have a Bitcoin Address")
 }
@@ -177,6 +191,16 @@ async fn confirm_staking_record_one(txid: TxId) -> Result<Option<StakingRecord>,
     validate_owner(caller)?;
 
     confirm_staking_record_one::serve(txid).await
+}
+
+/// Update the steward canister id
+#[ic_cdk::update]
+fn set_steward_canister(canister_id: CanisterId) -> Result<String, WalletError> {
+    if is_controller(&ic_cdk::caller()) {
+        set_steward_canister::serve(canister_id)
+    } else {
+        Err(WalletError::UnAuthorized(ic_cdk::caller().to_string()))
+    }
 }
 
 /// --------------------- Queries interface of this canister -------------------

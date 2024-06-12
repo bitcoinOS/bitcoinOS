@@ -68,3 +68,13 @@ impl From<GetUtxosResponse> for UtxosResponse {
         }
     }
 }
+
+/// Response result of send transaction to bitcoin network
+/// * Fields:
+/// * txid: txid of transaction when send success, and error is `None`
+/// * error_msg: error message when send failed, and txid is `None`
+#[derive(Debug, Clone, CandidType, Deserialize)]
+pub struct SendTransactionResponse {
+    pub txid: Option<String>,
+    pub error_msg: Option<String>,
+}

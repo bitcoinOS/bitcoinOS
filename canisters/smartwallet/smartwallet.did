@@ -110,7 +110,9 @@ service : (InitArgument) -> {
   network : () -> (NetworkResponse) query;
   owner : () -> (Result_8) query;
   p2pkh_address : () -> (text);
+  p2wsh_multisig22_address : () -> (text);
   public_key : () -> (Result_9);
+  set_steward_canister : (principal) -> (Result_4);
   staking_to_pool : (StakingRequest) -> (Result_4);
   sync_staking_record_status : (text) -> (Result_10);
   total_staking : (TotalStakingRequest) -> (Result_1) query;

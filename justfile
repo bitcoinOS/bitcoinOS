@@ -2,9 +2,11 @@
 create_all_canisters:
     dfx canister create --all
 
+deploy_steward:
+    dfx deploy steward --argument '("regtest")'
 
 deploy_os:
-    dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"aaaaa-aa\"; })" 
+    STEWARD_CANISTER=$(dfx canister id steward) && dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"$STEWARD_CANISTER\"; })"
 
 deploy_os_ic:
     dfx deploy os --ic --argument "(record { network = variant { testnet }; steward_canister =  principal \"aaaaa-aa\"; })" 
@@ -27,12 +29,14 @@ translate_wasm:
 install_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { name = \"smartwallet\";  network = variant { regtest }; steward_canister = principal \"aaaaa-aa\" })"
+    STEWARD_CANISTER=$(dfx canister id steward)
+    dfx canister install --wasm smartwallet.wasm smartwallet --mode reinstall --argument "(record { name = \"smartwallet\";  network = variant { regtest }; steward_canister = principal\"$STEWARD_CANISTER\" })"
 
 deploy_wallet:
     #!/usr/bin/env bash
     # set -euxo pipefail
-    dfx deploy smartwallet --argument '(record { name = "smartwallet"; network = variant { regtest }; steward_canister = principal "aaaaa-aa" })'
+    STEWARD_CANISTER=$(dfx canister id steward)
+    dfx deploy smartwallet --argument "(record { name = \"smartwallet\"; network = variant { regtest }; steward_canister = principal \"$STEWARD_CANISTER\" })"
 
 deploy_staking:
     #!/usr/bin/env bash

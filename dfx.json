@@ -16,6 +16,11 @@
       "package": "os",
       "type": "rust"
     },
+    "steward": {
+      "candid": "canisters/steward/steward.did",
+      "package": "steward",
+      "type": "rust"
+    },
     "stakingpool": {
       "candid": "canisters/stakingpool/stakingpool.did",
       "package": "stakingpool",
