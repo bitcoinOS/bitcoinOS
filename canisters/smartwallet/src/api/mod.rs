@@ -128,9 +128,9 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
 pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
-    let public_key = public_key::serve(&metadata).await?;
+    // let public_key = public_key::serve(&metadata).await?;
 
-    transfer_from_p2wsh_multisig22::serve(&public_key, metadata, req).await
+    transfer_from_p2wsh_multisig22::serve(metadata, req).await
 }
 
 /// Staking btc to staking pool

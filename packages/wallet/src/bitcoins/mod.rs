@@ -1,3 +1,8 @@
+
+mod p2wsh;
+
+pub use p2wsh::*;
+
 use bitcoin::{CompressedPublicKey, PublicKey, ScriptBuf};
 
 use ic_cdk::api::management_canister::bitcoin::{

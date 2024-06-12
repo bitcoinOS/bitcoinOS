@@ -9,11 +9,13 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+bitcoin = { workspace = true }
 candid = { workspace = true }
 ic-cdk = { workspace = true }
 ic-cdk-timers = { workspace = true }
 # ic-ledger-types ={ worksapce = true }
 ic-stable-structures = { workspace = true }
+hex = { workspace = true }
 serde = { workspace = true }
 
 thiserror = { workspace = true }

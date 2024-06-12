@@ -117,5 +117,6 @@ service : (InitArgument) -> {
   sync_staking_record_status : (text) -> (Result_10);
   total_staking : (TotalStakingRequest) -> (Result_1) query;
   transfer_from_p2pkh : (TransferRequest) -> (Result_4);
+  transfer_from_p2wsh_multisig22 : (TransferRequest) -> (Result_4);
   utxos : (UtxosRequest) -> (Result_11);
 }
