@@ -1,4 +1,3 @@
-
 mod p2wsh;
 
 pub use p2wsh::*;

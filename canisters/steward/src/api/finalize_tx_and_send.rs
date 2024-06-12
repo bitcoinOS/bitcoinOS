@@ -1,7 +1,10 @@
 use bitcoin::{consensus, EcdsaSighashType, Transaction, Txid};
 use candid::Principal;
 use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId};
-use wallet::{tx::{RawTransactionInfo, TransactionInfo}, utils::principal_to_derivation_path};
+use wallet::{
+    tx::{RawTransactionInfo, TransactionInfo},
+    utils::principal_to_derivation_path,
+};
 
 use crate::error::StewardError;
 
@@ -33,11 +36,11 @@ async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<T
 
     let txid = tx.compute_txid();
 
-    ic_cdk::print(format!("Sending transaction... {txid:?}\n"));
+    ic_cdk::print(format!("Sending transaction.............. {txid:?}\n"));
 
     wallet::bitcoins::send_transaction(signed_tx_bytes, network).await?;
 
-    ic_cdk::print("Transaction sent! \n");
+    ic_cdk::print("Transaction sent! ------------------ \n");
 
     Ok(txid)
 }

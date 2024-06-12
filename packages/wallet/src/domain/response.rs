@@ -74,7 +74,7 @@ impl From<GetUtxosResponse> for UtxosResponse {
 /// * txid: txid of transaction when send success, and error is `None`
 /// * error_msg: error message when send failed, and txid is `None`
 #[derive(Debug, Clone, CandidType, Deserialize)]
-pub struct SendTransactionResponse {
+pub struct FinalizeTransactionResponse {
     pub txid: Option<String>,
     pub error_msg: Option<String>,
 }

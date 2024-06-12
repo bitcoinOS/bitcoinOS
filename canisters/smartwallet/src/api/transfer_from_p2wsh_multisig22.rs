@@ -6,7 +6,8 @@ use bitcoin::Txid;
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
-use wallet::domain::response::SendTransactionResponse;
+use wallet::domain::request::FinalizeRequest;
+use wallet::domain::response::FinalizeTransactionResponse;
 use wallet::domain::MultiSigIndex;
 use wallet::tx::RawTransactionInfo;
 use wallet::tx::RecipientAmount;
@@ -46,8 +47,8 @@ pub(super) async fn serve(
 
     let tx_info_bytes = init_transfer_request(metadata, &txs.txs).await?;
 
-    ic_cdk::print("After init_send_request \n");
-    ic_cdk::print(format!("tx_info is: {:?}\n", tx_info_bytes));
+    ic_cdk::print("After init_send_request --------------\n");
+    ic_cdk::print(format!("tx_info is: {:?} ---------------\n", tx_info_bytes));
 
     // Send transaction
     finalize_and_send(steward_canister, network, tx_info_bytes).await
@@ -96,12 +97,25 @@ async fn finalize_and_send(
     network: BitcoinNetwork,
     tx_info_bytes: RawTransactionInfo,
 ) -> Result<String, WalletError> {
-    let resp: Result<(SendTransactionResponse,), _> = ic_cdk::call(
+    ic_cdk::print(format!(
+        "The steward canister is {:?}",
+        steward_canister.to_string()
+    ));
+
+    let resp: Result<(FinalizeTransactionResponse,), _> = ic_cdk::call(
         steward_canister,
         "finalize_tx_and_send",
-        (network, tx_info_bytes),
+        (FinalizeRequest {
+            network,
+            tx_info_bytes,
+        },),
     )
     .await;
+
+    ic_cdk::print(format!(
+        "result from steward is: {:?} ----------------\n ",
+        resp
+    ));
 
     match resp {
         Ok((resp,)) => {
@@ -113,8 +127,6 @@ async fn finalize_and_send(
                 )))
             }
         }
-        _ => Err(WalletError::StewardCallError(
-            "Finalize and send transaction error!".to_string(),
-        )),
+        Err((code, msg)) => Err(WalletError::StewardCallError(format!("{code:?}: {msg:?}"))),
     }
 }

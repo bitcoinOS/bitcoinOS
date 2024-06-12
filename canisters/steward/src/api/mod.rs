@@ -4,12 +4,13 @@ mod public_key;
 
 use candid::Principal;
 use ic_cdk::{export_candid, init, query, update};
-use wallet::domain::response::SendTransactionResponse;
+use wallet::domain::request::FinalizeRequest;
+use wallet::domain::response::FinalizeTransactionResponse;
 use wallet::domain::EcdsaKeyIds;
-use wallet::tx::RawTransactionInfo;
 use wallet::utils::{principal_to_derivation_path, to_ic_bitcoin_network};
 
 use crate::context::METADATA;
+
 use crate::{domain::Metadata, error::StewardError};
 
 /// --------------------- Update interface of this Canister ----------------------
@@ -26,22 +27,36 @@ pub async fn public_key() -> Vec<u8> {
 
 /// Finalize the tx and send it to Bitcoin network
 /// Returns txid if success
-///
+/// Returns error msg if network is invalid
 #[update]
-pub async fn finalize_tx_and_send(raw_tx_info: RawTransactionInfo) -> SendTransactionResponse {
+pub async fn finalize_tx_and_send(req: FinalizeRequest) -> FinalizeTransactionResponse {
+    ic_cdk::print(format!(
+        "Got finalize request: {:?} ---------------------- \n",
+        req
+    ));
+
     let wallet_canister = ic_caller();
     let metadata = METADATA.with(|m| m.borrow().get().clone());
     let network = metadata.network;
+
+    if network != req.network {
+        return FinalizeTransactionResponse {
+            txid: None,
+            error_msg: Some("Network invalid".to_string()),
+        };
+    }
+
     let key_id = metadata.ecdsa_key_id;
 
-    let txid = finalize_tx_and_send::serve(raw_tx_info, key_id, wallet_canister, network).await;
+    let txid =
+        finalize_tx_and_send::serve(req.tx_info_bytes, key_id, wallet_canister, network).await;
 
     match txid {
-        Ok(txid) => SendTransactionResponse {
+        Ok(txid) => FinalizeTransactionResponse {
             txid: Some(txid),
             error_msg: None,
         },
-        Err(err) => SendTransactionResponse {
+        Err(err) => FinalizeTransactionResponse {
             txid: None,
             error_msg: Some(err.to_string()),
         },

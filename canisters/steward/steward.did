@@ -1,6 +1,14 @@
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type EcdsaCurve = variant { secp256k1 };
 type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
+type FinalizeRequest = record {
+  tx_info_bytes : RawTransactionInfo;
+  network : BitcoinNetwork;
+};
+type FinalizeTransactionResponse = record {
+  txid : opt text;
+  error_msg : opt text;
+};
 type Metadata = record {
   ecdsa_key_id : EcdsaKeyId;
   network : BitcoinNetwork;
@@ -12,7 +20,6 @@ type RawTransactionInfo = record {
   witness_script : blob;
 };
 type Result = variant { Ok : text; Err : StewardError };
-type SendTransactionResponse = record { txid : opt text; error_msg : opt text };
 type StewardError = variant {
   NetworkAlreadyExists;
   BaseError : text;
@@ -22,7 +29,7 @@ type StewardError = variant {
 };
 service : (text) -> {
   ecdsa_key : () -> (Result) query;
-  finalize_tx_and_send : (RawTransactionInfo) -> (SendTransactionResponse);
+  finalize_tx_and_send : (FinalizeRequest) -> (FinalizeTransactionResponse);
   metadata : () -> (Metadata) query;
   public_key : () -> (blob);
 }

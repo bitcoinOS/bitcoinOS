@@ -1,10 +1,22 @@
 use std::str::FromStr;
 
-use bitcoin::{absolute::LockTime, consensus, Amount, EcdsaSighashType, hashes::Hash, OutPoint, ScriptBuf, SegwitV0Sighash, Sequence, Transaction, TxIn, TxOut, Txid, Witness};
-use ic_cdk::api::management_canister::{bitcoin::{BitcoinNetwork, MillisatoshiPerByte}, ecdsa::EcdsaKeyId};
+use bitcoin::{
+    absolute::LockTime, consensus, hashes::Hash, Amount, EcdsaSighashType, OutPoint, ScriptBuf,
+    SegwitV0Sighash, Sequence, Transaction, TxIn, TxOut, Txid, Witness,
+};
+use ic_cdk::api::management_canister::{
+    bitcoin::{BitcoinNetwork, MillisatoshiPerByte},
+    ecdsa::EcdsaKeyId,
+};
 
-use crate::{constants::{DEFAULT_FEE_MILLI_SATOSHI, DUST_THRESHOLD}, domain::{response::Utxo, MultiSigIndex, Wallet}, ecdsa, error::Error, tx::{RecipientAmount, TransactionInfo}, utils::sign_to_der};
-
+use crate::{
+    constants::{DEFAULT_FEE_MILLI_SATOSHI, DUST_THRESHOLD},
+    domain::{response::Utxo, MultiSigIndex, Wallet},
+    ecdsa,
+    error::Error,
+    tx::{RecipientAmount, TransactionInfo},
+    utils::sign_to_der,
+};
 
 /// Build a p2wsh multisig 2-2 transction
 pub async fn build_unsigned_transaction_p2wsh_multisig22(
@@ -23,13 +35,8 @@ pub async fn build_unsigned_transaction_p2wsh_multisig22(
         .await?
         .utxos;
 
-    build_p2wsh_multisig22_transaction_info(
-        my_wallet,
-        &utxos,
-        txs,
-        fee_per_bytes,
-        sighash_type,
-    ).await
+    build_p2wsh_multisig22_transaction_info(my_wallet, &utxos, txs, fee_per_bytes, sighash_type)
+        .await
 }
 
 pub async fn build_p2wsh_multisig22_transaction_info(
@@ -47,7 +54,7 @@ pub async fn build_p2wsh_multisig22_transaction_info(
         let tx_info_amounts =
             build_transaction_with_fee_p2wsh_multisig_22(my_wallet, utxos, txs, total_fee)?;
 
-        // Sign the transaction. 
+        // Sign the transaction.
         // We only care about the size of the signed transaction, so we use a mock signer here for efficiency.
         let signed_tx = fake_signatures_p2wsh_multisig22(&tx_info_amounts.0, sighash_type)?.tx;
 
@@ -71,7 +78,6 @@ fn build_transaction_with_fee_p2wsh_multisig_22(
     txs: &[RecipientAmount],
     fee: u64,
 ) -> Result<(TransactionInfo, Vec<Amount>), Error> {
-
     let mut utxos_to_spend = vec![];
 
     // Segwit signature need the input amount for eacth input
@@ -158,7 +164,6 @@ fn build_transaction_sighashes_p2wsh_multisig22(
     witness_script: &ScriptBuf,
     input_amounts: Vec<Amount>,
 ) -> Result<Vec<SegwitV0Sighash>, Error> {
-
     if tx.input.len() != input_amounts.len() {
         panic!("Transaction inputs and amounts must have the same length.");
     }
@@ -169,16 +174,17 @@ fn build_transaction_sighashes_p2wsh_multisig22(
     let mut cache = bitcoin::sighash::SighashCache::new(&txclone);
 
     for (input_index, _input) in tx.input.iter().enumerate() {
-
         let value = input_amounts.get(input_index).unwrap();
-        
+
         // Compute the sighash for this input using the witness script from the user wallet.
-        let sighash = cache.p2wsh_signature_hash(
-            input_index,
-            witness_script,
-            value.to_owned(),
-            EcdsaSighashType::All
-        ).map_err(|e| Error::P2wshSigHashError(format!("{e:?}")))?;
+        let sighash = cache
+            .p2wsh_signature_hash(
+                input_index,
+                witness_script,
+                value.to_owned(),
+                EcdsaSighashType::All,
+            )
+            .map_err(|e| Error::P2wshSigHashError(format!("{e:?}")))?;
 
         sig_hashes.push(sighash);
     }
@@ -186,11 +192,13 @@ fn build_transaction_sighashes_p2wsh_multisig22(
     Ok(sig_hashes)
 }
 // Fake the signatures of the smartwallet and the steward canister.
-fn fake_signatures_p2wsh_multisig22(transaction_info: &TransactionInfo, sighash_type: EcdsaSighashType) -> Result<TransactionInfo, Error> {
-
+fn fake_signatures_p2wsh_multisig22(
+    transaction_info: &TransactionInfo,
+    sighash_type: EcdsaSighashType,
+) -> Result<TransactionInfo, Error> {
     let mut transaction = transaction_info.tx.clone();
 
-    for input in transaction.input.iter_mut(){
+    for input in transaction.input.iter_mut() {
         // Clear any previous witness
         input.witness.clear();
 
@@ -205,10 +213,16 @@ fn fake_signatures_p2wsh_multisig22(transaction_info: &TransactionInfo, sighash_
         input.witness.push(vec![]); // Placeholder for scriptSig
         input.witness.push(der_signature.clone());
         input.witness.push(der_signature);
-        input.witness.push(transaction_info.witness_script.clone().into_bytes());
+        input
+            .witness
+            .push(transaction_info.witness_script.clone().into_bytes());
     }
 
-    TransactionInfo::new(transaction, transaction_info.witness_script.clone(), transaction_info.sig_hashes.clone())
+    TransactionInfo::new(
+        transaction,
+        transaction_info.witness_script.clone(),
+        transaction_info.sig_hashes.clone(),
+    )
 }
 
 // Add a signature to the given transaction.
@@ -228,7 +242,6 @@ pub async fn sign_transaction_p2wsh_multisig22(
 
     // Sign each input of the transaction.
     for (index, input) in tx.input.iter_mut().enumerate() {
-        
         // If it is the first signature, clear any previous witness script
         // and add a placeholder for the scriptSig.
         if signature_index == MultiSigIndex::First {
@@ -244,8 +257,9 @@ pub async fn sign_transaction_p2wsh_multisig22(
             derivation_path.to_owned(),
             key_id.clone(),
             sighash.to_byte_array().to_vec(),
-        ).await?;
-        
+        )
+        .await?;
+
         // Convert the signature to DER format.
         let mut der_signature = sign_to_der(sec1_signature);
         der_signature.push(sighash_type as u8);
@@ -255,10 +269,16 @@ pub async fn sign_transaction_p2wsh_multisig22(
 
         // If it is the last signature, add the witness script.
         if signature_index == MultiSigIndex::Second {
-            input.witness.push(transaction_info.witness_script.clone().into_bytes());
+            input
+                .witness
+                .push(transaction_info.witness_script.clone().into_bytes());
         }
     }
 
     // Return the transaction info with the updated transaction.
-    TransactionInfo::new(tx, transaction_info.witness_script.clone(), transaction_info.sig_hashes.clone())
+    TransactionInfo::new(
+        tx,
+        transaction_info.witness_script.clone(),
+        transaction_info.sig_hashes.clone(),
+    )
 }
