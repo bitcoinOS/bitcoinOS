@@ -18,6 +18,7 @@ mod sync_staking_record_status;
 mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
+mod transfer_from_p2wsh_multisig22;
 mod utxos;
 
 use ic_cdk::api::is_controller;
@@ -33,6 +34,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
+use crate::constants::{MAX_RECIPIENT_CNT, MIN_TRANSFER_AMOUNT_SATOSHI};
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
@@ -111,7 +113,7 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
     current_fee_percentiles::serve(network).await
 }
 
-/// Transfer btc to a p2pkh address
+/// Transfer btc from a p2pkh wallet
 #[update]
 pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
@@ -119,6 +121,16 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     let public_key = public_key::serve(&metadata).await?;
 
     transfer_from_p2pkh::serve(&public_key, metadata, req).await
+}
+
+/// Transfer btc to a ppkh address
+#[update]
+pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let public_key = public_key::serve(&metadata).await?;
+
+    transfer_from_p2wsh_multisig22::serve(&public_key, metadata, req).await
 }
 
 /// Staking btc to staking pool
@@ -308,4 +320,27 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
 
 async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
+}
+
+pub(crate) fn validate_recipient_cnt_must_less_than_100(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs.len() > MAX_RECIPIENT_CNT as usize {
+        Err(WalletError::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
+    } else {
+        Ok(())
+    }
+}
+
+pub(super) fn validate_recipient_amount_must_greater_than_1000(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs
+        .iter()
+        .any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI)
+    {
+        Err(WalletError::InsufficientFunds)
+    } else {
+        Ok(())
+    }
 }

@@ -9,6 +9,8 @@ use wallet::tx::RecipientAmount;
 use wallet::utils::{self, principal_to_derivation_path};
 use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 
+
+use crate::domain::request::TransferInfo;
 use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
@@ -34,6 +36,8 @@ pub(super) async fn serve(
     // Transaction counter increment one
     counter_increment_one::serve();
 
+    // Build an unsigned transaction
+    // let mut tx_info = wallet::build_unsigned_transaction_p2wsh_multisig22()
     send_p2pkh_transaction(public_key, metadata, &txs.txs)
         .await
         .map(|txid| txid.to_string())
@@ -103,3 +107,4 @@ async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<T
 
     Ok(txid)
 }
+
