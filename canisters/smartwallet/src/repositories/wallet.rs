@@ -68,6 +68,11 @@ pub(crate) async fn get_or_create_p2wsh_multisig22_wallet(
     }
 }
 
+/// Get all wallets
+pub(crate) fn list_wallet() -> Vec<(SelfCustodyKey, RawWallet)> {
+    STATE.with_borrow(|s| s.wallets.iter().collect())
+}
+
 pub(crate) fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {
     STATE.with(|s| {
         let raw_wallet = &mut s.borrow_mut().wallets;

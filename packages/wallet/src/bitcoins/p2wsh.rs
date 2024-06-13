@@ -24,7 +24,7 @@ pub async fn build_unsigned_transaction_p2wsh_multisig22(
     network: BitcoinNetwork,
     txs: &[RecipientAmount],
     sighash_type: EcdsaSighashType,
-) -> Result<(TransactionInfo, Vec<Amount>), Error> {
+) -> Result<TransactionInfo, Error> {
     let fee_per_bytes = super::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
     // Fetch UTXOs
@@ -45,25 +45,25 @@ pub async fn build_p2wsh_multisig22_transaction_info(
     txs: &[RecipientAmount],
     fee_per_byte: MillisatoshiPerByte,
     sighash_type: EcdsaSighashType,
-) -> Result<(TransactionInfo, Vec<Amount>), Error> {
+) -> Result<TransactionInfo, Error> {
     ic_cdk::print("Building transaction ... \n");
 
     let mut total_fee = 0;
 
     loop {
-        let tx_info_amounts =
+        let tx_info =
             build_transaction_with_fee_p2wsh_multisig_22(my_wallet, utxos, txs, total_fee)?;
 
         // Sign the transaction.
         // We only care about the size of the signed transaction, so we use a mock signer here for efficiency.
-        let signed_tx = fake_signatures_p2wsh_multisig22(&tx_info_amounts.0, sighash_type)?.tx;
+        let signed_tx = fake_signatures_p2wsh_multisig22(&tx_info, sighash_type)?.tx;
 
         let signed_tx_bytes_len = consensus::serialize(&signed_tx).len() as u64;
 
         if (signed_tx_bytes_len * fee_per_byte) / 1000 == total_fee {
             ic_cdk::print(format!("Transaction built with fee {}.", total_fee));
 
-            return Ok(tx_info_amounts);
+            return Ok(tx_info);
         } else {
             total_fee = (signed_tx_bytes_len * fee_per_byte) / 1000;
         }
@@ -77,7 +77,7 @@ fn build_transaction_with_fee_p2wsh_multisig_22(
     utxos: &[Utxo],
     txs: &[RecipientAmount],
     fee: u64,
-) -> Result<(TransactionInfo, Vec<Amount>), Error> {
+) -> Result<TransactionInfo, Error> {
     let mut utxos_to_spend = vec![];
 
     // Segwit signature need the input amount for eacth input
@@ -153,8 +153,7 @@ fn build_transaction_with_fee_p2wsh_multisig_22(
     )?;
 
     // Return all the data required to sign the transaction.
-    let tx_info = TransactionInfo::new(tx, my_wallet.witness_script.clone(), sig_hashes)?;
-    Ok((tx_info, input_amounts))
+    TransactionInfo::new(tx, my_wallet.witness_script.clone(), sig_hashes)
 }
 
 // Computes the sighashes for each input of the given transaction.

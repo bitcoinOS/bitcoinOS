@@ -9,7 +9,7 @@ deploy_os:
     STEWARD_CANISTER=$(dfx canister id steward) && dfx deploy os --argument "(record { network = variant { regtest }; steward_canister =  principal \"$STEWARD_CANISTER\"; })"
 
 deploy_os_ic:
-    dfx deploy os --ic --argument "(record { network = variant { testnet }; steward_canister =  principal \"aaaaa-aa\"; })" 
+     STEWARD_CANISTER=$(dfx canister id steward) && dfx deploy os --argument "(record { network = variant { testnet }; steward_canister =  principal \"$STEWARD_CANISTER\"; })"
 
 generate_did:
     ./scripts/did.sh
@@ -68,7 +68,7 @@ create_staking_pool_ic:
     dfx canister call --ic os create_staking_pool_canister '(record { duration_in_day = 1:nat64; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16 })'
 
 register_staking_pool_ic:
-    dfx canister call --ic os register_staking_pool '(record { duration_in_day = 1:nat64; network = variant { regtest }; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16; staking_pool_canister = principal "tyg77-iiaaa-aaaah-qdc7q-cai"; staking_pool_address = "mpYWkVyc5wZnj5aPZGBeqQWSeB3vfBwm7Q" })'
+    dfx canister call --ic os register_staking_pool '(record { duration_in_day = 1:nat64; network = variant { testnet }; name = "staking pool test"; description = "a staking pool with 10 annual interest rate for a year"; annual_interest_rate = 10:nat16; staking_pool_canister = principal "tyg77-iiaaa-aaaah-qdc7q-cai"; staking_pool_address = "mpYWkVyc5wZnj5aPZGBeqQWSeB3vfBwm7Q" })'
 
 create_wallet:
     dfx canister call os create_wallet_canister '("smartwallet")'

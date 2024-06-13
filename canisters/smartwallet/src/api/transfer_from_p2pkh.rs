@@ -53,9 +53,7 @@ pub async fn send_p2pkh_transaction(
     // Get fee per byte
     let fee_per_byte = bitcoins::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
-    // Fetch public key, p2pkh address, and utxos
-    // let sender_public_key = public_key::serve(metadata).await?;
-
+    // Fetch public key, p2pkh address
     let sender_address = bitcoins::public_key_to_p2pkh_address(network, public_key);
     let sender_address = str_to_bitcoin_address(&sender_address, network)?;
 

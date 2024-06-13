@@ -6,6 +6,7 @@ mod current_fee_percentiles;
 mod ecdsa_key;
 mod get_staking;
 mod list_staking;
+mod list_wallet;
 mod logs;
 mod p2pkh_address;
 mod p2wsh_multisig22_address;
@@ -14,6 +15,7 @@ mod public_key;
 mod register_staking;
 mod set_steward_canister;
 mod staking_to_pool;
+mod staking_to_pool_from_p2wsh_multisig22;
 mod sync_staking_record_status;
 mod total_staking;
 mod transaction_log;
@@ -39,7 +41,7 @@ use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, TransactionLog};
+use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
 use crate::error::WalletError;
 use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};
@@ -186,6 +188,53 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     Ok(txid)
 }
 
+/// Staking btc to staking pool from p2wsh multisig22 wallet
+#[update]
+async fn staking_to_pool_from_p2wsh_multisig22(req: StakingRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let network = metadata.network;
+
+    // let public_key = public_key::serve(&metadata).await?;
+    let sender_canister = ic_cdk::id();
+    // Get address from local storage is more effective
+    let sender_address =
+        repositories::wallet::get_or_create_p2wsh_multisig22_wallet(metadata.clone())
+            .await?
+            .address
+            .to_string();
+    let sent_time = ic_time();
+    let sent_amount = req.amount;
+    let staking_canister = req.staking_canister;
+
+    let txid = staking_to_pool_from_p2wsh_multisig22::serve(
+        metadata,
+        sender_canister,
+        sender_address.clone(),
+        sent_time,
+        req,
+    )
+    .await?;
+
+    // Register staking record to staking pool
+    let register_req = RegisterStakingRequest {
+        txid: txid.clone(),
+        sender_address,
+        sent_amount,
+        sent_time,
+        network,
+        staking_canister,
+        sender: owner,
+    };
+
+    // Register staking record to staking pool cnaister
+    let _record = register_staking::serve(register_req)
+        .await
+        .expect("Failed to register staking record");
+
+    Ok(txid)
+}
+
 /// Sync staking record status from Staking pool canister
 #[update]
 async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
@@ -277,6 +326,18 @@ fn owner() -> Result<Principal, WalletError> {
     let owner = ic_caller();
 
     validate_owner(owner).map(|m| m.owner)
+}
+
+/// Returns all wallets of this canister
+#[update]
+fn list_wallet() -> Vec<(SelfCustodyKey, RawWallet)> {
+    let owner = ic_caller();
+
+    if validate_owner(owner).is_err() {
+        return vec![];
+    }
+
+    list_wallet::serve()
 }
 
 /// Returns all the addresses of this canister if the caller is controller

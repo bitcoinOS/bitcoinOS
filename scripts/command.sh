@@ -11,7 +11,7 @@ dfx  canister   deposit-cycles  888888888888  be2us-64aaa-aaaaa-qaabq-cai
 -- from wallet staking to pool
 dfx canister call asrmz-lmaaa-aaaaa-qaaeq-cai staking_to_pool '(record { staking_canister = principal "avqkn-guaaa-aaaaa-qaaea-cai"; staking_address = "mk8tN4B63wE8Td8H4UEu9FG2bHhtNuydcm"; amount = 1200000000:nat64 })'
 
--- staking to 
+-- staking to pool on ic
 dfx canister call --ic ybrlv-6yaaa-aaaah-qddaq-cai staking_to_pool '(record { staking_canister = principal "tyg77-iiaaa-aaaah-qdc7q-cai"; staking_address = "mpYWkVyc5wZnj5aPZGBeqQWSeB3vfBwm7Q"; amount = 10000:nat64 })'
 
 -- transfer btc

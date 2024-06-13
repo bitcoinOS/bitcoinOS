@@ -1,21 +1,12 @@
-use bitcoin::consensus;
-
-use bitcoin::Transaction;
-use bitcoin::Txid;
-
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use ic_cdk::api::management_canister::main::CanisterId;
-use wallet::bitcoins;
 use wallet::domain::request::FinalizeRequest;
 use wallet::domain::response::FinalizeTransactionResponse;
 use wallet::domain::MultiSigIndex;
 use wallet::tx::RawTransactionInfo;
 use wallet::tx::RecipientAmount;
-use wallet::tx::TransactionInfo;
-use wallet::utils::{self, principal_to_derivation_path};
-use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
+use wallet::utils::principal_to_derivation_path;
 
-use crate::domain::request::TransferInfo;
 use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
@@ -26,11 +17,7 @@ use super::counter_increment_one;
 use super::validate_recipient_amount_must_greater_than_1000;
 use super::validate_recipient_cnt_must_less_than_100;
 
-pub(super) async fn serve(
-    // pk_bytes: &[u8],
-    metadata: Metadata,
-    req: TransferRequest,
-) -> Result<String, WalletError> {
+pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<String, WalletError> {
     validate_recipient_cnt_must_less_than_100(&req.txs)?;
     validate_recipient_amount_must_greater_than_1000(&req.txs)?;
 
@@ -65,14 +52,13 @@ async fn init_transfer_request(
 
     let sighash_type = bitcoin::EcdsaSighashType::All;
     // Build an unsigned transaction
-    let (mut tx_info, input_amounts) =
-        wallet::bitcoins::build_unsigned_transaction_p2wsh_multisig22(
-            &wallet,
-            network,
-            txs,
-            sighash_type,
-        )
-        .await?;
+    let tx_info = wallet::bitcoins::build_unsigned_transaction_p2wsh_multisig22(
+        &wallet,
+        network,
+        txs,
+        sighash_type,
+    )
+    .await?;
 
     // Sign the transaction
     let derivation_path = &principal_to_derivation_path(sender);
