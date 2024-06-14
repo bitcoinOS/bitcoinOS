@@ -128,7 +128,7 @@ service : (InitArgument) -> {
   p2pkh_address : () -> (text);
   p2wsh_multisig22_address : () -> (text);
   public_key : () -> (Result_9);
-  set_steward_canister : (principal) -> (Result_4);
+  set_steward_canister : (principal) -> (text);
   staking_to_pool : (StakingRequest) -> (Result_4);
   staking_to_pool_from_p2wsh_multisig22 : (StakingRequest) -> (Result_4);
   sync_staking_record_status : (text) -> (Result_10);

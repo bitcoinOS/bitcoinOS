@@ -256,11 +256,11 @@ async fn confirm_staking_record_one(txid: TxId) -> Result<Option<StakingRecord>,
 
 /// Update the steward canister id
 #[ic_cdk::update]
-fn set_steward_canister(canister_id: CanisterId) -> Result<String, WalletError> {
+fn set_steward_canister(canister_id: CanisterId) -> String {
     if is_controller(&ic_cdk::caller()) {
         set_steward_canister::serve(canister_id)
     } else {
-        Err(WalletError::UnAuthorized(ic_cdk::caller().to_string()))
+        "UnAuthorized".to_string()
     }
 }
 
