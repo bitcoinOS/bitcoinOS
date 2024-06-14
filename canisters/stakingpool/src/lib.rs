@@ -13,9 +13,10 @@ use crate::domain::{
 };
 use crate::error::StakingError;
 
-use candid::{CandidType, Principal};
+use candid::CandidType;
 
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 use serde::Deserialize;
 use wallet::domain::request::UtxosRequest;
@@ -46,6 +47,7 @@ async fn init(arg: InitArgument) {
                 annual_interest_rate: arg.annual_interest_rate,
                 duration_in_day: arg.duration_in_day,
                 os_canister,
+                steward_canister: Some(arg.steward_canister),
                 ecdsa_key_id,
                 updated_time,
                 owner,
@@ -76,7 +78,8 @@ struct InitArgument {
     // the annual interest rate of the staking pool will less than 10000, it will divide by 10000 for compute
     annual_interest_rate: u16,
     duration_in_day: u64,
-    os_canister: Principal,
+    os_canister: CanisterId,
+    steward_canister: CanisterId,
 }
 
 // In the following, we register a custom getrandom implementation because

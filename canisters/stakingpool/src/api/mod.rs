@@ -5,6 +5,7 @@ mod get_staking;
 mod list_staking;
 mod logs;
 mod p2pkh_address;
+mod p2wsh_multisig22_address;
 mod public_key;
 mod redeem;
 
@@ -39,6 +40,16 @@ pub async fn p2pkh_address() -> String {
     p2pkh_address::serve(metadata)
         .await
         .expect("Staking pool must has a bitcoin address")
+}
+
+/// Returns the P2WSH address of this canister at a specific derivation path
+#[update]
+pub async fn p2wsh_multisig22_address() -> String {
+    let metadata = get_metadata();
+
+    p2wsh_multisig22_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
 }
 
 /// Returns the utxos of this staking pool canister

@@ -7,6 +7,7 @@ type InitArgument = record {
   network : BitcoinNetwork;
   description : text;
   duration_in_day : nat64;
+  steward_canister : principal;
   annual_interest_rate : nat16;
 };
 type Metadata = record {
@@ -17,6 +18,7 @@ type Metadata = record {
   network : BitcoinNetwork;
   description : text;
   duration_in_day : nat64;
+  steward_canister : opt principal;
   updated_time : nat64;
   annual_interest_rate : nat16;
 };
@@ -95,6 +97,7 @@ service : (InitArgument) -> {
   metadata : () -> (Result_2) query;
   network : () -> (NetworkResponse) query;
   p2pkh_address : () -> (text);
+  p2wsh_multisig22_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
   redeem_logs : () -> (vec RedeemLog) query;
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
