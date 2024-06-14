@@ -20,6 +20,8 @@ use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerB
 use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 use ic_cdk::api::management_canister::main::CanisterId;
 
+use crate::constants::{DUST_THRESHOLD, MAX_RECIPIENT_CNT};
+use crate::domain::request::TransferInfo;
 use crate::domain::response::Utxo;
 use crate::domain::{Wallet, WalletType};
 use crate::error::Error;
@@ -337,6 +339,22 @@ pub fn network_to_string(network: BitcoinNetwork) -> String {
         BitcoinNetwork::Regtest => "regtest",
     }
     .to_string()
+}
+
+pub fn validate_recipient_cnt_must_less_than_100(txs: &[TransferInfo]) -> Result<(), Error> {
+    if txs.len() > MAX_RECIPIENT_CNT as usize {
+        Err(Error::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
+    } else {
+        Ok(())
+    }
+}
+
+pub fn validate_recipient_amount_must_greater_than_1000(txs: &[TransferInfo]) -> Result<(), Error> {
+    if txs.iter().any(|info| info.amount < DUST_THRESHOLD) {
+        Err(Error::InsufficientFunds)
+    } else {
+        Ok(())
+    }
 }
 
 /// Check the length of the transaction and the signatures

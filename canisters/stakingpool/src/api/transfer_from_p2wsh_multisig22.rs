@@ -11,26 +11,20 @@ use wallet::utils::{
 };
 
 use crate::domain::Metadata;
-use crate::error::WalletError;
+use crate::error::StakingError;
 use crate::repositories;
 
-use super::append_transaction_log;
-use super::counter_increment_one;
-
-pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<String, WalletError> {
+pub(super) async fn serve(
+    metadata: Metadata,
+    req: TransferRequest,
+) -> Result<String, StakingError> {
     validate_recipient_cnt_must_less_than_100(&req.txs)?;
     validate_recipient_amount_must_greater_than_1000(&req.txs)?;
 
     let network = metadata.network;
-    let steward_canister = metadata.steward_canister;
+    let steward_canister = metadata.steward_canister.unwrap();
 
     let txs = req.validate_address(network)?;
-
-    // Log transfer info
-    append_transaction_log(&req.txs).await?;
-
-    // Transaction counter increment one
-    counter_increment_one::serve();
 
     let tx_info_bytes = init_transfer_request(metadata, &txs.txs).await?;
 
@@ -44,7 +38,7 @@ pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<St
 async fn init_transfer_request(
     metadata: Metadata,
     txs: &[RecipientAmount],
-) -> Result<RawTransactionInfo, WalletError> {
+) -> Result<RawTransactionInfo, StakingError> {
     let sender = metadata.owner;
     let key_id = metadata.ecdsa_key_id.clone();
     let network = metadata.network;
@@ -82,7 +76,7 @@ async fn finalize_and_send(
     steward_canister: CanisterId,
     network: BitcoinNetwork,
     tx_info_bytes: RawTransactionInfo,
-) -> Result<String, WalletError> {
+) -> Result<String, StakingError> {
     ic_cdk::print(format!(
         "The steward canister is {:?}",
         steward_canister.to_string()
@@ -108,11 +102,11 @@ async fn finalize_and_send(
             if resp.txid.is_some() {
                 Ok(resp.txid.unwrap())
             } else {
-                Err(WalletError::StewardCallError(resp.error_msg.unwrap_or(
+                Err(StakingError::StewardCallError(resp.error_msg.unwrap_or(
                     "Finalize and send transaction error!".to_string(),
                 )))
             }
         }
-        Err((code, msg)) => Err(WalletError::StewardCallError(format!("{code:?}: {msg:?}"))),
+        Err((code, msg)) => Err(StakingError::StewardCallError(format!("{code:?}: {msg:?}"))),
     }
 }

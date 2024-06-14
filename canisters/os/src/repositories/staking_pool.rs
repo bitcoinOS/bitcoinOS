@@ -27,6 +27,7 @@ pub(crate) fn create_staking_pool(
     annual_interest_rate: u16,
     duration_in_millisecond: u64,
     bitcoin_address: String,
+    steward_canister: CanisterId,
 ) -> Result<StakingPoolInfo, Error> {
     STATE.with(|s| {
         let state = &mut s.borrow_mut();
@@ -47,6 +48,7 @@ pub(crate) fn create_staking_pool(
                 os_canister,
                 created_at,
                 bitcoin_address,
+                steward_canister: Some(steward_canister),
             };
 
             staking_pools.insert(canister_id, staking_pool.clone());

@@ -120,6 +120,8 @@ async fn create_staking_pool_canister(
         os_canister,
         STAKING_POOL_WASM.to_owned(),
         metadata.wallet_cycles,
+        metadata.steward_canister,
+        owner,
     )
     .await
     .map_err(|msg| Error::CreateCanisterFailed { msg })?;
@@ -138,6 +140,7 @@ async fn create_staking_pool_canister(
         arg.annual_interest_rate,
         arg.duration_in_day,
         staking_pool_address,
+        metadata.steward_canister,
     )?;
 
     staking_pool_increment_one::serve()?;
@@ -172,6 +175,7 @@ fn register_staking_pool(arg: RegisterStakingPoolRequest) -> Result<StakingPoolI
         arg.annual_interest_rate,
         arg.duration_in_day,
         arg.bitcoin_address,
+        metadata.steward_canister,
     )?;
 
     staking_pool_increment_one::serve()?;
@@ -250,6 +254,19 @@ async fn set_steward_canister_of_wallet(
 ) -> Result<String, Error> {
     if is_controller(&ic_cdk::caller()) {
         set_steward_canister_of_wallet::serve(wallet_canister, steward_canister).await
+    } else {
+        Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
+    }
+}
+
+/// Update the steward canister id for given smartwallet canister
+#[ic_cdk::update]
+async fn set_steward_canister_of_staking_pool(
+    staking_pool_canister: CanisterId,
+    steward_canister: CanisterId,
+) -> Result<String, Error> {
+    if is_controller(&ic_cdk::caller()) {
+        set_steward_canister_of_wallet::serve(staking_pool_canister, steward_canister).await
     } else {
         Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
     }

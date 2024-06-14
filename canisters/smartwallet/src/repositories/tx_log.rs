@@ -1,10 +1,9 @@
-use wallet::utils::{ic_caller, ic_time};
-
-use crate::{
-    context::STATE,
-    domain::{request::TransferInfo, TransactionLog},
-    error::WalletError,
+use wallet::{
+    domain::request::TransferInfo,
+    utils::{ic_caller, ic_time},
 };
+
+use crate::{context::STATE, domain::TransactionLog, error::WalletError};
 
 pub(crate) fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletError> {
     STATE.with(|s| {

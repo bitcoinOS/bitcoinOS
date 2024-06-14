@@ -1,17 +1,13 @@
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::{
-    domain::staking::{StakingRecord, StakingStatus},
+    domain::{
+        request::{StakingRequest, TransferInfo, TransferRequest},
+        staking::{StakingRecord, StakingStatus},
+    },
     utils::ic_time,
 };
 
-use crate::{
-    domain::{
-        request::{StakingRequest, TransferInfo, TransferRequest},
-        Metadata,
-    },
-    error::WalletError,
-    repositories,
-};
+use crate::{domain::Metadata, error::WalletError, repositories};
 
 use super::transfer_from_p2pkh;
 

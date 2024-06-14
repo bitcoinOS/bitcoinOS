@@ -26,7 +26,7 @@ mod utxos;
 use ic_cdk::api::is_controller;
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
-use wallet::domain::request::UtxosRequest;
+use wallet::domain::request::{StakingRequest, TransferInfo, TransferRequest, UtxosRequest};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::TxId;
@@ -36,10 +36,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::constants::{MAX_RECIPIENT_CNT, MIN_TRANSFER_AMOUNT_SATOSHI};
-use crate::domain::request::{
-    RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
-};
+use crate::domain::request::{RegisterStakingRequest, TotalStakingRequest};
 use crate::domain::response::{ListWalletResponse, NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
@@ -381,27 +378,4 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
 
 async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
-}
-
-pub(crate) fn validate_recipient_cnt_must_less_than_100(
-    txs: &[TransferInfo],
-) -> Result<(), WalletError> {
-    if txs.len() > MAX_RECIPIENT_CNT as usize {
-        Err(WalletError::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
-    } else {
-        Ok(())
-    }
-}
-
-pub(super) fn validate_recipient_amount_must_greater_than_1000(
-    txs: &[TransferInfo],
-) -> Result<(), WalletError> {
-    if txs
-        .iter()
-        .any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI)
-    {
-        Err(WalletError::InsufficientFunds)
-    } else {
-        Ok(())
-    }
 }

@@ -19,10 +19,12 @@ pub(crate) async fn serve(
     os_canister: CanisterId,
     staking_pool_wasm: WasmModule,
     wallet_cycles: u64,
+    steward_canister: CanisterId,
+    owner: Principal,
 ) -> Result<CanisterId, String> {
     // create wallet canister id
     let staking_canister_id =
-        create_new_staking_pool_canister(vec![os_canister], wallet_cycles).await?;
+        create_new_staking_pool_canister(vec![os_canister, owner], wallet_cycles).await?;
 
     ic_cdk::println!(
         "-------------- created staking pool canister id: {:?} --------------- \n",
@@ -36,6 +38,7 @@ pub(crate) async fn serve(
         duration_in_day: duration_in_millisecond,
         network,
         os_canister,
+        steward_canister,
     };
 
     // Translate arg for CreateStaking

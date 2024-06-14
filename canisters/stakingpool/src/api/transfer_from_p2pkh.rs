@@ -1,66 +1,47 @@
 use bitcoin::consensus;
 
-use bitcoin::Amount;
 use bitcoin::Transaction;
 use bitcoin::Txid;
 
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
-use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
+use wallet::domain::request::TransferRequest;
 use wallet::tx::RecipientAmount;
+use wallet::utils::validate_recipient_amount_must_greater_than_1000;
+use wallet::utils::validate_recipient_cnt_must_less_than_100;
 use wallet::utils::{self, principal_to_derivation_path};
 use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 
-use crate::domain::request::RedeemRequest;
 use crate::domain::Metadata;
 use crate::error::StakingError;
-use crate::repositories;
-use crate::repositories::counter;
-use crate::repositories::tx_log;
-
-use super::public_key;
 
 pub(super) async fn serve(
-    sender: CanisterId,
+    public_key: &[u8],
     metadata: Metadata,
-    req: RedeemRequest,
-    redeem_time: u64,
+    req: TransferRequest,
 ) -> Result<String, StakingError> {
-    let txid = req.txid.clone();
+    validate_recipient_cnt_must_less_than_100(&req.txs)?;
+    validate_recipient_amount_must_greater_than_1000(&req.txs)?;
 
-    let amount = repositories::staking_record::validate_staker_amount(sender, &txid, redeem_time)?;
-
-    let recipient = req.validate_address()?;
-    let tx = RecipientAmount {
-        recipient,
-        amount: Amount::from_sat(amount),
-    };
+    let txs = req.validate_address(metadata.network)?;
 
     // Log transfer info
-    tx_log::build_and_append_redeem_log(req)?;
+    // append_transaction_log(&req.txs).await?;
 
-    // Transaction counter increment one
-    counter::increment_one();
+    // // Transaction counter increment one
+    // counter_increment_one::serve();
 
-    // Update the staking record status as `Redeeming`
-    repositories::staking_record::redeeming_record(txid.clone(), redeem_time)?;
-
-    let redeemed_txid = send_p2pkh_transaction(metadata, tx)
+    send_p2pkh_transaction(public_key, metadata, &txs.txs)
         .await
-        .map(|txid| txid.to_string())?;
-
-    repositories::staking_record::redeemed_record(txid, redeem_time, redeemed_txid.clone())?;
-
-    ic_cdk::print(format!("Redeemed tx is {redeemed_txid:?} \n"));
-
-    Ok(redeemed_txid)
+        .map(|txid| txid.to_string())
 }
 
 /// Send a transaction to bitcoin network that transfer the given amount and recipient
 /// and the sender is the canister itself
 pub async fn send_p2pkh_transaction(
+    public_key: &[u8],
     metadata: Metadata,
-    tx: RecipientAmount,
+    txs: &[RecipientAmount],
 ) -> Result<Txid, StakingError> {
     let network = metadata.network;
     let key_id = metadata.ecdsa_key_id.clone();
@@ -69,10 +50,8 @@ pub async fn send_p2pkh_transaction(
     // Get fee per byte
     let fee_per_byte = bitcoins::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
-    // Fetch public key, p2pkh address, and utxos
-    let sender_public_key = public_key::serve(&metadata).await?;
-
-    let sender_address = bitcoins::public_key_to_p2pkh_address(network, &sender_public_key);
+    // Fetch public key, p2pkh address
+    let sender_address = bitcoins::public_key_to_p2pkh_address(network, public_key);
     let sender_address = str_to_bitcoin_address(&sender_address, network)?;
 
     ic_cdk::print(format!(
@@ -82,24 +61,18 @@ pub async fn send_p2pkh_transaction(
     // Fetching UTXOs
     ic_cdk::print("Fetching UTXOs... \n");
 
-    // Fixme: UTXOs maybe very large, need to paginate
+    // FIXME: UTXOs maybe very large, need to paginate
     let utxos = wallet::bitcoins::get_utxos(sender_address.to_string(), network, None)
         .await?
         .utxos;
 
     // Build transaction
-    let tx = utils::build_transaction(
-        &sender_public_key,
-        &sender_address,
-        &utxos,
-        &[tx],
-        fee_per_byte,
-    )
-    .await?;
+    let tx =
+        utils::build_transaction(public_key, &sender_address, &utxos, txs, fee_per_byte).await?;
 
     // Sign the transaction
     let signed_tx = utils::sign_transaction_p2pkh(
-        &sender_public_key,
+        public_key,
         &sender_address,
         tx,
         key_id,

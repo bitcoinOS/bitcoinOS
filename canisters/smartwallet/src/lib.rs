@@ -8,7 +8,7 @@ pub mod rgb;
 
 use crate::context::STATE;
 use crate::domain::{
-    request::{StakingRequest, TotalStakingRequest, TransferRequest},
+    request::TotalStakingRequest,
     response::{ListWalletResponse, NetworkResponse, PublicKeyResponse},
     Metadata, TransactionLog,
 };
@@ -21,7 +21,7 @@ use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 
 use serde::Deserialize;
-use wallet::domain::request::UtxosRequest;
+use wallet::domain::request::{StakingRequest, TransferRequest, UtxosRequest};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::{EcdsaKeyIds, TxId};

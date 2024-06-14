@@ -13,13 +13,11 @@ use ic_cdk::api::management_canister::{
 use ic_stable_structures::{storable::Bound, Storable};
 use serde::{Deserialize, Serialize};
 use wallet::{
-    domain::{AddressType, EcdsaKeyIds, Wallet, WalletType},
+    domain::{request::TransferInfo, AddressType, EcdsaKeyIds, Wallet, WalletType},
     utils::mgmt_canister_id,
 };
 
 use crate::constants::DAILY_LIMIT_SATOSHI;
-
-use self::request::TransferInfo;
 
 #[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
 pub struct Metadata {

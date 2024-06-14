@@ -16,9 +16,3 @@ pub const DAILY_LIMIT_SATOSHI: u64 = 10_000_000_000;
 
 /// One hours for staking pool schecdule
 pub const ONE_HOURS: Duration = Duration::from_secs(60 * 60);
-
-/// max recipient number when transfer btc
-pub const MAX_RECIPIENT_CNT: u8 = 100;
-
-/// min amount in satoshi when transfer btc
-pub const MIN_TRANSFER_AMOUNT_SATOSHI: u64 = 1000;

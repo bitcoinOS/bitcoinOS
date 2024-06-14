@@ -10,14 +10,19 @@ mod public_key;
 mod redeem;
 
 mod register_staking;
+mod set_steward_canister;
 mod staker_save;
+mod transfer_from_p2pkh;
+mod transfer_from_p2wsh_multisig22;
 mod tvl;
 mod utxos;
 
+use candid::Principal;
 use ic_cdk::api::is_controller;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::{query, update};
-use wallet::domain::request::UtxosRequest;
+use wallet::domain::request::{TransferRequest, UtxosRequest};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::TxId;
@@ -52,6 +57,25 @@ pub async fn p2wsh_multisig22_address() -> String {
         .expect("A Smart wallet must have a Bitcoin Address")
 }
 
+/// Transfer btc from a p2pkh wallet
+#[update]
+pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, StakingError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let public_key = public_key::serve(&metadata).await?;
+
+    transfer_from_p2pkh::serve(&public_key, metadata, req).await
+}
+
+/// Transfer btc to a ppkh address
+#[update]
+pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<String, StakingError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    // let public_key = public_key::serve(&metadata).await?;
+
+    transfer_from_p2wsh_multisig22::serve(metadata, req).await
+}
 /// Returns the utxos of this staking pool canister
 #[update]
 pub async fn utxos(req: UtxosRequest) -> Result<UtxosResponse, StakingError> {
@@ -150,6 +174,16 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     redeem::serve(sender, metadata, req, redeem_time).await
 }
 
+/// Update the steward canister id
+#[ic_cdk::update]
+fn set_steward_canister(canister_id: CanisterId) -> String {
+    if is_controller(&ic_cdk::caller()) {
+        set_steward_canister::serve(canister_id)
+    } else {
+        "UnAuthorized".to_string()
+    }
+}
+
 /// --------------------- Queries interface of this canister -------------------
 ///
 /// Returns TVL of this staking pool canister
@@ -197,6 +231,21 @@ async fn redeem_logs() -> Vec<RedeemLog> {
 #[query]
 fn counter() -> u128 {
     get_counter()
+}
+
+/// Helpers functions
+
+/// Validate the given ownerr if it is owner of canister, return `Metadata` if true,
+/// otherwise return `UnAuthorized`
+fn validate_owner(owner: Principal) -> Result<Metadata, StakingError> {
+    check_normal_principal(owner)?;
+
+    let metadata = repositories::metadata::get_metadata();
+    if metadata.owner == owner || is_controller(&owner) {
+        Ok(metadata)
+    } else {
+        Err(StakingError::UnAuthorized(owner.to_string()))
+    }
 }
 
 fn check_network(network: BitcoinNetwork) -> Result<(), StakingError> {

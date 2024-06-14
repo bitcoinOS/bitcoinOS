@@ -58,6 +58,9 @@ pub enum Error {
 
     #[error("Stable write error: {msg:?}")]
     StableWriteError { msg: String },
+
+    #[error("Recipients exceeded max limit {0}")]
+    ExceededMaxRecipientError(u8),
 }
 
 impl From<(ic_cdk::api::call::RejectionCode, String)> for Error {

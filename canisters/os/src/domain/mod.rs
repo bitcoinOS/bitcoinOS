@@ -150,6 +150,7 @@ pub struct StakingPoolInfo {
     pub annual_interest_rate: u16,
     pub duration_in_day: u64,
     pub os_canister: CanisterId,
+    pub steward_canister: Option<CanisterId>,
     pub created_at: u64,
 }
 

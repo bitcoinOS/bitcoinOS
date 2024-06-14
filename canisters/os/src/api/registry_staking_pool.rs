@@ -13,6 +13,7 @@ pub(crate) fn serve(
     annual_interest_rate: u16,
     duration_in_millisecond: u64,
     bitcoin_address: String,
+    steward_canister: CanisterId,
 ) -> Result<StakingPoolInfo, Error> {
     repositories::staking_pool::create_staking_pool(
         staking_pool_id,
@@ -24,5 +25,6 @@ pub(crate) fn serve(
         annual_interest_rate,
         duration_in_millisecond,
         bitcoin_address,
+        steward_canister
     )
 }

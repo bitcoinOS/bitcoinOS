@@ -50,6 +50,7 @@ type Result_4 = variant { Ok : UtxosResponse; Err : StakingError };
 type StakingError = variant {
   AppendRedeemLogError : text;
   StakingRecordAlreadyExists : text;
+  StewardCallError : text;
   BitcoinAddressNetworkUnmatch : text;
   RedemptionNotAllowed;
   WalletAlreadyExists : text;
@@ -78,6 +79,8 @@ type StakingRecord = record {
   annual_interest_rate : nat16;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
+type TransferInfo = record { recipient : text; amount : nat64 };
+type TransferRequest = record { txs : vec TransferInfo };
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
 type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
 type UtxosRequest = record { filter : opt UtxoFilter; address : text };
@@ -101,6 +104,9 @@ service : (InitArgument) -> {
   redeem : (RedeemRequest) -> (Result_3);
   redeem_logs : () -> (vec RedeemLog) query;
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
+  set_steward_canister : (principal) -> (text);
+  transfer_from_p2pkh : (TransferRequest) -> (Result_3);
+  transfer_from_p2wsh_multisig22 : (TransferRequest) -> (Result_3);
   tvl : () -> (nat64) query;
   utxos : (UtxosRequest) -> (Result_4);
 }

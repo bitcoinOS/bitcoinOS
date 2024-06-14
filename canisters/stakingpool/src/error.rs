@@ -34,6 +34,9 @@ pub enum StakingError {
 
     #[error("Redemption not allowed")]
     RedemptionNotAllowed,
+
+    #[error("Happens error: {0} when call Steward canister")]
+    StewardCallError(String),
 }
 
 impl From<wallet::error::Error> for StakingError {

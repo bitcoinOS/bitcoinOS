@@ -19,7 +19,7 @@ use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
 use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 use serde::Deserialize;
-use wallet::domain::request::UtxosRequest;
+use wallet::domain::request::{TransferRequest, UtxosRequest};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::{EcdsaKeyIds, TxId};
@@ -62,11 +62,6 @@ async fn init(arg: InitArgument) {
     //     })
     // });
 }
-
-// #[ic_cdk::post_upgrade]
-// async fn post_upgrade() {
-
-// }
 
 export_candid!();
 

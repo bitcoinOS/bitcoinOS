@@ -115,6 +115,9 @@ just build_wallet
 # Compile stakingpool to wasm
 just build_staking
 
+# Deploy steward canister
+just deploy_steward
+
 # Deploy os canister
 just deploy_os
 

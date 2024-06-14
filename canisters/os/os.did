@@ -52,6 +52,7 @@ type StakingPoolInfo = record {
   description : text;
   created_at : nat64;
   duration_in_day : nat64;
+  steward_canister : opt principal;
   staking_pool_canister : principal;
   annual_interest_rate : nat16;
 };
@@ -88,6 +89,7 @@ service : (InitArgument) -> {
   my_wallets : () -> (vec WalletInfo) query;
   register_staking_pool : (RegisterStakingPoolRequest) -> (Result_1);
   set_steward_canister : (principal) -> (Result_4);
+  set_steward_canister_of_staking_pool : (principal, principal) -> (Result_4);
   set_steward_canister_of_wallet : (principal, principal) -> (Result_4);
   set_wallet_cycles : (nat64) -> (Result_5);
   timestamp : () -> (nat64) query;

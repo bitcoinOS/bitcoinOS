@@ -14,3 +14,6 @@ pub const SIG_HASH_TYPE: EcdsaSighashType = EcdsaSighashType::All;
 
 pub const PRINCIPAL_MIN: Principal = Principal::from_slice(&[]);
 pub const PRINCIPAL_MAX: Principal = Principal::from_slice(&[255; 29]);
+
+/// max recipient number when transfer btc
+pub const MAX_RECIPIENT_CNT: u8 = 100;
