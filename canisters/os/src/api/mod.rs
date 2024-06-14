@@ -348,11 +348,12 @@ fn init(args: InitArgument) {
 export_candid!();
 
 async fn fetch_wallet_address(staking_pool_canister: CanisterId) -> Result<String, Error> {
-    let resp: Result<(String,), _> = ic_cdk::call(staking_pool_canister, "p2pkh_address", ((),))
-        .await
-        .map_err(|msg| Error::GetStakingPoolAddressFailed {
-            msg: format!("{msg:?}"),
-        });
+    let resp: Result<(String,), _> =
+        ic_cdk::call(staking_pool_canister, "p2wsh_multisig22_address", ((),))
+            .await
+            .map_err(|msg| Error::GetStakingPoolAddressFailed {
+                msg: format!("{msg:?}"),
+            });
 
     resp.map(|(address,)| address)
 }

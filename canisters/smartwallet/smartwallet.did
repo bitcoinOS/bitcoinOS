@@ -8,6 +8,7 @@ type InitArgument = record {
   network : BitcoinNetwork;
   steward_canister : principal;
 };
+type ListWalletResponse = record { key : SelfCustodyKey; wallet : RawWallet };
 type Metadata = record {
   ecdsa_key_id : EcdsaKeyId;
   owner : principal;
@@ -120,7 +121,7 @@ service : (InitArgument) -> {
   ecdsa_key : () -> (Result_4) query;
   get_staking : (text) -> (Result_2) query;
   list_staking : () -> (Result_5) query;
-  list_wallet : () -> (vec record { SelfCustodyKey; RawWallet });
+  list_wallet : () -> (vec ListWalletResponse);
   logs : () -> (Result_6) query;
   metadata : () -> (Result_7) query;
   network : () -> (NetworkResponse) query;

@@ -9,8 +9,8 @@ pub mod rgb;
 use crate::context::STATE;
 use crate::domain::{
     request::{StakingRequest, TotalStakingRequest, TransferRequest},
-    response::{NetworkResponse, PublicKeyResponse},
-    Metadata, RawWallet, SelfCustodyKey, TransactionLog,
+    response::{ListWalletResponse, NetworkResponse, PublicKeyResponse},
+    Metadata, TransactionLog,
 };
 use crate::error::WalletError;
 

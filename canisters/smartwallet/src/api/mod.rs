@@ -40,8 +40,8 @@ use crate::constants::{MAX_RECIPIENT_CNT, MIN_TRANSFER_AMOUNT_SATOSHI};
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
-use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
+use crate::domain::response::{ListWalletResponse, NetworkResponse, PublicKeyResponse};
+use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
 use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};
@@ -330,7 +330,7 @@ fn owner() -> Result<Principal, WalletError> {
 
 /// Returns all wallets of this canister
 #[update]
-fn list_wallet() -> Vec<(SelfCustodyKey, RawWallet)> {
+fn list_wallet() -> Vec<ListWalletResponse> {
     let owner = ic_caller();
 
     if validate_owner(owner).is_err() {
