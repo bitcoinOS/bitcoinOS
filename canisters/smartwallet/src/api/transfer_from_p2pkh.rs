@@ -9,22 +9,20 @@ use wallet::tx::RecipientAmount;
 use wallet::utils::{self, principal_to_derivation_path};
 use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 
-use crate::constants::MAX_RECIPIENT_CNT;
-use crate::constants::MIN_TRANSFER_AMOUNT_SATOSHI;
-use crate::domain::request::TransferInfo;
 use crate::domain::request::TransferRequest;
 use crate::domain::Metadata;
 use crate::error::WalletError;
 
 use super::append_transaction_log;
 use super::counter_increment_one;
+use super::validate_recipient_amount_must_greater_than_1000;
+use super::validate_recipient_cnt_must_less_than_100;
 
 pub(super) async fn serve(
     public_key: &[u8],
     metadata: Metadata,
     req: TransferRequest,
 ) -> Result<String, WalletError> {
-    
     validate_recipient_cnt_must_less_than_100(&req.txs)?;
     validate_recipient_amount_must_greater_than_1000(&req.txs)?;
 
@@ -55,9 +53,7 @@ pub async fn send_p2pkh_transaction(
     // Get fee per byte
     let fee_per_byte = bitcoins::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
-    // Fetch public key, p2pkh address, and utxos
-    // let sender_public_key = public_key::serve(metadata).await?;
-
+    // Fetch public key, p2pkh address
     let sender_address = bitcoins::public_key_to_p2pkh_address(network, public_key);
     let sender_address = str_to_bitcoin_address(&sender_address, network)?;
 
@@ -104,20 +100,4 @@ async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<T
     ic_cdk::print("Transaction sent! \n");
 
     Ok(txid)
-}
-
-pub(crate) fn validate_recipient_cnt_must_less_than_100(txs: &[TransferInfo]) -> Result<(), WalletError> {
-    if txs.len() > MAX_RECIPIENT_CNT as usize {
-        Err(WalletError::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
-    } else {
-        Ok(())
-    }
-}
-
-pub(super) fn validate_recipient_amount_must_greater_than_1000(txs: &[TransferInfo]) -> Result<(), WalletError> {
-    if txs.iter().any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI) {
-        Err(WalletError::InsufficientFunds)
-    } else {
-        Ok(())
-    }
 }

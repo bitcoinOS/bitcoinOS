@@ -10,13 +10,14 @@ use crate::context::STATE;
 use crate::domain::{
     request::{StakingRequest, TotalStakingRequest, TransferRequest},
     response::{NetworkResponse, PublicKeyResponse},
-    Metadata, TransactionLog,
+    Metadata, RawWallet, SelfCustodyKey, TransactionLog,
 };
 use crate::error::WalletError;
 
 use candid::{CandidType, Principal};
 use constants::DAILY_LIMIT_SATOSHI;
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, MillisatoshiPerByte, Satoshi};
+use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 
 use serde::Deserialize;

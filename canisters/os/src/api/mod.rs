@@ -12,6 +12,7 @@ mod list_wallet_types;
 mod my_wallet;
 mod registry_staking_pool;
 mod registry_wallet;
+mod set_steward_canister;
 mod set_wallet_cycles;
 mod staking_pool_increment_one;
 mod update_staking_pool_bitcoin_address;
@@ -225,6 +226,16 @@ async fn upgrade_staking_pool_wasm(staking_pool_canister: CanisterId) -> Result<
 fn set_wallet_cycles(wallet_cycles: u64) -> Result<u64, Error> {
     if is_controller(&ic_cdk::caller()) {
         set_wallet_cycles::serve(wallet_cycles)
+    } else {
+        Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
+    }
+}
+
+/// Update the steward canister id
+#[ic_cdk::update]
+fn set_steward_canister(canister_id: CanisterId) -> Result<String, Error> {
+    if is_controller(&ic_cdk::caller()) {
+        set_steward_canister::serve(canister_id)
     } else {
         Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
     }

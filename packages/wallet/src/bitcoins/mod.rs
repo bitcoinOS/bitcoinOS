@@ -1,4 +1,8 @@
-use bitcoin::{PublicKey, ScriptBuf};
+mod p2wsh;
+
+pub use p2wsh::*;
+
+use bitcoin::{CompressedPublicKey, PublicKey, ScriptBuf};
 
 use ic_cdk::api::management_canister::bitcoin::{
     bitcoin_get_balance, bitcoin_get_current_fee_percentiles, bitcoin_get_utxos,
@@ -132,12 +136,13 @@ pub async fn create_p2wsh_wallet(
     let public_key =
         PublicKey::from_slice(public_key).map_err(|e| Error::Secp256k1Error(e.to_string()))?;
 
-    // let witness_script = ScriptBuf::new_p2wsh(&public_key.p2wpkh_script_code());
+    let compressed_pk = CompressedPublicKey(public_key.inner);
+    let witness_script = ScriptBuf::new_p2wsh(&compressed_pk.p2wpkh_script_code().wscript_hash());
 
     // let script_pub_key = ScriptBuf::new_p2wsh(&witness_script.wscript_hash());
-    let witness_script = bitcoin::blockdata::script::Builder::new()
-        .push_key(&public_key)
-        .into_script();
+    // let witness_script = bitcoin::blockdata::script::Builder::new()
+    //     .push_key(&public_key)
+    //     .into_script();
     // let script_buf = ScriptBuf::new_p2wsh(&witness_script.wscript_hash());
 
     // let address =

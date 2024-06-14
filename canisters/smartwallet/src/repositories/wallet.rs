@@ -18,6 +18,11 @@ pub(crate) fn get_p2pkh_wallet(metadata: &Metadata) -> Option<RawWallet> {
     get_wallet(&key)
 }
 
+pub(crate) fn get_p2wsh_multisig22_wallet(metadata: &Metadata) -> Option<RawWallet> {
+    let key = SelfCustodyKey::new(metadata, WalletType::MultiSig22, AddressType::P2wsh);
+    get_wallet(&key)
+}
+
 pub(crate) async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wallet, WalletError> {
     let raw_wallet = get_p2pkh_wallet(&metadata);
 
@@ -35,6 +40,37 @@ pub(crate) async fn get_or_create_p2pkh_wallet(metadata: Metadata) -> Result<Wal
             Ok(wallet)
         }
     }
+}
+
+pub(crate) async fn get_or_create_p2wsh_multisig22_wallet(
+    metadata: Metadata,
+) -> Result<Wallet, WalletError> {
+    let raw_wallet = get_p2wsh_multisig22_wallet(&metadata);
+
+    match raw_wallet {
+        Some(wallet) => Ok(Wallet::from(wallet)),
+        None => {
+            let wallet_key =
+                SelfCustodyKey::new(&metadata, WalletType::MultiSig22, AddressType::P2wsh);
+
+            let wallet = utils::create_p2wsh_multisig22_wallet(
+                metadata.owner,
+                metadata.ecdsa_key_id,
+                metadata.network,
+                metadata.steward_canister,
+            )
+            .await?;
+
+            insert_wallet(wallet_key, wallet.clone())?;
+
+            Ok(wallet)
+        }
+    }
+}
+
+/// Get all wallets
+pub(crate) fn list_wallet() -> Vec<(SelfCustodyKey, RawWallet)> {
+    STATE.with_borrow(|s| s.wallets.iter().collect())
 }
 
 pub(crate) fn insert_wallet(wallet_key: SelfCustodyKey, wallet: Wallet) -> Result<(), WalletError> {

@@ -55,6 +55,9 @@ pub enum Error {
 
     #[error("Insufficient funds")]
     InsufficientFunds,
+
+    #[error("Stable write error: {msg:?}")]
+    StableWriteError { msg: String },
 }
 
 impl From<(ic_cdk::api::call::RejectionCode, String)> for Error {

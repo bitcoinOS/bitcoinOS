@@ -6,18 +6,25 @@ mod current_fee_percentiles;
 mod ecdsa_key;
 mod get_staking;
 mod list_staking;
+mod list_wallet;
 mod logs;
 mod p2pkh_address;
+mod p2wsh_multisig22_address;
 mod public_key;
 
 mod register_staking;
+mod set_steward_canister;
 mod staking_to_pool;
+mod staking_to_pool_from_p2wsh_multisig22;
 mod sync_staking_record_status;
 mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
+mod transfer_from_p2wsh_multisig22;
 mod utxos;
 
+use ic_cdk::api::is_controller;
+use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
 use wallet::domain::request::UtxosRequest;
 use wallet::domain::response::UtxosResponse;
@@ -29,11 +36,12 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
+use crate::constants::{MAX_RECIPIENT_CNT, MIN_TRANSFER_AMOUNT_SATOSHI};
 use crate::domain::request::{
     RegisterStakingRequest, StakingRequest, TotalStakingRequest, TransferInfo, TransferRequest,
 };
 use crate::domain::response::{NetworkResponse, PublicKeyResponse};
-use crate::domain::{Metadata, TransactionLog};
+use crate::domain::{Metadata, RawWallet, SelfCustodyKey, TransactionLog};
 use crate::error::WalletError;
 use crate::repositories::metadata::get_metadata;
 use crate::repositories::{self, counter, metadata, tx_log};
@@ -47,6 +55,16 @@ pub async fn p2pkh_address() -> String {
     let metadata = get_metadata();
 
     p2pkh_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
+}
+
+/// Returns the P2WSH address of this canister at a specific derivation path
+#[update]
+pub async fn p2wsh_multisig22_address() -> String {
+    let metadata = get_metadata();
+
+    p2wsh_multisig22_address::serve(metadata)
         .await
         .expect("A Smart wallet must have a Bitcoin Address")
 }
@@ -97,7 +115,7 @@ pub async fn current_fee_percentiles() -> Result<Vec<MillisatoshiPerByte>, Walle
     current_fee_percentiles::serve(network).await
 }
 
-/// Transfer btc to a p2pkh address
+/// Transfer btc from a p2pkh wallet
 #[update]
 pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
@@ -105,6 +123,16 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     let public_key = public_key::serve(&metadata).await?;
 
     transfer_from_p2pkh::serve(&public_key, metadata, req).await
+}
+
+/// Transfer btc to a ppkh address
+#[update]
+pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    // let public_key = public_key::serve(&metadata).await?;
+
+    transfer_from_p2wsh_multisig22::serve(metadata, req).await
 }
 
 /// Staking btc to staking pool
@@ -160,6 +188,53 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     Ok(txid)
 }
 
+/// Staking btc to staking pool from p2wsh multisig22 wallet
+#[update]
+async fn staking_to_pool_from_p2wsh_multisig22(req: StakingRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let network = metadata.network;
+
+    // let public_key = public_key::serve(&metadata).await?;
+    let sender_canister = ic_cdk::id();
+    // Get address from local storage is more effective
+    let sender_address =
+        repositories::wallet::get_or_create_p2wsh_multisig22_wallet(metadata.clone())
+            .await?
+            .address
+            .to_string();
+    let sent_time = ic_time();
+    let sent_amount = req.amount;
+    let staking_canister = req.staking_canister;
+
+    let txid = staking_to_pool_from_p2wsh_multisig22::serve(
+        metadata,
+        sender_canister,
+        sender_address.clone(),
+        sent_time,
+        req,
+    )
+    .await?;
+
+    // Register staking record to staking pool
+    let register_req = RegisterStakingRequest {
+        txid: txid.clone(),
+        sender_address,
+        sent_amount,
+        sent_time,
+        network,
+        staking_canister,
+        sender: owner,
+    };
+
+    // Register staking record to staking pool cnaister
+    let _record = register_staking::serve(register_req)
+        .await
+        .expect("Failed to register staking record");
+
+    Ok(txid)
+}
+
 /// Sync staking record status from Staking pool canister
 #[update]
 async fn sync_staking_record_status(txid: TxId) -> Result<bool, WalletError> {
@@ -177,6 +252,16 @@ async fn confirm_staking_record_one(txid: TxId) -> Result<Option<StakingRecord>,
     validate_owner(caller)?;
 
     confirm_staking_record_one::serve(txid).await
+}
+
+/// Update the steward canister id
+#[ic_cdk::update]
+fn set_steward_canister(canister_id: CanisterId) -> Result<String, WalletError> {
+    if is_controller(&ic_cdk::caller()) {
+        set_steward_canister::serve(canister_id)
+    } else {
+        Err(WalletError::UnAuthorized(ic_cdk::caller().to_string()))
+    }
 }
 
 /// --------------------- Queries interface of this canister -------------------
@@ -243,6 +328,18 @@ fn owner() -> Result<Principal, WalletError> {
     validate_owner(owner).map(|m| m.owner)
 }
 
+/// Returns all wallets of this canister
+#[update]
+fn list_wallet() -> Vec<(SelfCustodyKey, RawWallet)> {
+    let owner = ic_caller();
+
+    if validate_owner(owner).is_err() {
+        return vec![];
+    }
+
+    list_wallet::serve()
+}
+
 /// Returns all the addresses of this canister if the caller is controller
 /// otherwise return `UnAuthorized`
 #[query]
@@ -284,4 +381,27 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
 
 async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
+}
+
+pub(crate) fn validate_recipient_cnt_must_less_than_100(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs.len() > MAX_RECIPIENT_CNT as usize {
+        Err(WalletError::ExceededMaxRecipientError(MAX_RECIPIENT_CNT))
+    } else {
+        Ok(())
+    }
+}
+
+pub(super) fn validate_recipient_amount_must_greater_than_1000(
+    txs: &[TransferInfo],
+) -> Result<(), WalletError> {
+    if txs
+        .iter()
+        .any(|info| info.amount < MIN_TRANSFER_AMOUNT_SATOSHI)
+    {
+        Err(WalletError::InsufficientFunds)
+    } else {
+        Ok(())
+    }
 }

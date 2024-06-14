@@ -1,3 +1,4 @@
+type AddressType = variant { P2wpkh; P2pkh; P2wsh; P2sh; P2tr };
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type EcdsaCurve = variant { secp256k1 };
 type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
@@ -19,6 +20,12 @@ type Metadata = record {
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : text; vout : nat32 };
 type PublicKeyResponse = record { public_key_hex : text };
+type RawWallet = record {
+  witness_script : blob;
+  derivation_path : vec blob;
+  address : text;
+  wallet_type : WalletType;
+};
 type Result = variant { Ok : vec text; Err : WalletError };
 type Result_1 = variant { Ok : nat64; Err : WalletError };
 type Result_10 = variant { Ok : bool; Err : WalletError };
@@ -31,6 +38,13 @@ type Result_6 = variant { Ok : vec TransactionLog; Err : WalletError };
 type Result_7 = variant { Ok : Metadata; Err : WalletError };
 type Result_8 = variant { Ok : principal; Err : WalletError };
 type Result_9 = variant { Ok : PublicKeyResponse; Err : WalletError };
+type SelfCustodyKey = record {
+  owner : principal;
+  network : BitcoinNetwork;
+  steward_canister : principal;
+  address_type : AddressType;
+  wallet_type : WalletType;
+};
 type StakingRecord = record {
   status : StakingStatus;
   redeemed_txid : opt text;
@@ -96,6 +110,7 @@ type WalletError = variant {
   InsufficientFunds;
   StakingRecordNotFound : text;
 };
+type WalletType = variant { MultiSig22; Single };
 service : (InitArgument) -> {
   addresses : () -> (Result) query;
   balance : (text) -> (Result_1);
@@ -105,15 +120,20 @@ service : (InitArgument) -> {
   ecdsa_key : () -> (Result_4) query;
   get_staking : (text) -> (Result_2) query;
   list_staking : () -> (Result_5) query;
+  list_wallet : () -> (vec record { SelfCustodyKey; RawWallet });
   logs : () -> (Result_6) query;
   metadata : () -> (Result_7) query;
   network : () -> (NetworkResponse) query;
   owner : () -> (Result_8) query;
   p2pkh_address : () -> (text);
+  p2wsh_multisig22_address : () -> (text);
   public_key : () -> (Result_9);
+  set_steward_canister : (principal) -> (Result_4);
   staking_to_pool : (StakingRequest) -> (Result_4);
+  staking_to_pool_from_p2wsh_multisig22 : (StakingRequest) -> (Result_4);
   sync_staking_record_status : (text) -> (Result_10);
   total_staking : (TotalStakingRequest) -> (Result_1) query;
   transfer_from_p2pkh : (TransferRequest) -> (Result_4);
+  transfer_from_p2wsh_multisig22 : (TransferRequest) -> (Result_4);
   utxos : (UtxosRequest) -> (Result_11);
 }
