@@ -681,7 +681,7 @@ export default function Stake() {
             ]
         };
 
-        walletBackend.transfer_from_p2pkh(TransferInfo).then((result) => {
+        walletBackend.transfer_from_p2wsh_multisig22(TransferInfo).then((result) => {
             if ('Err' in result) {
                 toast({
                     title: 'Transfer',
@@ -722,7 +722,7 @@ export default function Stake() {
             'amount': BigInt(amountInSatoshis), // 确保是整数
         };
 
-        walletBackend.staking_to_pool(stakeRequest).then((result) => {
+        walletBackend.staking_to_pool_from_p2wsh_multisig22(stakeRequest).then((result) => {
             if ('Err' in result) {
                 toast({
                     title: 'Stake',

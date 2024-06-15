@@ -19,7 +19,7 @@ import { WalletStore } from "../store/index"
 const actorContext = createActorContext<_SERVICE>();
 export const usePointBackend = createUseActorHook<_SERVICE>(actorContext);
 
-export { type PointRecord } from "../../../declarations/point/point.did";
+export { type PointRecord, type Metadata } from "../../../declarations/point/point.did";
 
 export default function PointActors({ children }: { children: ReactNode }) {
     const { identity, clear } = useInternetIdentity();

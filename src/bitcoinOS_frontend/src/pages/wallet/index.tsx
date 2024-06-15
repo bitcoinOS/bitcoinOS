@@ -12,10 +12,12 @@ import {
   TableContainer,
 } from '@chakra-ui/react'
 
-import { usePointBackend } from "../../ic/PointActors";
+import { usePointBackend, PointRecord, Metadata } from "../../ic/PointActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
 import { useToast } from '@chakra-ui/react'
 import React, { useEffect, useState, useRef } from 'react';
+import { point } from '../../../../declarations/point';
+
 
 export default function Wallet() {
 
@@ -60,6 +62,24 @@ export default function Wallet() {
   const test = () => {
     console.log('----------goods')
     console.log(pointBackend)
+    if (!pointBackend) {
+      return
+    }
+    pointBackend.get_metadata().then((value: Metadata[]) => {
+
+    }).catch((error) => {
+      toast({
+        title: 'Info',
+        description: "get stake error",
+        status: 'error',
+        position: 'top',
+        duration: 9000,
+        isClosable: true,
+      });
+      console.error("Error fetching staking pool:", error);
+    }).finally(() => {
+      console.log("goods")
+    });
   }
   return (
     <>

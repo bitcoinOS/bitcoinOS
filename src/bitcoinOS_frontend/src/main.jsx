@@ -8,10 +8,10 @@ import {
 } from "react-router-dom";
 
 
-import  WalletActors  from "./ic/WalletActors";
-import  OsActors  from "./ic/OsActors";
-import StakePoolActors  from "./ic/StakePoolActors";
-
+import WalletActors from "./ic/WalletActors";
+import OsActors from "./ic/OsActors";
+import StakePoolActors from "./ic/StakePoolActors";
+import PointActors from './ic/PointActors'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -20,7 +20,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <WalletActors>
         <OsActors>
           <StakePoolActors>
-            <App />
+            <PointActors>
+              <App />
+            </PointActors>
           </StakePoolActors>
         </OsActors>
       </WalletActors>
