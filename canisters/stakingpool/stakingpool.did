@@ -18,7 +18,7 @@ type Metadata = record {
   network : BitcoinNetwork;
   description : text;
   duration_in_day : nat64;
-  steward_canister : opt principal;
+  steward_canister : principal;
   updated_time : nat64;
   annual_interest_rate : nat16;
 };

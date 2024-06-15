@@ -52,7 +52,7 @@ type StakingPoolInfo = record {
   description : text;
   created_at : nat64;
   duration_in_day : nat64;
-  steward_canister : opt principal;
+  steward_canister : principal;
   staking_pool_canister : principal;
   annual_interest_rate : nat16;
 };
