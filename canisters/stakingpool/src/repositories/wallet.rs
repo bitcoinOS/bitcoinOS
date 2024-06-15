@@ -57,7 +57,7 @@ pub(crate) async fn get_or_create_p2wsh_multisig22_wallet(
                 metadata.owner,
                 metadata.ecdsa_key_id,
                 metadata.network,
-                metadata.steward_canister.unwrap(),
+                metadata.steward_canister,
             )
             .await?;
 

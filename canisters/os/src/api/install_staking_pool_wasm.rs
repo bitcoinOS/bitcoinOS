@@ -19,7 +19,7 @@ pub(super) async fn serve(
         annual_interest_rate: info.annual_interest_rate,
         duration_in_day: info.duration_in_day,
         os_canister: info.os_canister,
-        steward_canister: info.steward_canister.unwrap_or(CanisterId::anonymous()),
+        steward_canister: info.steward_canister,
     };
 
     let arg_bytes =

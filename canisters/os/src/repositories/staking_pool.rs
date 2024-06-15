@@ -48,7 +48,7 @@ pub(crate) fn create_staking_pool(
                 os_canister,
                 created_at,
                 bitcoin_address,
-                steward_canister: Some(steward_canister),
+                steward_canister,
             };
 
             staking_pools.insert(canister_id, staking_pool.clone());

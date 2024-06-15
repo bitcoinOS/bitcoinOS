@@ -23,7 +23,7 @@ pub struct Metadata {
     pub annual_interest_rate: u16,
     pub duration_in_day: u64,
     pub os_canister: CanisterId,
-    pub steward_canister: Option<CanisterId>,
+    pub steward_canister: CanisterId,
     pub ecdsa_key_id: EcdsaKeyId,
     pub updated_time: u64,
     pub owner: Principal,
@@ -40,11 +40,11 @@ impl Default for Metadata {
             network,
             annual_interest_rate: 0,
             duration_in_day: 0,
-            os_canister: Principal::anonymous(),
+            os_canister: CanisterId::anonymous(),
+            steward_canister: CanisterId::anonymous(),
             ecdsa_key_id,
             updated_time: 0,
             owner: Principal::anonymous(),
-            steward_canister: None,
         }
     }
 }

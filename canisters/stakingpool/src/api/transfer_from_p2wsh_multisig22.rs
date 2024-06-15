@@ -22,7 +22,7 @@ pub(super) async fn serve(
     validate_recipient_amount_must_greater_than_1000(&req.txs)?;
 
     let network = metadata.network;
-    let steward_canister = metadata.steward_canister.unwrap();
+    let steward_canister = metadata.steward_canister;
 
     let txs = req.validate_address(network)?;
 

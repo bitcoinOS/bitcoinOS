@@ -47,7 +47,7 @@ async fn init(arg: InitArgument) {
                 annual_interest_rate: arg.annual_interest_rate,
                 duration_in_day: arg.duration_in_day,
                 os_canister,
-                steward_canister: Some(arg.steward_canister),
+                steward_canister: arg.steward_canister,
                 ecdsa_key_id,
                 updated_time,
                 owner,

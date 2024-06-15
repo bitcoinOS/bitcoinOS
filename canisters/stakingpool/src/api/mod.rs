@@ -67,7 +67,7 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, Staking
     transfer_from_p2pkh::serve(&public_key, metadata, req).await
 }
 
-/// Transfer btc to a ppkh address
+/// Transfer btc to a p2wsh address
 #[update]
 pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<String, StakingError> {
     let owner = ic_caller();
@@ -76,6 +76,7 @@ pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<Stri
 
     transfer_from_p2wsh_multisig22::serve(metadata, req).await
 }
+
 /// Returns the utxos of this staking pool canister
 #[update]
 pub async fn utxos(req: UtxosRequest) -> Result<UtxosResponse, StakingError> {

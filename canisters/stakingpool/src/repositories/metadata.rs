@@ -10,7 +10,7 @@ pub(crate) fn set_steward_canister(canister_id: CanisterId) -> Result<String, St
     STATE.with_borrow_mut(|s| {
         s.metadata
             .set(Metadata {
-                steward_canister: Some(canister_id),
+                steward_canister: canister_id,
                 ..s.metadata.get().clone()
             })
             .map_err(|e| wallet::error::Error::StableWriteError {
