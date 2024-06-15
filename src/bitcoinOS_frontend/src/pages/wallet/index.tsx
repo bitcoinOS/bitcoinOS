@@ -15,17 +15,21 @@ import {
 import { usePointBackend, PointRecord, Metadata } from "../../ic/PointActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
 import { useToast } from '@chakra-ui/react'
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { point } from '../../../../declarations/point';
 
 
 export default function Wallet() {
+  const toast = useToast();
 
   const { actor: pointBackend } = usePointBackend();
   const { identity, login } = useInternetIdentity();
 
   const [isLogin, setIslogin] = useState<boolean>(false)
   const [isPointInited, setIsPointInited] = useState<boolean>(false)
+  const [pointRank, setPointRank] = useState<PointRecord[]>([])
+
+  const btcunity = 100000000n;
 
   useEffect(() => {
     if (identity) {
@@ -51,22 +55,24 @@ export default function Wallet() {
   useEffect(() => {
     console.log("------sss")
     console.log(pointBackend)
-    if (!pointBackend) {
-      setIsPointInited(false);
-    } else {
+    if (pointBackend) {
       setIsPointInited(true);
+      get_Pointrank()
+    } else {
+      setIsPointInited(false);
     }
   }, [pointBackend])
 
 
-  const test = () => {
+  const get_Pointrank = () => {
     console.log('----------goods')
     console.log(pointBackend)
     if (!pointBackend) {
       return
     }
-    pointBackend.get_metadata().then((value: Metadata[]) => {
-
+    pointBackend.get_point().then((value: PointRecord[]) => {
+      setPointRank(value)
+      console.log(":--", pointRank)
     }).catch((error) => {
       toast({
         title: 'Info',
@@ -84,43 +90,32 @@ export default function Wallet() {
   return (
     <>
       <Box>
-        <Button onClick={test}>test</Button>
         <Flex justify="center">
           <Flex>
-            <Table variant='simple'>
-              <TableCaption>Imperial to metric conversion factors</TableCaption>
-              <Thead>
-                <Tr>
-                  <Th>To convert</Th>
-                  <Th>into</Th>
-                  <Th isNumeric>multiply by</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                <Tr>
-                  <Td>inches</Td>
-                  <Td>millimetres (mm)</Td>
-                  <Td isNumeric>25.4</Td>
-                </Tr>
-                <Tr>
-                  <Td>feet</Td>
-                  <Td>centimetres (cm)</Td>
-                  <Td isNumeric>30.48</Td>
-                </Tr>
-                <Tr>
-                  <Td>yards</Td>
-                  <Td>metres (m)</Td>
-                  <Td isNumeric>0.91444</Td>
-                </Tr>
-              </Tbody>
-              <Tfoot>
-                <Tr>
-                  <Th>To convert</Th>
-                  <Th>into</Th>
-                  <Th isNumeric>multiply by</Th>
-                </Tr>
-              </Tfoot>
-            </Table>
+            {pointRank.length > 0 ? (
+              <Table variant='simple'>
+                <Thead>
+                  <Tr>
+                    <Th>Rank</Th>
+                    <Th>account</Th>
+                    <Th isNumeric>staked</Th>
+                    <Th>points</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {pointRank.map((record, index) => (
+                    <Tr key={index}>
+                      <Td>{index + 1}</Td>
+                      <Td>{record.staker.toString()}</Td>
+                      <Td isNumeric>{(record.actual_amount / btcunity).toString()}</Td>
+                      <Td>{record.points.toString()}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            ) : (
+              <div>No data available</div>
+            )}
           </Flex>
         </Flex>
       </Box>
