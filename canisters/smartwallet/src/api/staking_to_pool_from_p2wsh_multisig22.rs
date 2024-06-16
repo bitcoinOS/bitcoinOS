@@ -28,7 +28,9 @@ pub(super) async fn serve(
     let network = metadata.network;
     let sender = metadata.owner;
 
-    let txid = transfer_from_p2wsh_multisig22::serve(metadata, tx_req).await?;
+    let txs = tx_req.validate_address(network)?;
+
+    let txid = transfer_from_p2wsh_multisig22::serve(metadata, &txs.txs).await?;
 
     // Save Staking record in wallet
     let stakings = StakingRecord {

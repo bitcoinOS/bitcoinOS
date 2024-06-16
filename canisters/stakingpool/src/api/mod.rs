@@ -8,6 +8,7 @@ mod p2pkh_address;
 mod p2wsh_multisig22_address;
 mod public_key;
 mod redeem;
+mod redeem_from_p2wsh_multisig22;
 
 mod register_staking;
 mod set_steward_canister;
@@ -64,7 +65,8 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, Staking
     let metadata = validate_owner(owner)?;
     let public_key = public_key::serve(&metadata).await?;
 
-    transfer_from_p2pkh::serve(&public_key, metadata, req).await
+    let txs = req.validate_address(metadata.network)?;
+    transfer_from_p2pkh::serve(&public_key, metadata, &txs.txs).await
 }
 
 /// Transfer btc to a p2wsh address
@@ -73,8 +75,9 @@ pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<Stri
     let owner = ic_caller();
     let metadata = validate_owner(owner)?;
     // let public_key = public_key::serve(&metadata).await?;
+    let txs = req.validate_address(metadata.network)?;
 
-    transfer_from_p2wsh_multisig22::serve(metadata, req).await
+    transfer_from_p2wsh_multisig22::serve(metadata, &txs.txs).await
 }
 
 /// Returns the utxos of this staking pool canister
@@ -164,6 +167,7 @@ async fn confirm_staking_record_one(txid: TxId) -> Option<StakingRecord> {
 /// NOTE: Must validate the staker and amount is valid
 /// NOTE: Only staker canister can redeem now, this will change to wrapper token in the future
 /// NOTE: After osBTC issued, this will change
+/// Redeem btc from p2pkh address
 #[update]
 pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     check_network(req.network)?;
@@ -173,6 +177,18 @@ pub async fn redeem(req: RedeemRequest) -> Result<String, StakingError> {
     let redeem_time = ic_time();
 
     redeem::serve(sender, metadata, req, redeem_time).await
+}
+
+/// Redeem btc from p2wsh address
+#[update]
+pub async fn redeem_from_p2wsh_multisig22(req: RedeemRequest) -> Result<String, StakingError> {
+    check_network(req.network)?;
+
+    let metadata = get_metadata();
+    let sender = ic_cdk::caller();
+    let redeem_time = ic_time();
+
+    redeem_from_p2wsh_multisig22::serve(sender, metadata, req, redeem_time).await
 }
 
 /// Update the steward canister id

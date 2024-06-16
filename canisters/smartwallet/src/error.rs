@@ -53,8 +53,8 @@ pub enum WalletError {
     #[error("Append transfer log error: {0:?}")]
     AppendTransferLogError(String),
 
-    #[error("Insufficient funds")]
-    InsufficientFunds,
+    // #[error("Insufficient funds")]
+    // InsufficientFunds,
 
     #[error("Exceeded max recipient {0:?}")]
     ExceededMaxRecipientError(u8),

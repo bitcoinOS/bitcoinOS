@@ -11,4 +11,3 @@ pub(super) fn serve(canister_id: CanisterId) -> String {
         "".to_string()
     }
 }
-

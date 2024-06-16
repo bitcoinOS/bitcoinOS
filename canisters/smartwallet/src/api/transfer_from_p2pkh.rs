@@ -5,7 +5,6 @@ use bitcoin::Txid;
 
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use wallet::bitcoins;
-use wallet::domain::request::TransferRequest;
 use wallet::tx::RecipientAmount;
 use wallet::utils::validate_recipient_amount_must_greater_than_1000;
 use wallet::utils::validate_recipient_cnt_must_less_than_100;
@@ -21,20 +20,18 @@ use super::counter_increment_one;
 pub(super) async fn serve(
     public_key: &[u8],
     metadata: Metadata,
-    req: TransferRequest,
+    txs: &[RecipientAmount],
 ) -> Result<String, WalletError> {
-    validate_recipient_cnt_must_less_than_100(&req.txs)?;
-    validate_recipient_amount_must_greater_than_1000(&req.txs)?;
-
-    let txs = req.validate_address(metadata.network)?;
+    validate_recipient_cnt_must_less_than_100(txs)?;
+    validate_recipient_amount_must_greater_than_1000(txs)?;
 
     // Log transfer info
-    append_transaction_log(&req.txs).await?;
+    append_transaction_log(txs).await?;
 
     // Transaction counter increment one
     counter_increment_one::serve();
 
-    send_p2pkh_transaction(public_key, metadata, &txs.txs)
+    send_p2pkh_transaction(public_key, metadata, txs)
         .await
         .map(|txid| txid.to_string())
 }

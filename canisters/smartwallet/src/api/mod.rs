@@ -26,10 +26,11 @@ mod utxos;
 use ic_cdk::api::is_controller;
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
-use wallet::domain::request::{StakingRequest, TransferInfo, TransferRequest, UtxosRequest};
+use wallet::domain::request::{StakingRequest, TransferRequest, UtxosRequest};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::TxId;
+use wallet::tx::RecipientAmount;
 use wallet::utils::{check_normal_principal, hex, ic_caller, ic_time, str_to_bitcoin_address};
 
 use candid::Principal;
@@ -119,7 +120,8 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     let metadata = validate_owner(owner)?;
     let public_key = public_key::serve(&metadata).await?;
 
-    transfer_from_p2pkh::serve(&public_key, metadata, req).await
+    let txs = req.validate_address(metadata.network)?;
+    transfer_from_p2pkh::serve(&public_key, metadata, &txs.txs).await
 }
 
 /// Transfer btc to a ppkh address
@@ -129,7 +131,8 @@ pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<Stri
     let metadata = validate_owner(owner)?;
     // let public_key = public_key::serve(&metadata).await?;
 
-    transfer_from_p2wsh_multisig22::serve(metadata, req).await
+    let txs = req.validate_address(metadata.network)?;
+    transfer_from_p2wsh_multisig22::serve(metadata, &txs.txs).await
 }
 
 /// Staking btc to staking pool
@@ -376,6 +379,6 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
     }
 }
 
-async fn append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
+async fn append_transaction_log(txs: &[RecipientAmount]) -> Result<(), WalletError> {
     tx_log::build_and_append_transaction_log(txs)
 }

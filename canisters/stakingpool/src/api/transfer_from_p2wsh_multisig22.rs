@@ -1,6 +1,6 @@
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use ic_cdk::api::management_canister::main::CanisterId;
-use wallet::domain::request::{FinalizeRequest, TransferRequest};
+use wallet::domain::request::FinalizeRequest;
 use wallet::domain::response::FinalizeTransactionResponse;
 use wallet::domain::MultiSigIndex;
 use wallet::tx::RawTransactionInfo;
@@ -16,17 +16,17 @@ use crate::repositories;
 
 pub(super) async fn serve(
     metadata: Metadata,
-    req: TransferRequest,
+    txs: &[RecipientAmount],
 ) -> Result<String, StakingError> {
-    validate_recipient_cnt_must_less_than_100(&req.txs)?;
-    validate_recipient_amount_must_greater_than_1000(&req.txs)?;
+    validate_recipient_cnt_must_less_than_100(txs)?;
+    validate_recipient_amount_must_greater_than_1000(txs)?;
 
     let network = metadata.network;
     let steward_canister = metadata.steward_canister;
 
-    let txs = req.validate_address(network)?;
+    // let txs = req.validate_address(network)?;
 
-    let tx_info_bytes = init_transfer_request(metadata, &txs.txs).await?;
+    let tx_info_bytes = init_transfer_request(metadata, txs).await?;
 
     ic_cdk::print("After init_send_request --------------\n");
     ic_cdk::print(format!("tx_info is: {:?} ---------------\n", tx_info_bytes));

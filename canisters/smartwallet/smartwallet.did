@@ -108,7 +108,6 @@ type WalletError = variant {
   StakingRecordCantUpdate : text;
   SyncStakingRecordError : text;
   OnlySupportP2pkhSign;
-  InsufficientFunds;
   StakingRecordNotFound : text;
 };
 type WalletType = variant { MultiSig22; Single };

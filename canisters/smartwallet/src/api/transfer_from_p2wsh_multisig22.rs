@@ -1,6 +1,6 @@
 use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use ic_cdk::api::management_canister::main::CanisterId;
-use wallet::domain::request::{FinalizeRequest, TransferRequest};
+use wallet::domain::request::FinalizeRequest;
 use wallet::domain::response::FinalizeTransactionResponse;
 use wallet::domain::MultiSigIndex;
 use wallet::tx::RawTransactionInfo;
@@ -17,22 +17,23 @@ use crate::repositories;
 use super::append_transaction_log;
 use super::counter_increment_one;
 
-pub(super) async fn serve(metadata: Metadata, req: TransferRequest) -> Result<String, WalletError> {
-    validate_recipient_cnt_must_less_than_100(&req.txs)?;
-    validate_recipient_amount_must_greater_than_1000(&req.txs)?;
+pub(super) async fn serve(
+    metadata: Metadata,
+    txs: &[RecipientAmount],
+) -> Result<String, WalletError> {
+    validate_recipient_cnt_must_less_than_100(txs)?;
+    validate_recipient_amount_must_greater_than_1000(txs)?;
 
     let network = metadata.network;
     let steward_canister = metadata.steward_canister;
 
-    let txs = req.validate_address(network)?;
-
     // Log transfer info
-    append_transaction_log(&req.txs).await?;
+    append_transaction_log(txs).await?;
 
     // Transaction counter increment one
     counter_increment_one::serve();
 
-    let tx_info_bytes = init_transfer_request(metadata, &txs.txs).await?;
+    let tx_info_bytes = init_transfer_request(metadata, txs).await?;
 
     ic_cdk::print("After init_send_request --------------\n");
     ic_cdk::print(format!("tx_info is: {:?} ---------------\n", tx_info_bytes));
@@ -50,6 +51,10 @@ async fn init_transfer_request(
     let network = metadata.network;
     let wallet = repositories::wallet::get_or_create_p2wsh_multisig22_wallet(metadata).await?;
 
+    ic_cdk::print("Got wallet ----------- \n");
+
+    ic_cdk::print("Starting to build unsigned transaction ---------------- \n");
+    
     let sighash_type = bitcoin::EcdsaSighashType::All;
     // Build an unsigned transaction
     let tx_info = wallet::bitcoins::build_unsigned_transaction_p2wsh_multisig22(

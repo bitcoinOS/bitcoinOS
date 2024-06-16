@@ -102,6 +102,7 @@ service : (InitArgument) -> {
   p2pkh_address : () -> (text);
   p2wsh_multisig22_address : () -> (text);
   redeem : (RedeemRequest) -> (Result_3);
+  redeem_from_p2wsh_multisig22 : (RedeemRequest) -> (Result_3);
   redeem_logs : () -> (vec RedeemLog) query;
   register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
   set_steward_canister : (principal) -> (text);

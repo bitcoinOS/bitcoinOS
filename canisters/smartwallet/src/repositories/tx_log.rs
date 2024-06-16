@@ -1,5 +1,5 @@
 use wallet::{
-    domain::request::TransferInfo,
+    tx::RecipientAmount,
     utils::{ic_caller, ic_time},
 };
 
@@ -16,11 +16,11 @@ pub(crate) fn append_transaction_log(log: &TransactionLog) -> Result<(), WalletE
     })
 }
 
-pub(crate) fn build_and_append_transaction_log(txs: &[TransferInfo]) -> Result<(), WalletError> {
+pub(crate) fn build_and_append_transaction_log(txs: &[RecipientAmount]) -> Result<(), WalletError> {
     let sender = ic_caller();
     let send_time = ic_time();
     let log = &TransactionLog {
-        txs: txs.to_vec(),
+        txs: txs.iter().map(|ra| ra.into()).collect(),
         sender,
         send_time,
     };

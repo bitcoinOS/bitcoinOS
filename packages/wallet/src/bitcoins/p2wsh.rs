@@ -27,8 +27,10 @@ pub async fn build_unsigned_transaction_p2wsh_multisig22(
 ) -> Result<TransactionInfo, Error> {
     let fee_per_bytes = super::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
+    ic_cdk::print(format!("Got fee per bytes is: {fee_per_bytes:?} ------------ \n"));
+
     // Fetch UTXOs
-    ic_cdk::print("Fetching Utxos... \n");
+    ic_cdk::print("Fetching Utxos ------------- \n");
 
     // FIXME: UTXOs maybe very large, need to paginate
     let utxos = super::get_utxos(my_wallet.address.to_string(), network, None)
@@ -46,7 +48,7 @@ pub async fn build_p2wsh_multisig22_transaction_info(
     fee_per_byte: MillisatoshiPerByte,
     sighash_type: EcdsaSighashType,
 ) -> Result<TransactionInfo, Error> {
-    ic_cdk::print("Building transaction ... \n");
+    ic_cdk::print("Building transaction ----------- \n");
 
     let mut total_fee = 0;
 
@@ -101,8 +103,13 @@ fn build_transaction_with_fee_p2wsh_multisig_22(
         }
     }
 
+    let outputs_and_fee = total_outputs + fee;
+
+    ic_cdk::print(format!("The total spent is: {total_spent:?} -----------\n "));
+    ic_cdk::print(format!("The outputs and fee total is {outputs_and_fee:?} -------------\n "));
+
     // Check that we have enough balance to cover the amount we want to spend.
-    if total_spent < total_outputs + fee {
+    if total_spent < outputs_and_fee {
         return Err(Error::InsufficientFunds);
     }
 
@@ -164,7 +171,8 @@ fn build_transaction_sighashes_p2wsh_multisig22(
     input_amounts: Vec<Amount>,
 ) -> Result<Vec<SegwitV0Sighash>, Error> {
     if tx.input.len() != input_amounts.len() {
-        panic!("Transaction inputs and amounts must have the same length.");
+        // panic!("Transaction inputs and amounts must have the same length.");
+        return Err(Error::AmountsAndAddressesMismatch);
     }
 
     let mut sig_hashes = vec![];

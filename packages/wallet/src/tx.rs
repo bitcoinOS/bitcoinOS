@@ -2,13 +2,22 @@ use bitcoin::{consensus, hashes::Hash, Address, Amount, ScriptBuf, SegwitV0Sigha
 use candid::CandidType;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::Error, utils::check_tx_hashes_len};
+use crate::{domain::request::TransferInfo, error::Error, utils::check_tx_hashes_len};
 
 #[derive(Debug, Clone)]
 pub struct RecipientAmount {
     // A bitcoin address
     pub recipient: Address,
     pub amount: Amount,
+}
+
+impl From<&RecipientAmount> for TransferInfo {
+    fn from(value: &RecipientAmount) -> Self {
+        Self {
+            recipient: value.recipient.to_string(),
+            amount: value.amount.to_sat()
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
