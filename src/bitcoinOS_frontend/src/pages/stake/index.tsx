@@ -762,11 +762,22 @@ export default function Stake() {
             'recipient': addr,
             'network': network,
         }
-        stakeBackend.redeem(unstakeRequest).then((result: RedeemResponse) => {
+        stakeBackend.redeem_from_p2wsh_multisig22(unstakeRequest).then((result: RedeemResponse) => {
             if ('Err' in result) {
+                console.log("stake err", result)
+                // 获取 Err 对象中的键和值
+                const errorEntries = Object.entries(result.Err);
+                let errorMessage = '';
+
+                // 生成错误信息字符串
+                if (errorEntries.length > 0) {
+                    const [key, value] = errorEntries[0];
+                    errorMessage = `${key}: ${value}`;
+                }
+
                 toast({
                     title: 'Unstake',
-                    description: "unstake balance error",
+                    description: errorMessage || "unstake balance error",
                     status: 'error',
                     position: "top",
                     duration: 9000,
