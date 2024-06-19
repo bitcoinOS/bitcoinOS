@@ -7,7 +7,7 @@ use ic_cdk::{export_candid, init, query, update};
 use wallet::domain::request::FinalizeRequest;
 use wallet::domain::response::FinalizeTransactionResponse;
 use wallet::domain::EcdsaKeyIds;
-use wallet::utils::{principal_to_derivation_path, to_ic_bitcoin_network};
+use wallet::utils::{principal_to_derivation_path, to_ic_bitcoin_network,ic_caller,ic_time};
 
 use crate::context::METADATA;
 
@@ -100,10 +100,10 @@ fn init(network: String) {
 
 export_candid!();
 
-fn ic_caller() -> Principal {
-    ic_cdk::caller()
-}
+// fn ic_caller() -> Principal {
+//     ic_cdk::caller()
+// }
 
-fn ic_time() -> u64 {
-    ic_cdk::api::time()
-}
+// fn ic_time() -> u64 {
+//     ic_cdk::api::time()
+// }

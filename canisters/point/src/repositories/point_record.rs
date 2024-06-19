@@ -1,5 +1,5 @@
 use crate::{context::STATE, domain::PointRecord};
-
+use crate::constants::{NANOS_PER_DAY};
 
 
 use wallet::utils::ic_time;
@@ -13,14 +13,18 @@ pub(crate) fn save_point_record(p: PointRecord) {
         let user = p.staker;
         if records.contains_key(&user) {
             let user_point = records.get(&user).unwrap();
-            let new_user_point = PointRecord {
-                network: user_point.network,
-                staker: user,
-                actual_amount: p.actual_amount,
-                points: p.points + user_point.points,
-                updated_time: ic_time(),
-            };
-            records.insert(user, new_user_point);
+            let time_now = ic_time();
+            if user_point.updated_time - time_now >= NANOS_PER_DAY {
+                let new_user_point = PointRecord {
+                    network: user_point.network,
+                    staker: user,
+                    actual_amount: p.actual_amount,
+                    points: p.points + user_point.points,
+                    updated_time: time_now,
+                };
+                records.insert(user, new_user_point);
+            }
+           
         } else {
             records.insert(p.staker, p.to_owned());
         }
