@@ -5,55 +5,53 @@ pub mod domain;
 pub mod error;
 pub mod repositories;
 
-use crate::context::STATE;
-use crate::domain::{
-    request::{RedeemRequest, RegisterStakingRequest},
-    response::NetworkResponse,
-    Metadata, RedeemLog,
-};
-use crate::error::StakingError;
+use crate::domain::{request::RedeemRequest, response::NetworkResponse, Metadata, RedeemLog};
+use wallet::error::StakingError;
 
-use candid::CandidType;
-
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use ic_cdk::api::management_canister::bitcoin::Satoshi;
 use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
-use serde::Deserialize;
-use wallet::domain::request::{TransferRequest, UtxosRequest};
-use wallet::domain::response::UtxosResponse;
-use wallet::domain::staking::StakingRecord;
+use wallet::domain::request::{
+    RegisterStakingRecordRequest, TransferRequest, UpdateStakingPoolInfoRequest,
+    UpdateStakingPoolStatusRequest, UtxosRequest,
+};
+use wallet::domain::response::{UpdateStakingPoolInfoResponse, UtxosResponse};
+use wallet::domain::staking::{InitStakingPoolArgument, StakingRecord};
 use wallet::domain::{EcdsaKeyIds, TxId};
 use wallet::utils::ic_time;
 
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]
-async fn init(arg: InitArgument) {
-    ic_wasi_polyfill::init(&[0u8; 32], &[]);
-
+async fn init(arg: InitStakingPoolArgument) {
     let owner = arg.os_canister;
     let name = arg.name;
     let network = arg.network;
     let os_canister = arg.os_canister;
     let ecdsa_key_id = EcdsaKeyIds::from(network).to_key_id();
     let updated_time = ic_time();
+    // let point_canister = arg.point_canister;
 
-    STATE.with(|s| {
-        let metadata = &mut s.borrow_mut().metadata;
-        metadata
-            .set(Metadata {
-                name,
-                description: arg.description,
-                network,
-                annual_interest_rate: arg.annual_interest_rate,
-                duration_in_day: arg.duration_in_day,
-                os_canister,
-                steward_canister: arg.steward_canister,
-                ecdsa_key_id,
-                updated_time,
-                owner,
-            })
-            .expect("Failed to init metadata")
-    });
+    let metadata = Metadata {
+        name,
+        description: arg.description,
+        network,
+        annual_interest_rate: arg.annual_interest_rate,
+        duration_in_day: arg.duration_in_day,
+        os_canister,
+        steward_canister: arg.steward_canister,
+        ecdsa_key_id,
+        updated_time,
+        owner,
+        status: arg.status.into(),
+        start_time: arg.start_time,
+        // stake_end_time: arg.stake_end_time,
+        end_time: arg.end_time,
+        fund_management: arg.fund_management.into(),
+        minimum_stake_amount: arg.minimum_stake_amount,
+        boost_rate: arg.boost_rate,
+    };
+
+    repositories::metadata::save(metadata).expect("Failed to init metadata");
 
     // TODO: schedule a task to check tx status is confirmed or not very hour, update staking record status when tx is confirmed for 6 blocks
     // let timer_id = ic_cdk_timers::set_timer_interval(ONE_HOURS, move || {
@@ -64,18 +62,6 @@ async fn init(arg: InitArgument) {
 }
 
 export_candid!();
-
-#[derive(CandidType, Deserialize)]
-struct InitArgument {
-    name: String,
-    description: String,
-    network: BitcoinNetwork,
-    // the annual interest rate of the staking pool will less than 10000, it will divide by 10000 for compute
-    annual_interest_rate: u16,
-    duration_in_day: u64,
-    os_canister: CanisterId,
-    steward_canister: CanisterId,
-}
 
 // In the following, we register a custom getrandom implementation because
 // otherwise getrandom (which is a dependency of k256) fails to compile.

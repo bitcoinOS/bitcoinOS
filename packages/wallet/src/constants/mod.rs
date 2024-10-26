@@ -17,3 +17,12 @@ pub const PRINCIPAL_MAX: Principal = Principal::from_slice(&[255; 29]);
 
 /// max recipient number when transfer btc
 pub const MAX_RECIPIENT_CNT: u8 = 100;
+
+/// Default start value from DBank id
+pub const START_ID_IN_DBANK_ID: u64 = 10_001;
+
+/// One days for a dbank canister can hold
+pub const MAX_WALLET_LIMIT: u32 = 2;
+
+pub const BOOST_RATE: u64 = 100;
+pub const MINIMUM_STAKE_AMOUNT: u64 = 10000;

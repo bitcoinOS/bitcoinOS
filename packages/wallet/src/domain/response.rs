@@ -3,6 +3,8 @@ use candid::CandidType;
 use ic_cdk::api::management_canister::bitcoin::{BlockHash, GetUtxosResponse, Satoshi};
 use serde::{Deserialize, Serialize};
 
+use super::staking::{FundManagement, PoolStatus};
+
 /// Response type of [bitcoin_get_utxos](super::bitcoin_get_utxos). Translate the Utxo `txid` to string
 #[derive(
     CandidType, Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Default,
@@ -77,4 +79,18 @@ impl From<GetUtxosResponse> for UtxosResponse {
 pub struct FinalizeTransactionResponse {
     pub txid: Option<String>,
     pub error_msg: Option<String>,
+}
+
+/// Response for `UpdateStakingPoolInfoRequest`
+#[derive(Debug, Clone, CandidType, Deserialize)]
+pub struct UpdateStakingPoolInfoResponse {
+    pub name: String,
+    pub description: String,
+    // the annual interest rate of the staking pool will less than 10000, it will divide by 10000 for compute
+    pub annual_interest_rate: u16,
+    pub duration_in_day: u64,
+    pub status: PoolStatus,
+    pub start_time: u64,
+    pub end_time: u64,
+    pub fund_management: FundManagement,
 }

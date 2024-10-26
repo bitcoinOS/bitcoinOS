@@ -1,21 +1,11 @@
 use bitcoin::Address;
-use candid::{CandidType, Principal};
-use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, Satoshi};
+use candid::CandidType;
+use ic_cdk::api::management_canister::bitcoin::BitcoinNetwork;
 use serde::Deserialize;
 use wallet::utils::str_to_bitcoin_address;
 
-use crate::error::StakingError;
 use wallet::domain::TxId;
-
-#[derive(Clone, Debug, CandidType, Deserialize)]
-pub struct RegisterStakingRequest {
-    pub txid: TxId,
-    pub sender: Principal,
-    pub sender_address: String,
-    pub sent_amount: Satoshi,
-    pub sent_time: u64,
-    pub network: BitcoinNetwork,
-}
+use wallet::error::StakingError;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct RedeemRequest {

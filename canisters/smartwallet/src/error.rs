@@ -55,7 +55,6 @@ pub enum WalletError {
 
     // #[error("Insufficient funds")]
     // InsufficientFunds,
-
     #[error("Exceeded max recipient {0:?}")]
     ExceededMaxRecipientError(u8),
 

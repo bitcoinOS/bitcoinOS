@@ -4,7 +4,8 @@ pub mod context;
 pub mod domain;
 pub mod error;
 pub mod repositories;
-
+#[macro_use]
+extern crate wallet;
 use std::borrow::Cow;
 
 use ic_stable_structures::{storable::Bound, Storable};

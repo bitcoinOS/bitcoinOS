@@ -2,6 +2,7 @@ type AddressType = variant { P2wpkh; P2pkh; P2wsh; P2sh; P2tr };
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type EcdsaCurve = variant { secp256k1 };
 type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
+type FundManagement = variant { Locktime; Transfer };
 type InitArgument = record {
   owner : opt principal;
   name : text;
@@ -27,10 +28,23 @@ type RawWallet = record {
   address : text;
   wallet_type : WalletType;
 };
+type RegisterStakingRecordRequest = record {
+  sender_address : text;
+  memo : opt text;
+  txid : text;
+  network : BitcoinNetwork;
+  stake_type : StakingType;
+  sender : principal;
+  staking_canister : principal;
+  fund_management : text;
+  sent_time : nat64;
+  sent_amount : nat64;
+};
 type Result = variant { Ok : vec text; Err : WalletError };
 type Result_1 = variant { Ok : nat64; Err : WalletError };
-type Result_10 = variant { Ok : bool; Err : WalletError };
-type Result_11 = variant { Ok : UtxosResponse; Err : WalletError };
+type Result_10 = variant { Ok : StakingRecord; Err : WalletError };
+type Result_11 = variant { Ok : bool; Err : WalletError };
+type Result_12 = variant { Ok : UtxosResponse; Err : WalletError };
 type Result_2 = variant { Ok : opt StakingRecord; Err : WalletError };
 type Result_3 = variant { Ok : vec nat64; Err : WalletError };
 type Result_4 = variant { Ok : text; Err : WalletError };
@@ -51,12 +65,15 @@ type StakingRecord = record {
   redeemed_txid : opt text;
   sender_address : text;
   staking_address : text;
+  memo : opt text;
   txid : text;
   network : BitcoinNetwork;
+  stake_type : StakingType;
   sender : principal;
   duration_in_day : nat64;
   actual_amount : nat64;
   staking_canister : principal;
+  fund_management : FundManagement;
   sent_time : nat64;
   sent_amount : nat64;
   sender_canister : principal;
@@ -65,10 +82,14 @@ type StakingRecord = record {
 };
 type StakingRequest = record {
   staking_address : text;
+  memo : opt text;
+  stake_type : opt StakingType;
   staking_canister : principal;
+  fund_management : opt text;
   amount : nat64;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
+type StakingType = variant { OSWallet; BTCWallet };
 type TotalStakingRequest = record {
   sender_address : text;
   staking_canister : principal;
@@ -123,17 +144,21 @@ service : (InitArgument) -> {
   list_wallet : () -> (vec ListWalletResponse);
   logs : () -> (Result_6) query;
   metadata : () -> (Result_7) query;
+  my_staked_pools : () -> (vec principal) query;
   network : () -> (NetworkResponse) query;
   owner : () -> (Result_8) query;
   p2pkh_address : () -> (text);
+  p2wpkh_address : () -> (text);
   p2wsh_multisig22_address : () -> (text);
   public_key : () -> (Result_9);
+  register_staking_record : (RegisterStakingRecordRequest) -> (Result_10);
   set_steward_canister : (principal) -> (text);
   staking_to_pool : (StakingRequest) -> (Result_4);
   staking_to_pool_from_p2wsh_multisig22 : (StakingRequest) -> (Result_4);
-  sync_staking_record_status : (text) -> (Result_10);
+  sync_staking_record_status : (text) -> (Result_11);
   total_staking : (TotalStakingRequest) -> (Result_1) query;
   transfer_from_p2pkh : (TransferRequest) -> (Result_4);
+  transfer_from_p2wpkh : (TransferRequest) -> (Result_4);
   transfer_from_p2wsh_multisig22 : (TransferRequest) -> (Result_4);
-  utxos : (UtxosRequest) -> (Result_11);
+  utxos : (UtxosRequest) -> (Result_12);
 }

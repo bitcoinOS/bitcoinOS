@@ -15,7 +15,7 @@ impl From<&RecipientAmount> for TransferInfo {
     fn from(value: &RecipientAmount) -> Self {
         Self {
             recipient: value.recipient.to_string(),
-            amount: value.amount.to_sat()
+            amount: value.amount.to_sat(),
         }
     }
 }

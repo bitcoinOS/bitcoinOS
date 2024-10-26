@@ -1,11 +1,11 @@
 use ic_cdk::api::management_canister::{bitcoin::Satoshi, main::CanisterId};
 
-use crate::{constants::DAY_IN_NANOSECOND, context::STATE, error::StakingError};
+use crate::{constants::DAY_IN_NANOSECOND, context::STATE};
 use wallet::domain::{
     staking::{StakingRecord, StakingStatus},
     TxId,
 };
-
+use wallet::error::StakingError;
 /// Get staking record by txid
 pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {
     STATE.with_borrow(|s| s.staking_records.get(&txid))
@@ -14,6 +14,17 @@ pub(crate) fn get_staking(txid: TxId) -> Option<StakingRecord> {
 /// List all staking records
 pub(crate) fn list_staking_records() -> Vec<StakingRecord> {
     STATE.with_borrow(|s| s.staking_records.iter().map(|(_, r)| r).collect())
+}
+
+/// List all staking records by wallet address
+pub(crate) fn list_staking_records_by_wallet(wallet: String) -> Vec<StakingRecord> {
+    STATE.with_borrow(|s| {
+        s.staking_records
+            .iter()
+            .map(|(_, r)| r)
+            .filter(|r| r.sender_address == wallet)
+            .collect()
+    })
 }
 
 /// Calculate the total amount staked
@@ -72,19 +83,19 @@ fn update_status(
     })
 }
 
-pub(crate) fn confirmed_record(
-    txid: TxId,
-    received_amount: Satoshi,
-    updated_time: u64,
-) -> Result<(), StakingError> {
-    update_status(
-        txid,
-        StakingStatus::Confirmed,
-        updated_time,
-        Some(received_amount),
-        None,
-    )
-}
+// pub(crate) fn confirmed_record(
+//     txid: TxId,
+//     received_amount: Satoshi,
+//     updated_time: u64,
+// ) -> Result<(), StakingError> {
+//     update_status(
+//         txid,
+//         StakingStatus::Confirmed,
+//         updated_time,
+//         Some(received_amount),
+//         None,
+//     )
+// }
 
 pub(crate) fn redeeming_record(txid: TxId, updated_time: u64) -> Result<(), StakingError> {
     update_status(txid, StakingStatus::Redeeming, updated_time, None, None)

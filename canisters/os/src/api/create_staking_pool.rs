@@ -1,45 +1,25 @@
 use candid::{Encode, Principal};
-use ic_cdk::api::management_canister::{
-    bitcoin::BitcoinNetwork,
-    main::{
-        create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
-        CreateCanisterArgument, InstallCodeArgument, WasmModule,
-    },
+use ic_cdk::api::management_canister::main::{
+    create_canister, install_code, CanisterId, CanisterInstallMode, CanisterSettings,
+    CreateCanisterArgument, InstallCodeArgument, WasmModule,
 };
+use wallet::domain::staking::InitStakingPoolArgument;
 
-use crate::{domain::request::InitStakingPoolArgument, error::Error};
+use crate::error::Error;
 
-#[allow(clippy::too_many_arguments)]
 pub(crate) async fn serve(
-    name: String,
-    description: String,
-    annual_interest_rate: u16,
-    duration_in_millisecond: u64,
-    network: BitcoinNetwork,
-    os_canister: CanisterId,
+    arg: InitStakingPoolArgument,
     staking_pool_wasm: WasmModule,
     wallet_cycles: u64,
-    steward_canister: CanisterId,
-    owner: Principal,
+    owners: Vec<Principal>,
 ) -> Result<CanisterId, String> {
     // create wallet canister id
-    let staking_canister_id =
-        create_new_staking_pool_canister(vec![os_canister, owner], wallet_cycles).await?;
+    let staking_canister_id = create_new_staking_pool_canister(owners, wallet_cycles).await?;
 
     ic_cdk::println!(
         "-------------- created staking pool canister id: {:?} --------------- \n",
         staking_canister_id.to_text()
     );
-
-    let arg = InitStakingPoolArgument {
-        name,
-        description,
-        annual_interest_rate,
-        duration_in_day: duration_in_millisecond,
-        network,
-        os_canister,
-        steward_canister,
-    };
 
     // Translate arg for CreateStaking
     let arg = Encode!(&arg).map_err(|e| Error::CandidEncodeError(e.to_string()).to_string())?;
@@ -67,6 +47,7 @@ async fn create_new_staking_pool_canister(
             memory_allocation: None,
             freezing_threshold: None,
             reserved_cycles_limit: None,
+            log_visibility: None,
             wasm_memory_limit: None,
         }),
     };
@@ -78,14 +59,14 @@ async fn create_new_staking_pool_canister(
 }
 
 pub(super) async fn install_staking_pool_canister_code(
-    staking_canister_id: CanisterId,
+    canister_id: CanisterId,
     staking_wasm: WasmModule,
     mode: CanisterInstallMode,
     arg: Vec<u8>,
 ) -> Result<(), String> {
     let install_args = InstallCodeArgument {
         mode,
-        canister_id: staking_canister_id,
+        canister_id,
         wasm_module: staking_wasm,
         arg,
     };

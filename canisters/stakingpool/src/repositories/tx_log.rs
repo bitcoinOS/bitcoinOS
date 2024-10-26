@@ -3,9 +3,8 @@ use wallet::utils::{ic_caller, ic_time};
 use crate::{
     context::STATE,
     domain::{request::RedeemRequest, RedeemLog},
-    error::StakingError,
 };
-
+use wallet::error::StakingError;
 pub(crate) fn build_and_append_redeem_log(req: RedeemRequest) -> Result<(), StakingError> {
     let sender = ic_caller();
     let send_time = ic_time();

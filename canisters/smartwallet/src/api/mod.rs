@@ -8,11 +8,13 @@ mod get_staking;
 mod list_staking;
 mod list_wallet;
 mod logs;
+mod my_staked_pools;
 mod p2pkh_address;
+mod p2wpkh_address;
 mod p2wsh_multisig22_address;
 mod public_key;
 
-mod register_staking;
+mod register_staking_record;
 mod set_steward_canister;
 mod staking_to_pool;
 mod staking_to_pool_from_p2wsh_multisig22;
@@ -20,13 +22,16 @@ mod sync_staking_record_status;
 mod total_staking;
 mod transaction_log;
 mod transfer_from_p2pkh;
+mod transfer_from_p2wpkh;
 mod transfer_from_p2wsh_multisig22;
 mod utxos;
 
 use ic_cdk::api::is_controller;
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::bitcoins;
-use wallet::domain::request::{StakingRequest, TransferRequest, UtxosRequest};
+use wallet::domain::request::{
+    RegisterStakingRecordRequest, StakingRequest, TransferRequest, UtxosRequest,
+};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::TxId;
@@ -37,7 +42,7 @@ use candid::Principal;
 use ic_cdk::api::management_canister::bitcoin::{MillisatoshiPerByte, Satoshi};
 use ic_cdk::{query, update};
 
-use crate::domain::request::{RegisterStakingRequest, TotalStakingRequest};
+use crate::domain::request::TotalStakingRequest;
 use crate::domain::response::{ListWalletResponse, NetworkResponse, PublicKeyResponse};
 use crate::domain::{Metadata, TransactionLog};
 use crate::error::WalletError;
@@ -53,6 +58,16 @@ pub async fn p2pkh_address() -> String {
     let metadata = get_metadata();
 
     p2pkh_address::serve(metadata)
+        .await
+        .expect("A Smart wallet must have a Bitcoin Address")
+}
+
+/// Returns the P2WPKH address of this canister at a specific derivation path
+#[update]
+pub async fn p2wpkh_address() -> String {
+    let metadata = get_metadata();
+
+    p2wpkh_address::serve(metadata)
         .await
         .expect("A Smart wallet must have a Bitcoin Address")
 }
@@ -124,7 +139,18 @@ pub async fn transfer_from_p2pkh(req: TransferRequest) -> Result<String, WalletE
     transfer_from_p2pkh::serve(&public_key, metadata, &txs.txs).await
 }
 
-/// Transfer btc to a ppkh address
+/// Transfer btc to a p2wpkh address
+#[update]
+pub async fn transfer_from_p2wpkh(req: TransferRequest) -> Result<String, WalletError> {
+    let owner = ic_caller();
+    let metadata = validate_owner(owner)?;
+    let public_key = public_key::serve(&metadata).await?;
+
+    let txs = req.validate_address(metadata.network)?;
+    transfer_from_p2wpkh::serve(&public_key, metadata, &txs.txs).await
+}
+
+/// Transfer btc from a p2wsh address
 #[update]
 pub async fn transfer_from_p2wsh_multisig22(req: TransferRequest) -> Result<String, WalletError> {
     let owner = ic_caller();
@@ -148,6 +174,12 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     let sent_time = ic_time();
     let sent_amount = req.amount;
     let staking_canister = req.staking_canister;
+    let fund_management = req
+        .fund_management
+        .clone()
+        .unwrap_or_else(|| "transfer".to_string());
+    let memo = req.memo.clone();
+    let stake_type = req.stake_type.unwrap_or_default();
 
     let txid = staking_to_pool::serve(
         &public_key,
@@ -160,7 +192,7 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
     .await?;
 
     // Register staking record to staking pool
-    let register_req = RegisterStakingRequest {
+    let register_req = RegisterStakingRecordRequest {
         txid: txid.clone(),
         sender_address,
         sent_amount,
@@ -168,10 +200,13 @@ async fn staking_to_pool(req: StakingRequest) -> Result<String, WalletError> {
         network,
         staking_canister,
         sender: owner,
+        memo,
+        fund_management,
+        stake_type,
     };
 
     // Register staking record to staking pool cnaister
-    let _record = register_staking::serve(register_req)
+    let _record = register_staking_record::serve(register_req)
         .await
         .expect("Failed to register staking record");
 
@@ -206,6 +241,12 @@ async fn staking_to_pool_from_p2wsh_multisig22(req: StakingRequest) -> Result<St
     let sent_time = ic_time();
     let sent_amount = req.amount;
     let staking_canister = req.staking_canister;
+    let fund_management = req
+        .fund_management
+        .clone()
+        .unwrap_or_else(|| "transfer".to_string());
+    let memo = req.memo.clone();
+    let stake_type = req.stake_type.unwrap_or_default();
 
     let txid = staking_to_pool_from_p2wsh_multisig22::serve(
         metadata,
@@ -217,7 +258,7 @@ async fn staking_to_pool_from_p2wsh_multisig22(req: StakingRequest) -> Result<St
     .await?;
 
     // Register staking record to staking pool
-    let register_req = RegisterStakingRequest {
+    let register_req = RegisterStakingRecordRequest {
         txid: txid.clone(),
         sender_address,
         sent_amount,
@@ -225,14 +266,33 @@ async fn staking_to_pool_from_p2wsh_multisig22(req: StakingRequest) -> Result<St
         network,
         staking_canister,
         sender: owner,
+        memo,
+        stake_type,
+        fund_management,
     };
 
     // Register staking record to staking pool cnaister
-    let _record = register_staking::serve(register_req)
+    let _record = register_staking_record::serve(register_req)
         .await
         .expect("Failed to register staking record");
 
     Ok(txid)
+}
+
+/// Register staking record to staking pool by manual if staking btc from a standard bitcoin wallet
+/// TODO: Need to verify the staking record is really from the user
+#[update]
+async fn register_staking_record(
+    req: RegisterStakingRecordRequest,
+) -> Result<StakingRecord, WalletError> {
+    let metadata = get_metadata();
+
+    if metadata.network != req.network {
+        return Err(WalletError::UnAuthorized(
+            "network is not matched".to_string(),
+        ));
+    }
+    register_staking_record::serve(req).await
 }
 
 /// Sync staking record status from Staking pool canister
@@ -294,6 +354,14 @@ fn get_staking(txid: TxId) -> Result<Option<StakingRecord>, WalletError> {
     validate_owner(owner)?;
 
     Ok(get_staking::serve(&txid))
+}
+
+/// Returns the staking pool canisters which user has staked
+#[query]
+fn my_staked_pools() -> Vec<CanisterId> {
+    let owner = ic_caller();
+
+    my_staked_pools::serve(&owner)
 }
 
 /// Returns ecdsa key of this canister if the caller is controller and the key exists
@@ -372,7 +440,7 @@ fn validate_owner(owner: Principal) -> Result<Metadata, WalletError> {
     check_normal_principal(owner)?;
 
     let metadata = repositories::metadata::get_metadata();
-    if metadata.owner == owner {
+    if metadata.owner == owner || is_controller(&owner) {
         Ok(metadata)
     } else {
         Err(WalletError::UnAuthorized(owner.to_string()))

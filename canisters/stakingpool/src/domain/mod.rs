@@ -9,12 +9,20 @@ use ic_cdk::api::management_canister::{
     bitcoin::BitcoinNetwork, ecdsa::EcdsaKeyId, main::CanisterId,
 };
 use ic_stable_structures::{storable::Bound, Storable};
-use serde::{Deserialize, Serialize};
-use wallet::domain::{AddressType, EcdsaKeyIds, Wallet, WalletType};
+use serde::Deserialize;
+use wallet::domain::{
+    response::UpdateStakingPoolInfoResponse,
+    staking::{FundManagement, PoolStatus},
+    AddressType, EcdsaKeyIds, Wallet, WalletType,
+};
+
+use wallet::constants::{BOOST_RATE, MINIMUM_STAKE_AMOUNT};
+
+use crate::context::Timestamp;
 
 use self::request::RedeemRequest;
 
-#[derive(Debug, Clone, CandidType, Serialize, Deserialize)]
+#[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct Metadata {
     pub name: String,
     pub description: String,
@@ -27,6 +35,13 @@ pub struct Metadata {
     pub ecdsa_key_id: EcdsaKeyId,
     pub updated_time: u64,
     pub owner: Principal,
+    pub status: PoolStatus,
+    pub start_time: Timestamp,
+    // pub stake_end_time: Timestamp,
+    pub end_time: Timestamp,
+    pub fund_management: FundManagement,
+    pub minimum_stake_amount: Option<u64>,
+    pub boost_rate: Option<u64>,
 }
 
 impl Default for Metadata {
@@ -45,6 +60,13 @@ impl Default for Metadata {
             ecdsa_key_id,
             updated_time: 0,
             owner: Principal::anonymous(),
+            status: PoolStatus::Inactive,
+            start_time: 0,
+            // stake_end_time: 0,
+            end_time: 0,
+            fund_management: Default::default(),
+            minimum_stake_amount: Some(MINIMUM_STAKE_AMOUNT),
+            boost_rate: Some(BOOST_RATE),
         }
     }
 }
@@ -59,6 +81,21 @@ impl Storable for Metadata {
     }
 
     const BOUND: Bound = Bound::Unbounded;
+}
+
+impl From<Metadata> for UpdateStakingPoolInfoResponse {
+    fn from(metadata: Metadata) -> Self {
+        Self {
+            name: metadata.name,
+            description: metadata.description,
+            annual_interest_rate: metadata.annual_interest_rate,
+            duration_in_day: metadata.duration_in_day,
+            status: metadata.status,
+            start_time: metadata.start_time,
+            end_time: metadata.end_time,
+            fund_management: metadata.fund_management,
+        }
+    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]

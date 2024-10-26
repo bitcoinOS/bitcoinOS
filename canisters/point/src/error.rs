@@ -1,4 +1,4 @@
-use candid::CandidType;
+use candid::{CandidType, Principal};
 use serde::Deserialize;
 #[derive(Debug, CandidType, thiserror::Error)]
 pub enum Error {
@@ -22,6 +22,29 @@ pub enum Error {
     CandidEncodeError(String),
     #[error("UnAuthorized: {0:?}")]
     UnAuthorized(String),
+
+    #[error("user:{0:?} has box:{1:?}")]
+    BoxHasExists(Principal, u64),
+
+    #[error("user:{0:?} has box:{1:?}")]
+    BoxNotExists(Principal, u64),
+
+    #[error("user:{0:?} , box:{1:?} has been open")]
+    BoxHasOpen(Principal, u64),
+
+    #[error("user:{0:?} , box:{1:?} open error")]
+    BoxOpenError(Principal, u64),
+
+    #[error("user:{0:?} has box:{1:?}")]
+    BoxRewardHasExists(Principal, u64),
+
+    #[error("user:{0:?} not exists")]
+    UserUnInit(Principal),
+
+
+    #[error("pool stake:{0:?} confirm error:{1:?}")]
+    ConfirmStakeError(Principal,String),
+
     #[error("Unknown error")]
     Unknown,
 }

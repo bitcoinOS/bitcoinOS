@@ -1,4 +1,3 @@
-
 use bitcoin::consensus;
 
 use bitcoin::Amount;
@@ -14,10 +13,10 @@ use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address
 
 use crate::domain::request::RedeemRequest;
 use crate::domain::Metadata;
-use crate::error::StakingError;
 use crate::repositories;
 use crate::repositories::counter;
 use crate::repositories::tx_log;
+use wallet::error::StakingError;
 
 use super::public_key;
 

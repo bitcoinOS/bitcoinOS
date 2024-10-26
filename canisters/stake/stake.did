@@ -1,0 +1,40 @@
+type Error = variant {
+  NFTUnStaked : UnStakeRequest;
+  WalletBindError : text;
+  NFTHasStaked : UnStakeRequest;
+  NFTBalanceError : text;
+  NFTTransferError : text;
+  UnAuthorized : text;
+  NFTAllownceError : text;
+  Unknown;
+  NFTTUnstakeError : text;
+};
+type Metadata = record { os_canister : principal; user_canister : principal };
+type Result = variant { Ok : bool; Err : Error };
+type StakeNFT = record {
+  to : principal;
+  nft_id : nat32;
+  staker : principal;
+  stake_at : nat64;
+  from : principal;
+  nft_canister : principal;
+  unstake_at : nat64;
+  amount : nat8;
+  stake_status : StakeStatus;
+};
+type StakeRequest = record {
+  nft_id : nat32;
+  nft_owner : principal;
+  nft_canister : principal;
+};
+type StakeStatus = variant { Stake; Unstake };
+type UnStakeRequest = record { nft_id : nat32; nft_canister : principal };
+service : (Metadata) -> {
+  add_controller : (principal, vec principal) -> (Result);
+  get_all_stake_nft : () -> (vec StakeNFT) query;
+  get_stake_nft : (principal, nat32) -> (opt StakeNFT) query;
+  get_user_stake_nft : (principal) -> (vec StakeNFT) query;
+  metadata : () -> (Metadata) query;
+  stake_nft : (StakeRequest) -> (Result);
+  unstake_nft : (UnStakeRequest) -> (Result);
+}

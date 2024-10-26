@@ -1,5 +1,8 @@
+mod p2pkh;
+mod p2wpkh;
 mod p2wsh;
 
+pub use p2wpkh::*;
 pub use p2wsh::*;
 
 use bitcoin::{CompressedPublicKey, PublicKey, ScriptBuf};

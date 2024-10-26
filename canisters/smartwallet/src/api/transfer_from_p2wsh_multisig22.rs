@@ -54,7 +54,7 @@ async fn init_transfer_request(
     ic_cdk::print("Got wallet ----------- \n");
 
     ic_cdk::print("Starting to build unsigned transaction ---------------- \n");
-    
+
     let sighash_type = bitcoin::EcdsaSighashType::All;
     // Build an unsigned transaction
     let tx_info = wallet::bitcoins::build_unsigned_transaction_p2wsh_multisig22(

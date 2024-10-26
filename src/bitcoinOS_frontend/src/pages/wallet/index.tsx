@@ -1,124 +1,87 @@
-import { Box, Flex, Spacer, Button } from '@chakra-ui/react'
-
-import {
-  Table,
-  Thead,
-  Tbody,
-  Tfoot,
-  Tr,
-  Th,
-  Td,
-  TableCaption,
-  TableContainer,
-} from '@chakra-ui/react'
-
-import { usePointBackend, PointRecord, Metadata } from "../../ic/PointActors";
+import { Box, Flex, Tooltip, Table, Thead, Tbody, Tr, Th, Td, useToast, Button } from '@chakra-ui/react';
+import { usePointBackend, RewardRecord, Metadata } from "../../ic/PointActors";
 import { useInternetIdentity } from "ic-use-internet-identity";
-import { useToast } from '@chakra-ui/react'
-import { useEffect, useState, useRef } from 'react';
-import { point } from '../../../../declarations/point';
-
+import { useEffect, useState } from 'react';
+import { truncateMiddle } from '../../utils/utils'
+import { usePointStore } from '../../store/useStakePool';
+import { checkIdentityExpiration } from '../../utils/utils';
+import { useConnectStore } from '../../store/useConnectStore';
 
 export default function Wallet() {
-  const toast = useToast();
-
-  const { actor: pointBackend } = usePointBackend();
-  const { identity, login } = useInternetIdentity();
-
-  const [isLogin, setIslogin] = useState<boolean>(false)
-  const [isPointInited, setIsPointInited] = useState<boolean>(false)
-  const [pointRank, setPointRank] = useState<PointRecord[]>([])
-
-  const btcunity = 100000000n;
-
-  useEffect(() => {
-    if (identity) {
-      setIslogin(true)
-    }
-    if (!pointBackend) {
-      setIsPointInited(false);
-    } else {
-      setIsPointInited(true);
-    }
-
-  }, [])
-
-  useEffect(() => {
-    if (identity) {
-      setIslogin(true)
-    } else {
-      //setIsLoading(false)
-      setIslogin(false)
-    }
-  }, [identity])
-
-  useEffect(() => {
-    console.log("------sss")
-    console.log(pointBackend)
-    if (pointBackend) {
-      setIsPointInited(true);
-      get_Pointrank()
-    } else {
-      setIsPointInited(false);
-    }
-  }, [pointBackend])
 
 
-  const get_Pointrank = () => {
-    console.log('----------goods')
-    console.log(pointBackend)
-    if (!pointBackend) {
-      return
-    }
-    pointBackend.get_point().then((value: PointRecord[]) => {
-      setPointRank(value)
-      console.log(":--", pointRank)
-    }).catch((error) => {
-      toast({
-        title: 'Info',
-        description: "get stake error",
-        status: 'error',
-        position: 'top',
-        duration: 9000,
-        isClosable: true,
-      });
-      console.error("Error fetching staking pool:", error);
-    }).finally(() => {
-      console.log("goods")
-    });
-  }
   return (
-    <>
-      <Box>
-        <Flex justify="center">
-          <Flex>
-            {pointRank.length > 0 ? (
-              <Table variant='simple'>
-                <Thead>
-                  <Tr>
-                    <Th>Rank</Th>
-                    <Th>account</Th>
-                    <Th isNumeric>staked</Th>
-                    <Th>points</Th>
+    <Box>
+      {/*
+      <Flex justify="center">
+        <Flex>
+          {pointRank.length > 0 ? (
+            <Table variant="simple" border="1px solid #e2e8f0">
+              <Thead>
+                <Tr>
+                  <Th textTransform="none">Rank</Th>
+                  <Th textTransform="none">Wallet/Identity</Th>
+                  <Th textTransform="none">Account</Th>
+                  <Th textTransform="none">Staked</Th>
+                  <Th textTransform="none">Points</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                
+                {matchingRecord && (
+                  <Tr fontSize='14px' backgroundColor="#fff9db" _hover={{ backgroundColor: "#e2e8f0" }}>
+                    <Td>{matchingRecordIndex + 1}</Td>
+                    <Td>{Object.keys(matchingRecord.stake_type)[0]}</Td>
+                    <Td>
+                      {Object.keys(matchingRecord.stake_type)[0] === 'BTCWallet'
+                        ? (
+                          <Tooltip label={matchingRecord.wallet.toString()} aria-label="Full account">
+                            <span>{truncateMiddle(matchingRecord.wallet.toString(), 5, 5)}</span>
+                          </Tooltip>
+                        )
+                        : (
+                          <Tooltip label={matchingRecord.staker.toString()} aria-label="Full account">
+                            <span>{truncateMiddle(matchingRecord.staker.toString(), 5, 5)}</span>
+                          </Tooltip>
+                        )
+                      }
+                    </Td>
+                    <Td>{(Number(matchingRecord.actual_amount) / btcunity).toString()} btc</Td>
+                    <Td>{matchingRecord.points.toString()}</Td>
                   </Tr>
-                </Thead>
-                <Tbody>
-                  {pointRank.map((record, index) => (
-                    <Tr key={index}>
-                      <Td>{index + 1}</Td>
-                      <Td>{record.staker.toString()}</Td>
-                      <Td isNumeric>{(record.actual_amount / btcunity).toString()}</Td>
-                      <Td>{record.points.toString()}</Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            ) : (
-              <div>No data available</div>
-            )}
-          </Flex>
+                )}
+                {pointRank.map((record, index) => (
+                  <Tr key={index} _hover={{ backgroundColor: "#f7fafc" }} fontSize='14px'>
+                    <Td>{index + 1}</Td>
+                    <Td>{Object.keys(record.stake_type)[0]}</Td>
+                    <Td>
+                      {Object.keys(record.stake_type)[0] === 'BTCWallet'
+                        ? (
+                          <Tooltip label={record.wallet.toString()} aria-label="Full account">
+                            <span>{truncateMiddle(record.wallet.toString(), 5, 5)}</span>
+                          </Tooltip>
+                        )
+                        :
+                        (
+                          <Tooltip label={record.staker.toString()} aria-label="Full account">
+                            <span>{truncateMiddle(record.staker.toString(), 5, 5)}</span>
+                          </Tooltip>
+                        )
+                      }
+                    </Td>
+                    <Td>{(Number(record.actual_amount) / btcunity).toString()} btc</Td>
+                    <Td>{record.points.toString()}</Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          ) : (
+            <div>No Rank available</div>
+          )}
         </Flex>
-      </Box>
-    </>
-  )
+      </Flex>
+      */}
+      123
+    </Box>
+  );
 }

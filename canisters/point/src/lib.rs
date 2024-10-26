@@ -7,6 +7,9 @@ pub mod repositories;
 
 use std::borrow::Cow;
 
+#[macro_use]
+extern crate wallet;
+
 use ic_stable_structures::{storable::Bound, Storable};
 
 /// A helper type implementing Storable for all

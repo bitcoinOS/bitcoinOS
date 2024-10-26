@@ -1,6 +1,6 @@
 use candid::{CandidType, Principal};
-
-#[derive(Debug, thiserror::Error, CandidType)]
+use serde::Deserialize;
+#[derive(Debug, thiserror::Error, CandidType, Deserialize)]
 pub enum Error {
     #[error("Invalid transaction")]
     InvalidTransaction,
@@ -25,6 +25,9 @@ pub enum Error {
 
     #[error("Only support P2PKH sign")]
     OnlySupportP2pkhSign,
+
+    #[error("Only support P2WPKH sign")]
+    OnlySupportP2wpkhSign,
 
     #[error("Bitcoin address unmatch network: {0:?}")]
     BitcoinAddressUnmatchNetwork(String),
@@ -61,6 +64,9 @@ pub enum Error {
 
     #[error("Recipients exceeded max limit {0}")]
     ExceededMaxRecipientError(u8),
+
+    #[error("unkown error: {0:?}")]
+    UnkownError(String),
 }
 
 impl From<(ic_cdk::api::call::RejectionCode, String)> for Error {
@@ -84,5 +90,56 @@ impl From<bitcoin::address::FromScriptError> for Error {
 impl From<bitcoin::address::error::ParseError> for Error {
     fn from(e: bitcoin::address::error::ParseError) -> Self {
         Error::BitcoinAddressUnmatchNetwork(e.to_string())
+    }
+}
+
+#[derive(Debug, thiserror::Error, CandidType, Deserialize)]
+pub enum StakingError {
+    #[error("No Authorize to {0:?}")]
+    UnAuthorized(String),
+
+    #[error("Failed to create wallet {0:?}")]
+    CreateWalletError(String),
+
+    #[error("Wallet {0:?} already exists")]
+    WalletAlreadyExists(String),
+
+    #[error("Bitcoin address {0:?} network is unmatched")]
+    BitcoinAddressNetworkUnmatch(String),
+
+    #[error("Invalid bitcoin address: {0:?}")]
+    InvalidBitcoinAddress(String),
+
+    #[error("Append redeem log error: {0:?}")]
+    AppendRedeemLogError(String),
+
+    #[error("Insufficient funds")]
+    InsufficientFunds,
+
+    #[error("Txid: {0:?} staknig record already exists")]
+    StakingRecordAlreadyExists(String),
+
+    #[error("Staking record {0:?} not found")]
+    StakingRecordNotFound(String),
+
+    #[error("Staking pool {0:?} not found")]
+    StakingPoolNotFound(String),
+
+    #[error("Network is unmatched")]
+    InvalidNetwork,
+
+    #[error("Redemption not allowed")]
+    RedemptionNotAllowed,
+
+    #[error("Happens error: {0} when call Steward canister")]
+    StewardCallError(String),
+
+    #[error("Happens error: {0} when call OS canister")]
+    OsCallError(String),
+}
+
+impl From<Error> for StakingError {
+    fn from(value: Error) -> Self {
+        StakingError::CreateWalletError(value.to_string())
     }
 }

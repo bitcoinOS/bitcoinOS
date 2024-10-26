@@ -2,7 +2,7 @@ use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::{
     domain::{
         request::{StakingRequest, TransferInfo, TransferRequest},
-        staking::{StakingRecord, StakingStatus},
+        staking::{StakingRecord, StakingStatus, StakingType},
     },
     utils::ic_time,
 };
@@ -49,6 +49,9 @@ pub(super) async fn serve(
         status: StakingStatus::Pending,
         redeemed_txid: None,
         updated_time: ic_time(),
+        memo: req.memo,
+        stake_type: StakingType::OSWallet,
+        fund_management: req.fund_management.map(|s| s.into()).unwrap_or_default(),
     };
 
     repositories::staking_record::save(stakings)?;

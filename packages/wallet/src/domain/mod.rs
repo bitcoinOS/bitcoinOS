@@ -1,6 +1,9 @@
 pub mod request;
 pub mod response;
+pub mod reward;
 pub mod staking;
+pub mod user;
+pub mod wallet;
 
 use bitcoin::{Address, ScriptBuf};
 use candid::CandidType;
@@ -15,6 +18,9 @@ use crate::error::Error;
 /// Bitcoin Txid String
 pub type TxId = String;
 
+//canister key
+pub type CanisterName = String;
+
 #[derive(Clone, Debug)]
 pub struct Wallet {
     // The witness script of the wallet.
@@ -28,13 +34,17 @@ pub struct Wallet {
 }
 
 /// A wallet type of contains Single signature or 2-of-2 multisig.
-#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, CandidType, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub enum WalletType {
     Single,
     MultiSig22,
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, CandidType, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub enum AddressType {
     /// Pay to pubkey hash.
     P2pkh,
@@ -100,6 +110,12 @@ impl EcdsaKeyIds {
             .to_string(),
         }
     }
+}
+
+#[derive(CandidType, Deserialize, Debug)]
+pub struct EcdsaKeyIdAndDerivationPath {
+    pub key_id: EcdsaKeyId,
+    pub derivation_path: Vec<Vec<u8>>,
 }
 
 #[derive(CandidType, Deserialize, Debug)]

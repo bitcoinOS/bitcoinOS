@@ -6,9 +6,8 @@ use wallet::{
 use crate::{
     context::STATE,
     domain::{Metadata, RawWallet, SelfCustodyKey},
-    error::StakingError,
 };
-
+use wallet::error::StakingError;
 pub(crate) fn get_wallet(key: &SelfCustodyKey) -> Option<RawWallet> {
     STATE.with(|s| s.borrow().wallets.get(key).clone())
 }

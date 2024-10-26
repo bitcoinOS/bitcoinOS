@@ -67,13 +67,16 @@ export default function StakePoolActors({ children }: { children: ReactNode }) {
       });
     }
   };
-
+  //const httpAgentOptions = import.meta.env.VITE_DFX_NETWORK === "local" ? {} : {
+  //  "host": "https://icp-api.io"
+  //}
   return (
     <ActorProvider<_SERVICE>
       canisterId={stakepoolCanister}
       context={actorContext}
       identity={identity}
       idlFactory={idlFactory}
+      //httpAgentOptions={httpAgentOptions}
       onRequest={handleRequest}
       onResponse={handleResponse}
       onRequestError={handleRequestError}

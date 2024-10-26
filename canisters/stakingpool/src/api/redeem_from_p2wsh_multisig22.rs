@@ -1,17 +1,15 @@
-
 use bitcoin::Amount;
 
 use ic_cdk::api::management_canister::main::CanisterId;
 
 use wallet::tx::RecipientAmount;
 
-
 use crate::domain::request::RedeemRequest;
 use crate::domain::Metadata;
-use crate::error::StakingError;
 use crate::repositories;
 use crate::repositories::counter;
 use crate::repositories::tx_log;
+use wallet::error::StakingError;
 
 use super::transfer_from_p2wsh_multisig22;
 
@@ -40,9 +38,6 @@ pub(super) async fn serve(
     // Update the staking record status as `Redeeming`
     repositories::staking_record::redeeming_record(txid.clone(), redeem_time)?;
 
-    // let redeemed_txid = send_p2pkh_transaction(metadata, tx)
-    //     .await
-    //     .map(|txid| txid.to_string())?;
     let redeemed_txid = transfer_from_p2wsh_multisig22::serve(metadata, &[tx]).await?;
 
     repositories::staking_record::redeemed_record(txid, redeem_time, redeemed_txid.clone())?;
@@ -51,4 +46,3 @@ pub(super) async fn serve(
 
     Ok(redeemed_txid)
 }
-

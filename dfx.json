@@ -11,6 +11,12 @@
       },
       "frontend": {}
     },
+    "ic_siwb_provider": {
+      "type": "custom",
+      "candid": "https://github.com/bitcoinOS/ic-siwb/releases/download/init/ic_siwb_provider.did",
+      "wasm": "https://github.com/bitcoinOS/ic-siwb/releases/download/init/ic_siwb_provider.wasm.gz",
+      "frontend": {}
+    },
     "os": {
       "candid": "canisters/os/os.did",
       "package": "os",
@@ -31,7 +37,12 @@
       "package": "smartwallet",
       "type": "rust"
     },
-    "bitcoinOS_frontend": {
+    "stake": {
+      "candid": "canisters/stake/stake.did",
+      "package": "stake",
+      "type": "rust"
+    },
+    "frontend": {
       "dependencies": [
        
         "internet_identity"

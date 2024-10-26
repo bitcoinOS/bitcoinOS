@@ -23,9 +23,11 @@ import {
     ModalBody,
     FormLabel,
     Spinner,
+    Divider,
+    Tag,
     Center
-}
-    from '@chakra-ui/react'
+} from '@chakra-ui/react'
+import { useNavigate } from 'react-router-dom';
 import {
     Table,
     Thead,
@@ -37,14 +39,18 @@ import {
     TableCaption,
     TableContainer,
 } from '@chakra-ui/react'
+import { Card, CardHeader, CardBody, CardFooter } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
-import {
-    BsArrowClockwise, BsBoxArrowUpRight
-} from 'react-icons/bs'
-import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react"
-import { Select } from "@chakra-ui/react"
+
+import { checkIdentityExpiration } from '../../utils/utils';
+import useGetStakePool from '../../utils/poolActor'
+import useGetWalletPool from '../../utils/walletActor';
+
 import React, { useEffect, useState, useRef } from 'react';
-import { WalletStore, StakepoolStore } from "../../store/index"
+import { StakepoolStore, useStakeListStore, useAllInfo, getNetworkInfo } from "../../store/index"
+import { WalletStore } from '../../store/useWalletStore'
+
+
 import { Metadata, useWalletBackend, Result_1 as BalanceResult, StakingRequest, Result_3 as StakeResult, StakingRecords, StakingRecord, MetadataRecords, TransferRequest } from "../../ic/WalletActors";
 import { TotalStakingRequest, utxosRecords, UtxosRequest, UtxosResponse } from "../../ic/WalletActors";
 import { RedeemRequest } from "../../ic/StakePoolActors"
@@ -55,13 +61,27 @@ import { Principal } from "@dfinity/principal"
 import { stakingpool } from '../../../../declarations/stakingpool'
 import { RedeemResponse } from '../../ic/StakePoolActors'
 
+//Components of Line Charts
+import CurvedLineChart from '../../components/chart/CurvedLineChart';
+import ChartContainer from '../../components/chart/ChartContainer';
+import ChatUser from '../../components/chart/ChatUser';
+import { createActor } from "../../../../declarations/smartwallet/index";
+import { createActor as createActor_staking } from "../../../../declarations/stakingpool/index";
+import { usePointBackend } from '../../ic/PointActors';
+import { point } from '../../../../declarations/point';
+
+import { useConnectStore } from '../../store/useConnectStore';
+
 export default function Stake() {
     const toast = useToast();
-
+    const navigate = useNavigate();
+    const { get_stake_pool, get_allstake_records, get_tvl_user, get_btc_price, get_user_list, get_tvl_list } = useGetStakePool();
+    const { btcprice } = getNetworkInfo()
     const { actor: walletBackend } = useWalletBackend();
     const { actor: osBackend } = useOsBackend();
     const { actor: stakeBackend } = useSatkePoolBackend();
-    const { identity, login } = useInternetIdentity();
+    const { actor: pointBackend } = usePointBackend();
+    const { identity } = useInternetIdentity();
     /*--- wallet Info ---*/
     const [walletList, setWalletList] = useState<WalletInfo[]>([])
     const [walletSelect, setWalletSelect] = useState([])
@@ -71,22 +91,26 @@ export default function Stake() {
     const [balance, setBalance] = useState<number>(0)
     const { isOpen: isWalletOpen, onOpen: onWalletOpen, onClose: onWalletClose } = useDisclosure();
 
+    const { get_wallets } = useGetWalletPool()
+
     const [totalBalance, setTotalBalance] = useState<number>(0)
 
     const [stakeBalance, setStakeBalance] = useState<number>(0)
-    const [isstakeBalance, setIsstakeBalance] = useState<number>(0) //已质押数量
+    const [isstakeBalance, setIsstakeBalance] = useState<number>(0)
     const { currentWallet, setCurrentWallet } = WalletStore();
     const { stakepoolCanister, setStakepoolCanister } = StakepoolStore();
     const [balanceError, setBalanceError] = useState<string>("");
     const [isLogin, setIslogin] = useState<boolean>(false)
 
-    const [tvl, setTvl] = useState<number>(0)
-    const [users, setUsers] = useState<number>(0)
+    //const [tvl, setTvl] = useState<number>(0)
+    //const [users, setUsers] = useState<number>(0)
+    const { tvl, users } = useAllInfo()
 
     const [btcUnit, setBtcUnit] = useState('btc');
     const [isWalletInited, setIsWalletInited] = useState<boolean>(false)
     const [isOsInited, setIsOsInited] = useState<boolean>(false)
     const [isStakePoolInited, setIsStakePoolInited] = useState<boolean>(false)
+    const [isPointInited, setIsPointInited] = useState<boolean>(false)
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onClose: onCreateClose } = useDisclosure();
     const [walletName, setWalletName] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -95,8 +119,10 @@ export default function Stake() {
     const [transferBalance, setTransferBalance] = useState<number>(0)
     const [transferAddress, setTransferAddress] = useState<string>("")
     /*--- stake pool Info ---*/
+    const { currentPool, setCurrentPool, poolDetail, setPoolDetail } = useStakeListStore();
     const [isFirstCall, setIsFirstCall] = useState(true);
-    const [stakeList, setStakeList] = useState<StakingPoolInfo[]>([])
+    const stakeList = useStakeListStore((state) => state.stakeList);
+    const setStakeList = useStakeListStore((state) => state.setStakeList);
     const [stakeSelect, setStakeSelect] = useState([])
     const [stakeAddress, setStakeAddress] = useState<string>("")
     const [stakeCanister, setStakeCanister] = useState<Principal>();
@@ -106,11 +132,26 @@ export default function Stake() {
     const [initialLoadDoneStake, setInitialLoadDoneStake] = useState(false);
     const [initialLoadDoneOs, setInitialLoadDoneOs] = useState(false);
 
+    const [currentAccount] = useConnectStore((state) => [state.currentAccount])
+
     const btcunity = 100000000;
-    const [btc, setBtc] = useState(100000000); // 初始值
+    const [btc, setBtc] = useState(100000000); // starting value
+
+
     useEffect(() => {
+        //if (stakeList.length === 0) {
+        //    get_stake_pool(osBackend)
+        //get_wallet_count()
+        //}
         if (identity) {
             setIslogin(true)
+        } else {
+            setIsOsInited(false)
+            setIsLoading(false)
+            setIslogin(false)
+            setIsStakePoolInited(false)
+            setIsWalletInited(false)
+
         }
         if (!walletBackend) {
             setIsWalletInited(false);
@@ -118,114 +159,84 @@ export default function Stake() {
             setIsWalletInited(true);
         }
         if (!stakeBackend) {
-            setIsStakePoolInited(true);
-        } else {
-            get_tvl();
             setIsStakePoolInited(false);
+        } else {
+            //get_tvl();
+            setIsStakePoolInited(true);
         }
         if (!osBackend) {
             setIsOsInited(false)
         } else {
             setIsOsInited(true)
-            get_wallets()
-            console.log("!!!!!!!!!!!!!!!!!!!!!!!")
-            get_stake_pool()
-            get_wallet_count()
+            //get_wallets()
+            //get_stake_pool(osBackend)
+            //get_wallet_count()
         }
     }, [])
 
-    useEffect(() => {
-        if (!initialLoadDoneWallet && walletList.length > 0) {
-            const firstStake = stakeList[0];
-            const firstWallet = walletList[0];
-            setWallet(walletList[0].bitcoin_address)
-            // Trigger onChangeWallet with the first wallet's value
-            // 查找选中的 wallet 项
-            if (walletList[0].bitcoin_address) {
-                const walletselectedItem = walletList.find(item => item.bitcoin_address === walletList[0].bitcoin_address);
-                // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
-                if (walletselectedItem) {
-                    setWalletSelect([walletselectedItem]);
-                }
-
-                updateWalletData(walletList[0].bitcoin_address);
-            }
-            setInitialLoadDoneWallet(true);
-        }
-    }, [walletList, initialLoadDoneWallet]);
-
-    useEffect(() => {
-        if (!initialLoadDoneStake && stakeList.length > 0) {
-            const firstStake = stakeList[0];
-            const firstWallet = walletList[0];
-            get_stake_pool()
-            get_allstake_records(wallet)
-            // 查找选中的 wallet 项
-            if (stakeList[0].bitcoin_address) {
-                const selectedItem = stakeList.find(item => item.bitcoin_address === stakeList[0].bitcoin_address);
-                // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
-                if (selectedItem) {
-                    setStakeSelect([selectedItem]);
-                }
-            }
-            setInitialLoadDoneStake(true);
-        }
-    }, [stakeList, initialLoadDoneStake]);
 
     useEffect(() => {
         if (identity) {
             setIslogin(true)
         } else {
-            setIsLoading(false)
-            setIslogin(false)
+            if (isLogin) {
+                setIsOsInited(false)
+                setIsLoading(false)
+                setIslogin(false)
+                setIsStakePoolInited(false)
+                setIsWalletInited(false)
+            }
         }
     }, [identity])
 
+    useEffect(() => {
+        if (osBackend) {
+            get_tvl_user(osBackend)
+            get_user_list()
+            get_tvl_list()
+        }
+        if (osBackend && stakeList.length === 0) {
+            //get_wallets()
+            get_stake_pool(osBackend)
+            //get_wallet_count()
+            //setInitialLoadDoneOs(true)
+
+        }
+    }, [osBackend])
+
+    useEffect(() => {
+        if (pointBackend) {
+            setIsPointInited(true)
+        }
+
+    }, [pointBackend])
+
     // Get the principal from the backend when an identity is available
     useEffect(() => {
-        debugger
+        // debugger
         if (osBackend) {
             setIsOsInited(true)
         }
-        if (!initialLoadDoneOs && identity && osBackend) {
-            get_wallets()
-            get_stake_pool()
-            get_wallet_count()
-            setInitialLoadDoneOs(true)
-
+        if (identity && osBackend && !wallet) {
+            get_wallets(osBackend)
         }
-    }, [osBackend, identity, initialLoadDoneOs]);
+    }, [osBackend, identity]);
 
     useEffect(() => {
         if (identity && stakeBackend) {
-            get_tvl()
+            //get_tvl()
         }
     }, [stakeBackend, identity]);
 
-
-    /*
-    useEffect(() => {
-        if (identity && walletBackend) {
-            get_tvl()
-            get_balance(wallet)
-            get_stake_balance()
-        }
-    }, [walletBackend, identity]);
-    */
-
-    // useEffect(() => {
-    //     get_balance()
-    //     get_stake_records()
-    // }, [wallet])
     async function onChangeWallet(event: React.ChangeEvent<HTMLSelectElement>) {
         setWallet(event.target.value)
         setTransferAddress('')
         setTransferBalance(0)
         setStakeBalance(0)
 
-        // 查找选中的 wallet 项
+        // Find selected wallet item
         const selectedItem = walletList.find(item => item.bitcoin_address === event.target.value);
-        // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
+        // If the selected item is found and it is not in the walletSelect array, it is added to the array
         if (selectedItem) {
             setWalletSelect([selectedItem]);
         }
@@ -239,31 +250,13 @@ export default function Stake() {
     }
 
     useEffect(() => {
-        console.log('---------bbbbbbbbbbb', stakepoolCanister)
-        get_allstake_records(wallet)
-    }, [stakepoolCanister]);
-    /*--- change stake select ---*/
-    async function onChangeStake(event: React.ChangeEvent<HTMLSelectElement>) {
-        await get_stake_pool()
-        // 查找选中的 wallet 项
-        const selectedItem = stakeList.find(item => item.bitcoin_address === event.target.value);
-        // 如果找到了选中的项，并且它不在 walletSelect 数组中，则添加到数组中
-        if (selectedItem) {
-            setStakeSelect([selectedItem]);
-            setStakeAddress(selectedItem.bitcoin_address)
-            setStakeCanister(selectedItem.staking_pool_canister)
-            setStakepoolCanister(selectedItem.staking_pool_canister.toText())
-            console.log('------ggg', selectedItem.staking_pool_canister.toText())
-        }
-    }
-    useEffect(() => {
-        // 使用新的 btc 值更新 balance
+        // Update balance with new btc value
         if (btc === 1) {
             console.log(btc)
         } else if (btc === 100000000) {
             console.log(btc)
         }
-    }, [btc]); // 当 btc 发生变化时触发更新
+    }, [btc]); // Trigger update when btc changes
     /*--- change btc unit ---*/
     function onChangebtcunit(event: React.ChangeEvent<HTMLSelectElement>) {
         const newUnit = event.target.value;
@@ -303,116 +296,67 @@ export default function Stake() {
         }
 
     }
-    function onMaxClick() {
-        setStakeBalance(balance)
-        setTransferBalance(balance)
+    function resetallInit() {
+        setIsOsInited(false)
+        setIsLoading(false)
+        setIslogin(false)
+        setIsStakePoolInited(false)
+        setIsWalletInited(false)
     }
-    function get_stake_pool() {
+    //Get all pool information
+    async function get_stake_pool_ago() {
         if (!osBackend) return;
-        setIsLoading(true)
-        osBackend.list_staking_pool().then((value: StakingPoolInfo[]) => {
-            setStakeList(value)
+        if (!checkIdentityExpiration(identity)) {
+            resetallInit();
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const value = await osBackend.list_staking_pool();
+            const results = await Promise.all(value.map(async (pool) => {
+                const { staking_pool_canister } = pool;
+                const result = await createActor_staking(staking_pool_canister.toString()).tvl();
+                console.log(result);
+                return {
+                    ...pool,
+                    tvl: result
+                };
+            }));
+
+            setStakeList(results);
+
             if (isFirstCall && value.length > 0) {
-                const stakePool = value[0]
-                setStakeAddress(stakePool.bitcoin_address)
-                setStakeCanister(stakePool.staking_pool_canister)
-                setStakepoolCanister(stakePool.staking_pool_canister.toText())
+                const stakePool = value[0];
+                //setStakeAddress(stakePool.bitcoin_address);
+                //setStakeCanister(stakePool.staking_pool_canister);
+                //setStakepoolCanister(stakePool.staking_pool_canister.toText());
                 setIsFirstCall(false);
             }
-            setIsLoading(false)
-        }).catch((error) => {
+        } catch (error) {
             toast({
                 title: 'Info',
                 description: "get stake error",
                 status: 'error',
-                position: 'top',
+                position: 'bottom-right',
                 duration: 9000,
                 isClosable: true,
             });
             console.error("Error fetching staking pool:", error);
-        }).finally(() => {
+        } finally {
             setIsLoading(false);
-        });
-    }
-    function get_wallets() {
-        if (!osBackend) return;
-        setIsLoading(true)
-        osBackend.my_wallets().then((value: WalletInfo[]) => {
-            if (value && value.length > 0) {
-                setWallet(value[0].bitcoin_address)
-                setWalletList(value);
-                setCurrentWallet(value[0].wallet_canister.toText());
-            }
-            setIsLoading(false)
-        }).catch((error) => {
-            toast({
-                title: 'Info',
-                description: "get wallet error",
-                status: 'error',
-                position: 'top',
-                duration: 9000,
-                isClosable: true,
-            });
-            console.error("Error fetching walletList:", error);
-        }).finally(() => {
-            setIsLoading(false);
-        });
-    }
-    /*
-    function get_wallets_metadata() {
-        if (!walletBackend) return;
-        walletBackend.metadata().then((value) => {
-            if ('Ok' in value) {
-                setWalletMetadata(value.Ok)
-            }
-        })
-        console.log(walletMetadata)
-    }
-    */
-    function get_wallet_count() {
-        if (!osBackend) return;
-        setIsLoading(true)
-        osBackend.count_wallet().then((value: BigInt) => {
-            setUsers(Number(value));
-            setIsLoading(false)
-        }).catch((error) => {
-            toast({
-                title: 'Info',
-                description: "get walletCount error",
-                status: 'error',
-                position: 'top',
-                duration: 9000,
-                isClosable: true,
-            });
-            console.error("Error fetching wallet count:", error);
-        }).finally(() => {
-            setIsLoading(false);
-        });
-    }
-
-    function get_tvl() {
-        if (!stakeBackend) return;
-        // if(wallet.length <=1) return;
-        setIsLoading(true);
-        // walletBackend.metadata().then((value) => {
-        //     console.log(value);
-        // })
-        stakeBackend.tvl().then((v: BigInt) => {
-            setTvl(Number(v) * 1.0 / btcunity)
-            setIsLoading(false);
-        }).catch((error) => {
-            console.error("Error fetching wallet count:", error);
-        }).finally(() => {
-            setIsLoading(false);
-        });
+        }
     }
 
     async function updateWalletData(addr: string) {
         if (!walletBackend) { return };
-        // 初始化加载状态
+        if (!checkIdentityExpiration(identity)) {
+            resetallInit()
+            return
+        }
+        // Initialising the loading state
         setIsLoading(true);
 
-        // 初始化状态值
+        // Initialising state values
         if (!addr || addr.length < 1) {
             setBalance(0);
             setStakeRecords([]);
@@ -422,19 +366,19 @@ export default function Stake() {
 
         try {
 
-            // 并行调用 get_balance 和 get_stake_records
+            // Parallel calls to get_balance and get_stake_records
             const [balanceResult, stakeRecordsResult] = await Promise.all([
                 walletBackend.balance(addr),
                 walletBackend.list_staking()
             ]);
 
-            // 处理余额结果
+            // Processing of balance results
             if ('Err' in balanceResult) {
                 toast({
                     title: 'Balance',
                     description: "get balance error",
                     status: 'error',
-                    position: 'top',
+                    position: 'bottom-right',
                     duration: 9000,
                     isClosable: true,
                 });
@@ -443,7 +387,7 @@ export default function Stake() {
                 setBalance(Number(b) / btcunity);
             }
 
-            // 处理 staking 记录结果
+            // Processing staking Recording results
             if ('Ok' in stakeRecordsResult) {
                 const records: StakingRecord[] = stakeRecordsResult.Ok;
                 setStakeRecords(records);
@@ -460,7 +404,7 @@ export default function Stake() {
                 title: 'Error',
                 description: "Error updating wallet data",
                 status: 'error',
-                position: 'top',
+                position: 'bottom-right',
                 duration: 9000,
                 isClosable: true,
             });
@@ -468,142 +412,13 @@ export default function Stake() {
             setIsLoading(false);
         }
     }
-    async function get_stake_records(addr: string) {
-        if (!walletBackend) return;
-        if (!addr || addr.length <= 1) {
-            setStakeRecords([]);
-            return;
-        }
-        setIsLoading(true);
 
-        try {
-            const v: StakingRecords = await walletBackend.list_staking();
-            if ('Ok' in v) {
-                const records: StakingRecord[] = v.Ok;
-                setStakeRecords(records);
-                let r: bigint = 0n;
-                records.forEach((record) => {
-                    r += record.sent_amount;
-                });
-                setTotalBalance(Number(r) * 1.0 / btcunity);
-            }
-        } catch (error) {
-            console.error('Error getting stake records:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    async function get_allstake_records(addr: string) {
-        console.log("aaaaaaaaaaammmmmmmbbb", stakepoolCanister)
-        if (!stakeBackend) return;
-        if (!addr || addr.length <= 1) {
-            setAllstakeRecords([]);
-            return;
-        }
-        setIsLoading(true);
-        console.log("aaaaaaaaaaammmmmmm22222", stakepoolCanister)
-        try {
-            const v: allStakingRecords = await stakeBackend.list_staking();
-            if ('Ok' in v) {
-                const records: allStakingRecord[] = v.Ok;
-                setAllstakeRecords(records)
-                console.log("gggggoods", records)
-            }
-        } catch (error) {
-            console.error('Error getting stake records:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    async function get_balance(addr: string) {
-        if (!walletBackend) return;
-        // if(wallet.length <=1) return;
-        setIsLoading(true);
-        if (!addr || addr.length < 1) {
-            setBalance(0);
-            setStakeRecords([]);
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const value: BalanceResult = await walletBackend.balance(addr);
-            if ('Err' in value) {
-                toast({
-                    title: 'Balance',
-                    description: "get balance error",
-                    status: 'error',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                });
-            } else {
-                console.log("-------------111")
-                const b: bigint = value.Ok;
-                setBalance(Number(b) / btcunity);
-            }
-        } catch (error) {
-            console.error('Error getting balance:', error);
-            toast({
-                title: 'Balance',
-                description: "get balance error",
-                status: 'error',
-                position: "top",
-                duration: 9000,
-                isClosable: true,
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    async function get_stakebalance(addr: string) {
-        if (!walletBackend) return;
-        setIsLoading(true);
-        if (!addr || addr.length < 1) {
-            setBalance(0);
-            setStakeRecords([]);
-            setIsLoading(false);
-            return;
-        }
-        try {
-            const stakeRequest: TotalStakingRequest = {
-                'sender_address': addr,
-                'staking_canister': stakeCanister,
-            }
-            const value = await walletBackend.total_staking(stakeRequest);
-            if ('Err' in value) {
-                toast({
-                    title: 'Balance',
-                    description: "get balance error",
-                    status: 'error',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                });
-            } else {
-                const b: bigint = value.Ok;
-                setIsstakeBalance(Number(b) / btc);
-                console.log("---------------nnn")
-                console.log(b)
-            }
-        } catch (error) {
-            console.error('Error getting balance:', error);
-            toast({
-                title: 'Balance',
-                description: "get balance error",
-                status: 'error',
-                position: "top",
-                duration: 9000,
-                isClosable: true,
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }
     async function get_wallet_utxos(addr: string) {
         if (!walletBackend) return;
+        if (!checkIdentityExpiration(identity)) {
+            resetallInit()
+            return
+        }
         // if(wallet.length <=1) return;
         setIsLoading(true);
         if (!addr || addr.length < 1) {
@@ -623,18 +438,15 @@ export default function Stake() {
                     title: 'utxo',
                     description: "get balance error",
                     status: 'error',
-                    position: "top",
+                    position: "bottom-right",
                     duration: 9000,
                     isClosable: true,
                 });
             } else {
-                console.log("-------mmm", value)
                 if ('Ok' in value) {
                     const result: UtxosResponse = value.Ok;
                     setWalletUtxos([result])
                 }
-                console.log("--------------------```")
-                console.log(walletUtxos)
             }
         } catch (error) {
             console.error('Error getting utxos:', error);
@@ -642,19 +454,13 @@ export default function Stake() {
                 title: 'Balance',
                 description: "get utxos error",
                 status: 'error',
-                position: "top",
+                position: "bottom-right",
                 duration: 9000,
                 isClosable: true,
             });
         } finally {
             setIsLoading(false);
         }
-    }
-    function get_stake_balance() {
-        if (!osBackend) return;
-        osBackend.my_wallets().then((value: WalletInfo[]) => {
-            setWalletList(value);
-        })
     }
     // function stake_pool_canister(){
     //     if(osBackend){
@@ -666,148 +472,7 @@ export default function Stake() {
     //         })
     //     }
     // }
-    function transfer_balance() {
-        if (!walletBackend) return;
-        setIsLoading(true);
 
-        const amountInSatoshis = Math.round(transferBalance * btc); // 确保是整数
-
-        const TransferInfo: TransferRequest = {
-            txs: [
-                {
-                    recipient: transferAddress,
-                    amount: BigInt(amountInSatoshis) // 确保是整数
-                }
-            ]
-        };
-
-        walletBackend.transfer_from_p2wsh_multisig22(TransferInfo).then((result) => {
-            if ('Err' in result) {
-                toast({
-                    title: 'Transfer',
-                    description: 'transfer balance error',
-                    status: 'error',
-                    duration: 9000,
-                    isClosable: true,
-                });
-            } else {
-                toast({
-                    title: 'Transfer',
-                    status: 'success',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                    render: () => (
-                        <Box color='white' p={3} bg='green.500'>
-                            <Text>transfer balance success</Text>
-                            <Text>{"txid:" + result.Ok}</Text>
-                        </Box>
-                    )
-                });
-            }
-            refresh();
-            setTransferBalance(0);
-            setIsLoading(false);
-        });
-    }
-    function stake_balance() {
-        if (!walletBackend) return;
-        if (!stakeCanister) return;
-        setIsLoading(true);
-
-        const amountInSatoshis = Math.round(stakeBalance * btc);
-        const stakeRequest = {
-            'staking_address': stakeSelect[0].bitcoin_address,
-            'staking_canister': stakeSelect[0].staking_pool_canister,
-            'amount': BigInt(amountInSatoshis), // 确保是整数
-        };
-
-        walletBackend.staking_to_pool_from_p2wsh_multisig22(stakeRequest).then((result) => {
-            if ('Err' in result) {
-                toast({
-                    title: 'Stake',
-                    description: "stake balance error",
-                    status: 'error',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                });
-            } else {
-                toast({
-                    title: 'Stake',
-                    status: 'success',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                    render: () => (
-                        <Box color='white' p={3} bg='green.500'>
-                            <Text>stake balance success</Text>
-                            <Text>{"txid:" + result.Ok}</Text>
-                        </Box>
-                    )
-                });
-            }
-            refresh();
-            setStakeBalance(0);
-            setIsLoading(false);
-        });
-    }
-    function unstake_balance(txid, addr, network) {
-        if (!walletBackend) return
-        if (!stakeCanister) return
-        setIsLoading(true);
-        console.log(network)
-        const unstakeRequest: RedeemRequest = {
-            'txid': txid,
-            'recipient': addr,
-            'network': network,
-        }
-        stakeBackend.redeem_from_p2wsh_multisig22(unstakeRequest).then((result: RedeemResponse) => {
-            if ('Err' in result) {
-                console.log("stake err", result)
-                // 获取 Err 对象中的键和值
-                const errorEntries = Object.entries(result.Err);
-                let errorMessage = '';
-
-                // 生成错误信息字符串
-                if (errorEntries.length > 0) {
-                    const [key, value] = errorEntries[0];
-                    errorMessage = `${key}: ${value}`;
-                }
-
-                toast({
-                    title: 'Unstake',
-                    description: errorMessage || "unstake balance error",
-                    status: 'error',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                })
-            } else {
-                toast({
-                    title: 'Unstake',
-                    status: 'success',
-                    position: "top",
-                    duration: 9000,
-                    isClosable: true,
-                    render: () => (
-                        <Box color='white' p={3} bg='green.500'>
-                            <Text>unstake balance success</Text>
-                            <Text>{"txid:" + result.Ok}</Text>
-                        </Box>
-                    )
-                })
-            }
-            refresh()
-            setIsLoading(false);
-        })
-    }
-    // function get_owner() {
-    //     if (!walletBackend) return;
-    //     walletBackend.owner().then((value) => {
-    //         console.log(value);
-    //     })
-    // }
     function onCreateWallet() {
         onCreateClose()
         if (!osBackend || !identity) {
@@ -816,8 +481,8 @@ export default function Stake() {
         setIsLoading(true)
         osBackend.create_wallet_canister(walletName).then(
             (v) => {
-                get_wallets()
-                get_wallet_count()
+                get_wallets(osBackend)
+                //get_wallet_count()
                 setIsLoading(false)
             }, (e) => {
                 setIsLoading(false)
@@ -827,359 +492,641 @@ export default function Stake() {
     }
     function refresh() {
 
-        get_wallets()
-        get_balance(wallet)
-        get_tvl()
-        get_stake_records(wallet)
-        get_allstake_records(wallet)
-        get_wallet_count()
-        get_stake_pool()
+        get_wallets(osBackend)
+        //get_tvl()
+        //get_wallet_count()
+        get_stake_pool(osBackend)
     }
-    function onStake() {
-        stake_balance()
 
-    }
     function sub(s: string) {
         const l = s.length
         return s.substring(0, 3) + "..." + s.substring(l - 3, l);
-    }
-    function test() {
-
-        /*const updatedWalletList = walletList.map(wallet => {
-            if (wallet.bitcoin_address === 'mpHDyVUSXuKkyySbU2mrG1GK1nauEiqjuo') {
-                return { ...wallet, balance: 1 };
-            }
-            return wallet;
-        });
-        setWalletList(updatedWalletList);
-        console.log(walletList)
-        */
-        get_allstake_records(wallet)
-        console.log(walletSelect)
     }
     const formatDate = (bigintTimestamp) => {
         const date = new Date(Number(bigintTimestamp / 1000000n)); // Assuming the timestamp is in nanoseconds, convert to milliseconds
         return date.toLocaleString();
     };
+
+    // pool list scroll
+    const flexRef = useRef(null);
+    const scrollRight = () => {
+        if (flexRef.current) {
+            flexRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+        }
+    };
+
+    const scrollLeft = () => {
+        if (flexRef.current) {
+            flexRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+        }
+    };
+
+    const test = async () => {
+        const result = await get_user_list()
+        // toast({
+        //     title: 'Error',
+        //     description: "Failed to fetch BTC price after multiple attempts.",
+        //     status: 'error',
+        //     position: 'bottom-right',
+        //     duration: 9000,
+        //     variant: 'left-accent right-accent',
+        //     isClosable: true,
+        //     colorScheme: 'red',
+        //     containerStyle: {
+        //         border: '1px solid #FF8800',
+        //         background: 'white',
+        //         color: 'red',
+        //         borderRadius: 'xl', // 可选：添加圆角
+        //         boxShadow: '0 0 10px rgba(255, 136, 0, 0.2)', // 可选：添加阴影效果
+        //     },
+        // });
+        /*
+        stakeBackend.tvl().then((v: BigInt) => {
+            setTvl(Number(v) * 1.0 / btcunity)
+            setIsLoading(false);
+        }).catch((error) => {
+            console.error("Error fetching wallet count:", error);
+        }).finally(() => {
+            setIsLoading(false);
+        });
+        */
+    }
+
+
+    //Click to enter pool details
+    const onCardClick = async (stake) => {
+        setStakepoolCanister(stake.staking_pool_canister.toText())
+        setCurrentPool(stake);
+        setPoolDetail(true);
+        await get_allstake_records(stake.staking_pool_canister.toText())
+        navigate('/pools');
+    }
     return (
         <>
-            <Flex direction='column' ml='20%' minWidth='1500px'>
+            <Flex direction='column' alignItems='center'>
+                {/*
+                <Button onClick={test}>test</Button>
+                */}
                 {isLoading &&
-                    <Flex zIndex={999999} height="100%" bg="#000" opacity="0.5" width="100%" position="fixed" align="center" justifyContent="center" top={0} left={0}>
-                        <Spinner color='purple.500' size="xl" speed="0.65s"></Spinner>
-                    </Flex>}
-                <Flex mt={6} direction='row'>
-                    <Flex direction='column'>
-                        <Text>
-                            <Heading>bitcoinOS</Heading>  A Decentralized Bitcoin Finance & Assets Management Platform
-                        </Text>
-                        <br />
-                        <Text mt={2}>
-                            <Heading>osBTC</Heading> Earn BTCs And Credits
-
-                        </Text>
+                    <Flex
+                        zIndex={999999}
+                        height="100%"
+                        bg="rgba(0, 0, 0, 0.6)" // 使用 RGBA 调整背景透明度
+                        width="100%"
+                        position="fixed"
+                        align="center"
+                        justify="center"
+                        top={0}
+                        left={0}
+                        backdropFilter="blur(5px)" // 添加背景模糊效果
+                    >
+                        <Spinner
+                            color="purple.500"
+                            size="xl"
+                            speed="0.65s"
+                            thickness="4px" // 调整厚度
+                        />
                     </Flex>
-                    {/* <Flex>
-                        <Image src="bitcoinos.jpg"></Image>
-                    </Flex> */}
+                }
+                <Flex
+                    justifyContent='center'
+                    alignItems='center'
+                    fontSize='16px'
+                    fontWeight='700'
+                    height='40px'
+                    width='100vw'
+                    bgGradient='linear(to-r, #FF8800, #AA00FF, #3600FF, #33CCFF)'
+                    color='white'
+                >
+                    btc Marathon is on!  Come and join us!
                 </Flex>
-                <Flex mt={5}>
-                    <Button onClick={test}>test</Button>
-                    <Text pr={3}>
-                        TVL: {tvl}
-                    </Text>
-                    <Spacer></Spacer>
-                    <Text mr="30%">
-                        Users: {users}
-                    </Text>
-                </Flex>
-                <Box mt={2} boxShadow="lg" border="1px" borderColor="gray.200" borderRadius="md" mr="30%" p={3} zIndex={4}>
+                <Flex
+                    direction='column'
+                    width='100%'
+                    //minWidth='1500px' 
+                    alignItems='center'
+                >
+                    <Flex
+                        width="100%"
+                        backgroundImage="url('./home/background-top.svg')" // Add your background image path
+                        backgroundSize="cover"
+                        backgroundPosition="center"
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                        direction='column'
+                    >
+                        <Flex
+                            width='78%'
+                            maxWidth='1120px'
+                            mt={6}
+                            direction='row'
+                            alignItems='center'
+                            justifyContent='space-between'
+                        //minWidth='1350px'
+                        >
+                            <Flex direction='column'>
+                                <Text>
+                                    <Flex alignItems='center'>
+                                        <Heading fontSize={{ md: '28px', lg: '40px', xl: '40px', '2xl': '40px', '3xl': '40px' }}>BifiPal</Heading>
+                                        <Text
+                                            //mt={2}
+                                            pl='2'
+                                            py='1'
+                                            borderRadius='xl'
+                                            background="linear-gradient(to right, #FFA033, #FFFFFF)"
+                                            fontStyle='italic'
+                                            fontWeight='400'
+                                            ml='2'
+                                            fontSize={{ md: '20px', lg: '20px', xl: '20px', '2xl': '20px', '3xl': '20px' }}
+                                        >
+                                            Make Bitcoin the Pioneer in Finance
+                                        </Text>
+                                    </Flex>
+                                    <Text
+                                        mt={2}
+                                        color='gray.700'
+                                        fontWeight='500'
+                                        fontSize={{ md: '20px', lg: '20px', xl: '20px', '2xl': '20px', '3xl': '20px' }}
+                                    >
+                                        Unlocking the DeFi Gaming Paradigm for Bitcoin
+                                    </Text>
+                                </Text>
+                                <Text
+                                    fontSize={{ md: '20px', lg: '20px', xl: '20px', '2xl': '20px', '3xl': '20px' }}
+                                    color='gray.600'
+                                    fontWeight='500'
+                                    mt='10'
+                                >
+                                    Total {tvl} btc Staked
+                                </Text>
+                            </Flex>
+                            <Flex
+                                alignItems="center"
+                                p={3}
+                                direction="row"
+                                border="2px"
+                                borderColor="gray.200"
+                                borderRadius="3xl"
+                                background="linear-gradient(to right, #CFD9FF, #F2F5FF)" // Setting a linear gradient background from left to right
+                            >
+                                <div>
+                                    <Image height='32px' src="./home/coin.svg"></Image >
+                                </div>
+                                <Flex ml={2} direction='column'>
+                                    <Flex fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>
+                                        <Flex width='40px'><Text color='gray.500' fontWeight='400'>TVL: </Text></Flex><Text color='gray.700' fontWeight='500'>{tvl * btcprice} btc</Text>
+                                    </Flex>
+                                    <Flex fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>
+                                        <Flex width='40px'><Text color='gray.500' fontWeight='400'>Users: </Text></Flex> <Text color='gray.700' fontWeight='500'>{users}</Text>
+                                    </Flex>
+                                </Flex>
+                            </Flex>
+                            {/* <Flex>
+                                <Image src="bitcoinos.jpg"></Image>
+                            </Flex> */}
+                        </Flex>
+                        <Box
+                            position="relative"
+                            width="78%"
+                            maxWidth='1120px'
+                        //overflow="hidden"
+                        //minWidth='1350px'
+                        >
+                            <Flex
+                                mt={5}
+                                borderColor="gray.200"
+                                overflowX="scroll"
+                                width="100%"
+                                ref={flexRef}
+                                whiteSpace="nowrap" // Keeping content on one line
+                                sx={{
+                                    '::-webkit-scrollbar': {
+                                        display: 'none',
+                                    },
+                                    '-ms-overflow-style': 'none',  // IE and Edge
+                                    'scrollbar-width': 'none',  // Firefox
+                                }}
+                            >
+                                {stakeList && stakeList.length > 0 ? (
+                                    stakeList.map((stake, index) => (
+                                        <Card
+                                            key={index}
+                                            borderWidth="1px"
+                                            borderColor="gray.200"
+                                            borderRadius="lg"
+                                            overflow="hidden"
+                                            width='28%'
+                                            //maxWidth="28%" // Make sure the width is consistent
+                                            m={2} // Add margin for spacing between cards
+                                            flexShrink={0} // Prevents card shrinkage
+                                            style={{ cursor: 'pointer' }}
+                                            background="linear-gradient(to right, #FFFFFF 0%, #E0E6FF 100%)" // Linear Gradient Background
+                                            onClick={() => onCardClick(stake)}
+                                        >
+                                            <CardHeader>
+                                                <Flex direction="column">
+                                                    <Flex justifyContent="space-between" alignItems="center" width='100%'>
+                                                        <Flex direction="column">
+                                                            <Flex fontSize={{ md: '14px', lg: '14px', xl: '14px', '2xl': '14px', '3xl': '14px' }} alignContent='center'>
+                                                                <Text>Top {index + 1} </Text>
+                                                                <Tag
+                                                                    size={{ md: 'sm', lg: 'sm', xl: 'sm', '2xl': 'sm', '3xl': 'sm' }}
+                                                                    variant='solid'
+                                                                    colorScheme='teal'
+                                                                    borderRadius='3xl'
+                                                                    ml='3'
+                                                                >{Object.keys(stake.status)[0]}</Tag></Flex>
+                                                            <Text
+                                                                fontSize={{ md: '14px', lg: '14px', xl: '14px', '2xl': '14px', '3xl': '14px' }}
+                                                                mt='2'
+                                                                fontWeight='700'
+                                                            >{stake.name}</Text>
+                                                            <Flex alignItems='center'>
+                                                                <Box
+                                                                    color='#ED8936'
+                                                                    as="span"
+                                                                    fontWeight="bold"
+                                                                    fontSize={{ md: '24px', lg: '24px', xl: '24px', '2xl': '24px', '3xl': '24px' }}
+                                                                >{Number(stake.annual_interest_rate).toFixed(2)}%</Box>
+                                                                <Text fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }} ml='2'>APY</Text>
+                                                            </Flex>
+                                                        </Flex>
+                                                        <Flex>
+                                                            <Image width={{ md: '40px', lg: '40px', xl: '40px', '2xl': '40px', '3xl': '40px' }} src="./home/bitcoin-btc-logo.svg"></Image>
+                                                        </Flex>
+                                                    </Flex>
+                                                    <Flex direction="column" mt='3'>
+                                                        <Flex justifyContent="space-between" pr='2'>
+                                                            <Text fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>Net Asset Value</Text>
+                                                            <Flex fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>
+                                                                <Text fontWeight='bold' mr='1'>
+                                                                    {Number(stake.tvl) * 1.0 / btcunity}
+                                                                </Text>
+                                                                btc
+                                                            </Flex>
+                                                        </Flex>
+                                                        <Flex justifyContent="space-between" pr='2'>
+                                                            <Text fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>TVL</Text>
+                                                            <Flex fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>
+                                                                <Text fontWeight='bold' mr='1'>
+                                                                    {Number(stake.tvl) * 1.0 / btcunity}
+                                                                </Text>
+                                                                btc
+                                                            </Flex>
+                                                        </Flex>
+                                                    </Flex>
+                                                </Flex>
+                                            </CardHeader>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <Text>No staking pools available.</Text>
+                                )}
+                            </Flex>
+                            <Button
+                                position="absolute"
+                                left="-40px"
+                                top="50%"
+                                transform="translateY(-50%)"
+                                zIndex="1"
+                                onClick={scrollLeft}
+                                backgroundColor="#A8B0C1"
+                                color='white'
+                                borderRadius="50%"
+                                width="40px"
+                                height="40px"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                p="0"
+                            >
+                                {'<'}
+                            </Button>
+                            <Button
+                                position="absolute"
+                                right="-40px"
+                                top="50%"
+                                transform="translateY(-50%)"
+                                zIndex="1"
+                                onClick={scrollRight}
+                                backgroundColor="#A8B0C1"
+                                color='white'
+                                borderRadius="50%"
+                                width="40px"
+                                height="40px"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                p="0"
+                            >
+                                {'>'}
+                            </Button>
+                        </Box>
+                    </Flex>
+                    <Flex
+                        maxWidth='1120px'
+                        mt={5}
+                        p={5}
+                        boxShadow="lg"
+                        border="1px"
+                        borderColor="gray.200"
+                        borderRadius="md"
+                        //minWidth='1350px'
+                        width="78%"
+                        direction='column'
+                        bgColor='white'
+                    >
+                        <Flex mb='10' p='6'>
+                            <ChartContainer />
+                            <ChatUser />
+                        </Flex>
+                        <Flex mt={3} mb={8}>
+                            <Text fontWeight='bold' fontSize='24px'>Top Pools</Text>
+                        </Flex>
+                        <Divider />
+                        <Table variant='simple' size='md'>
+                            <Thead>
+                                <Tr fontSize={{ md: '12px', lg: '12px', xl: '12px', '2xl': '12px', '3xl': '12px' }}>
+                                    <Th>#</Th>
+                                    <Th textTransform="none">Pool</Th>
+                                    <Th textTransform="none">TVL(btc)</Th>
+                                    <Th textTransform="none">Volumn(btc)</Th>
+                                    <Th textTransform="none">APR</Th>
+                                </Tr>
+                            </Thead>
+                            <Tbody>
+                                {stakeList && stakeList.length > 0 ? (
+                                    stakeList.map((stake, index) => {
+                                        return (
+                                            <Tr key={index} fontSize={{ md: '14px', lg: '14px', xl: '14px', '2xl': '14px', '3xl': '14px' }}>
+                                                <Td>{index + 1}</Td>
+                                                <Td>
+                                                    <Flex justifyContent='flex-start' alignItems='center'>
+                                                        <Flex>
+                                                            <Image mr='2' height='24px' width={{ md: '24px', lg: '24px', xl: '24px', '2xl': '24px', '3xl': '24px' }} src="./home/bitcoin-btc-logo.svg">
+                                                            </Image>
+                                                            {stake.name}
+                                                        </Flex>
+                                                    </Flex>
+                                                </Td>
+                                                <Td>{Number(stake.tvl) * 1.0 / btcunity}</Td>
+                                                <Td>{Number(stake.tvl) * 1.0 / btcunity}</Td>
+                                                <Td>{stake.annual_interest_rate}%</Td>
+                                                <Td>
+                                                    <Button
+                                                        variant='ghost'
+                                                        color='#3861FB'
+                                                        fontSize='14px'
+                                                        onClick={() => onCardClick(stake)}
+                                                    >Stake</Button>
+                                                </Td>
+                                            </Tr>
 
-                    <Flex width='100%' mb={4}>
-                        <Flex direction='column'>
+                                        );
+                                    })
+                                ) : (
+                                    <Text>No staking pools available.</Text>
+                                )}
+                            </Tbody>
+                        </Table>
+                    </Flex>
+
+                    <Modal
+                        isOpen={isCreateOpen}
+                        onClose={onCreateClose}
+                        isCentered
+                        closeOnOverlayClick={false}
+                    >
+                        <ModalOverlay />
+                        <ModalContent pt='10' pb='8' borderRadius="3xl">
+                            <ModalHeader></ModalHeader>
+                            {/*<ModalCloseButton />*/}
+                            <Image src='./home/createWallet.svg' />
+                            <ModalBody pb={6}>
+                                <Flex justifyContent="center">
+                                    <FormControl width='70%'>
+                                        <FormLabel textAlign="center">You need to create a wallet to continue using our products</FormLabel>
+                                        <Input placeholder="wallet name" onChange={event => setWalletName(event.currentTarget.value)} />
+                                    </FormControl>
+                                </Flex>
+                            </ModalBody>
+
+                            <ModalFooter>
+                                <Flex justifyContent="center" width='100%'>
+                                    <Button
+                                        width='60%'
+                                        bgColor="#000000"
+                                        color="white"
+                                        _hover={{ bg: "purple.300", borderColor: "purple.500" }}
+                                        onClick={onCreateWallet}>
+                                        Create Now
+                                    </Button>
+                                </Flex>
+                            </ModalFooter>
+                        </ModalContent>
+                    </Modal>
+
+
+                    {/*
+                    <Box mt={2} boxShadow="lg" border="1px" borderColor="gray.200" borderRadius="md" p={3} zIndex={4}>
+
+                        <Flex width='100%' mb={4}>
+                            <Flex direction='column'>
+                                <Flex>
+                                    <Text mr={2}>Wallets:</Text>
+                                    <Select onChange={onChangeWallet} mr={10} width="100%" maxWidth="200px">
+                                        {
+                                            walletList.length === 0
+                                                ? <option value="" disabled>No Wallet</option>
+                                                : null
+                                        }
+                                        {
+                                            walletList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.wallet_canister.toText()}>{item.name}</option>))
+                                        }
+                                    </Select>
+                                </Flex>
+                                {wallet.length > 0 && <Text fontSize='sm' mt="2" maxWidth="100%" overflow="auto" whiteSpace="nowrap">address:  {(wallet)}</Text>}
+                                {wallet.length > 0 && <Text fontSize='sm' mt="2">{walletSelect.map((item, index) => (
+                                    Object.keys(item.network).map((key) => (
+                                        <Box key={key}>Network: {key}</Box>
+                                    ))
+                                ))}</Text>}
+                            </Flex>
                             <Flex>
-                                <Text mr={2}>Wallets:</Text>
-                                <Select onChange={onChangeWallet} mr={10} width="100%">
+                                <Text mr={2}>Pools:</Text>
+                                <Select onChange={onChangeStake} mr={10} width="100%">
                                     {
-                                        walletList.length === 0
-                                            ? <option value="" disabled>No Wallet</option>
+                                        stakeList.length === 0
+                                            ? <option value="" disabled>No Pool</option>
                                             : null
                                     }
                                     {
-                                        walletList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.wallet_canister.toText()}>{item.name}</option>))
+                                        stakeList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.os_canister.toText()}>{item.name}</option>))
                                     }
                                 </Select>
                             </Flex>
-                            {wallet.length > 0 && <Text fontSize='sm' mt="2">address:  {(wallet)}</Text>}
-                            {wallet.length > 0 && <Text fontSize='sm' mt="2">{walletSelect.map((item, index) => (
-                                Object.keys(item.network).map((key) => (
-                                    <Box key={key}>Network: {key}</Box>
-                                ))
-                            ))}</Text>}
+                            <Button onClick={onWalletOpen}>Wallet</Button>
+                            <Spacer></Spacer>
+                            <Button
+                                bgColor="orange.400"
+                                color="white"
+                                isDisabled={!isLogin || !isOsInited}
+                                _hover={{ bg: "orange.200", borderColor: "orange.400" }}
+                                onClick={onCreateOpen}
+                                mr='10'
+                            >
+                                Create Wallet
+                            </Button>
+                            <Button
+                                bgColor="orange.400"
+                                color="white"
+                                isDisabled={!isLogin || !isOsInited}
+                                _hover={{ bg: "orange.200", borderColor: "orange.400" }}
+                                onClick={refresh}>
+                                <BsArrowClockwise />
+                            </Button>
+                            <Modal
+                                isOpen={isCreateOpen}
+                                onClose={onCreateClose}
+                            >
+                                <ModalOverlay />
+                                <ModalContent>
+                                    <ModalHeader>Create your wallet</ModalHeader>
+                                    <ModalCloseButton />
+                                    <ModalBody pb={6}>
+                                        <FormControl>
+                                            <FormLabel>wallet name</FormLabel>
+                                            <Input placeholder="wallet name" onChange={event => setWalletName(event.currentTarget.value)} />
+                                        </FormControl>
+                                    </ModalBody>
+
+                                    <ModalFooter>
+                                        <Button
+                                            bgColor="purple.500"
+                                            color="white"
+                                            _hover={{ bg: "purple.300", borderColor: "purple.500" }}
+                                            mr={3} onClick={onCreateWallet}>
+                                            create
+                                        </Button>
+                                        <Button color="white" bgColor="gray.500" onClick={onCreateClose}>Cancel</Button>
+                                    </ModalFooter>
+                                </ModalContent>
+                            </Modal>
                         </Flex>
-                        <Flex>
-                            <Text mr={2}>Pools:</Text>
-                            <Select onChange={onChangeStake} mr={10} width="100%">
-                                {
-                                    stakeList.length === 0
-                                        ? <option value="" disabled>No Pool</option>
-                                        : null
-                                }
-                                {
-                                    stakeList.map((item, index) => (<option key={index} value={item.bitcoin_address} data-id={item.os_canister.toText()}>{item.name}</option>))
-                                }
-                            </Select>
-                        </Flex>
-                        <Button onClick={onWalletOpen}>Wallet</Button>
-                        <Spacer></Spacer>
-                        <Button
-                            bgColor="orange.400"
-                            color="white"
-                            isDisabled={!isLogin || !isOsInited}
-                            _hover={{ bg: "orange.200", borderColor: "orange.400" }}
-                            onClick={onCreateOpen}
-                            mr='10'
-                        >
-                            Create Wallet
-                        </Button>
-                        <Button
-                            bgColor="orange.400"
-                            color="white"
-                            isDisabled={!isLogin || !isOsInited}
-                            _hover={{ bg: "orange.200", borderColor: "orange.400" }}
-                            onClick={refresh}>
-                            <BsArrowClockwise />
-                        </Button>
-                        <Modal
-                            isOpen={isCreateOpen}
-                            onClose={onCreateClose}
-                        >
-                            <ModalOverlay />
-                            <ModalContent>
-                                <ModalHeader>Create your wallet</ModalHeader>
-                                <ModalCloseButton />
-                                <ModalBody pb={6}>
-                                    <FormControl>
-                                        <FormLabel>wallet name</FormLabel>
-                                        <Input placeholder="wallet name" onChange={event => setWalletName(event.currentTarget.value)} />
-                                    </FormControl>
-                                </ModalBody>
-
-                                <ModalFooter>
-                                    <Button
-                                        bgColor="purple.500"
-                                        color="white"
-                                        _hover={{ bg: "purple.300", borderColor: "purple.500" }}
-                                        mr={3} onClick={onCreateWallet}>
-                                        create
-                                    </Button>
-                                    <Button color="white" bgColor="gray.500" onClick={onCreateClose}>Cancel</Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
-                    </Flex>
 
 
-                    <Flex justify="space-around" alignItems="center" width="100%">
-                        <Tabs minHeight="500px" width="100%" maxWidth="600px">
-                            <Flex justifyContent="center" borderBottom="1px solid" borderColor="gray.200">
-                                <TabList>
-                                    <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Transfer</Tab>
-                                    <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake</Tab>
-                                    <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Detail</Tab>
-                                </TabList>
-                            </Flex>
-
-                            <TabPanels>
-                                <TabPanel>
-                                    <Flex mt={2} justifyContent="center">
-                                        <VStack align='left' width='410px'>
-                                            <HStack align='end'>
-                                                <Text fontSize='sm'>BTC Balance:{balance}</Text>
-                                                <Spacer></Spacer>
-                                                <Flex>
-                                                    <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
-                                                    {/* <Button
-                                                    bgColor="orange.400"
-                                                    color="white"
-                                                    size='sm'
-                                                    _hover={{ bg: "orange.200", borderColor: "orange.400" }}
-                                                    onClick={refresh}>
-                                                    <BsBoxArrowUpRight  />
-                                                </Button> */}
-                                                </Flex>
-                                            </HStack>
-                                            <HStack bg="gray.200" p={1} borderRadius="lg">
-
-                                                <InputGroup>
-
-                                                    <Input type="string" value={transferAddress} border="none" placeholder='address' isDisabled={!isLogin} onChange={handleChangeTransferAddress}></Input >
-
-                                                </InputGroup>
-                                            </HStack>
-                                            <HStack bg="gray.200" p={1} borderRadius="lg">
-                                                <InputGroup>
-                                                    <InputLeftElement pointerEvents="none">
-                                                        <Image src='./favicon.png' boxSize="1.2rem" />
-                                                    </InputLeftElement>
-
-                                                    <Input
-                                                        type="number"
-                                                        value={transferBalance}
-                                                        border="none"
-                                                        placeholder='0.0'
-                                                        isDisabled={!isLogin}
-                                                        onChange={handleChangeTransfer}
-                                                        pr="4.5rem" // Add padding to the right to make space for the InputRightElement
-                                                    />
-
-                                                    <InputRightElement width="auto" display="flex" alignItems="center">
-                                                        <Select value={btcUnit} onChange={onChangebtcunit} width="auto" mr={2}>
-                                                            <option value="btc">btc</option>
-                                                            <option value="satoshi">satoshi</option>
-                                                        </Select>
-                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>
-                                                            MAX
-                                                        </Button>
-                                                    </InputRightElement>
-                                                </InputGroup>
-                                            </HStack>
-
-                                            <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
-                                            <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
-                                            <Flex width='100%' direction='column' align="center" pt={4}>
-                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={transferBalance <= 0 || !isOsInited} onClick={transfer_balance}>Transfer</Button>}
-                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} onClick={login}>Login/Registe</Button>}
-                                            </Flex>
-                                        </VStack>
-                                    </Flex>
-                                </TabPanel>
-                                <TabPanel>
-                                    <Flex mt={2} justifyContent="center">
-                                        <VStack align='left' width='410px'>
-                                            <HStack align='end'>
-                                                <Text fontSize='sm'>BTC Balance:{balance}</Text>
-                                                <Spacer></Spacer>
-                                                <Flex>
-                                                    <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
-                                                    {/* <Button
-                                                    bgColor="orange.400"
-                                                    color="white"
-                                                    size='sm'
-                                                    _hover={{ bg: "orange.200", borderColor: "orange.400" }}
-                                                    onClick={refresh}>
-                                                    <BsBoxArrowUpRight  />
-                                                </Button> */}
-                                                </Flex>
-                                            </HStack>
-                                            <HStack bg="gray.200" p={1} borderRadius="lg">
-                                                <InputGroup>
-                                                    <InputLeftElement
-                                                        pointerEvents="none"
-                                                    >
-                                                        <Image src='./favicon.png' boxSize="1.2rem" />
-                                                    </InputLeftElement>
-                                                    <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
-
-                                                    <InputRightElement width="auto" display="flex" alignItems="center">
-                                                        <Select value={btcUnit} onChange={onChangebtcunit} width="auto" mr={2}>
-                                                            <option value="btc">btc</option>
-                                                            <option value="satoshi">satoshi</option>
-                                                        </Select>
-                                                        <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
-                                                    </InputRightElement>
-                                                </InputGroup>
-                                            </HStack>
-                                            <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
-                                            <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
-                                            <Flex width='100%' direction='column' align="center" pt={4}>
-                                                {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Stake</Button>}
-                                                {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} onClick={login}>Login/Registe</Button>}
-                                            </Flex>
-                                        </VStack>
-                                    </Flex>
-                                </TabPanel>
-                                <TabPanel>
-                                    <TableContainer>
-                                        <Table variant='simple' size="sm">
-                                            <Thead>
-                                                <Tr>
-                                                    <Th>Date</Th>
-                                                    <Th>Stake pool</Th>
-                                                    <Th>Ammount(BTC) </Th>
-                                                    <Th>Day</Th>
-                                                </Tr>
-                                            </Thead>
-                                            <Tbody>
-                                                {
-                                                    stakeRecords.map((v, i) => {
-
-                                                        return (
-                                                            <Tr>
-                                                                <Td>{new Date(Number(v.sent_time) / 1000000).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })}</Td>
-                                                                <Td>{sub(v.staking_address)}</Td>
-                                                                <Td>{Number(v.sent_amount) / btc}</Td>
-                                                                <Td>{v.duration_in_day.toString()}</Td>
-                                                                <Td>
-                                                                    <Button onClick={() => unstake_balance(v.txid, wallet, v.network)}>unstake</Button>
-                                                                </Td>
-                                                            </Tr>
-                                                        );
-                                                    })
-                                                }
-                                            </Tbody>
-                                        </Table>
-                                    </TableContainer>
-                                </TabPanel>
-                            </TabPanels>
-                        </Tabs>
-                        <Flex direction="column" >
+                        <Flex justify="space-around" alignItems="center" width="100%">
                             <Tabs minHeight="500px" width="100%" maxWidth="600px">
                                 <Flex justifyContent="center" borderBottom="1px solid" borderColor="gray.200">
                                     <TabList>
-                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake Pool Info</Tab>
-                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake Record </Tab>
+                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Transfer</Tab>
+                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake</Tab>
+                                        <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Detail</Tab>
                                     </TabList>
                                 </Flex>
+
                                 <TabPanels>
                                     <TabPanel>
-                                        {stakeSelect.length > 0 && (
-                                            <Box maxWidth="600px" mx="auto">
+                                        <Flex mt={2} justifyContent="center">
+                                            <VStack align='left' width='410px'>
+                                                <HStack align='end'>
+                                                    <Text fontSize='sm'>BTC Balance:{balance}</Text>
+                                                    <Spacer></Spacer>
+                                                    <Flex>
+                                                        <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
+                                                        // <Button
+                                                        //    bgColor="orange.400"
+                                                        //    color="white"
+                                                        //    size='sm'
+                                                        //    _hover={{ bg: "orange.200", borderColor: "orange.400" }}
+                                                        //    onClick={refresh}>
+                                                        //    <BsBoxArrowUpRight  />
+                                                        //</Button> 
+                                                    </Flex>
+                                                </HStack>
+                                                <HStack bg="gray.200" p={1} borderRadius="lg">
 
-                                                <Table variant='simple' size='sm' maxHeight="380px">
-                                                    <Tbody>
-                                                        {stakeSelect.map((item, index) => (
-                                                            <React.Fragment key={index}>
-                                                                <Tr>
-                                                                    <Td>Name:</Td>
-                                                                    <Td>{item.name}</Td>
-                                                                </Tr>
-                                                                <Tr>
-                                                                    <Td>Canister ID:</Td>
-                                                                    <Td>{item.staking_pool_canister.toText()}</Td>
-                                                                </Tr>
-                                                                <Tr>
-                                                                    <Td>Address:</Td>
-                                                                    <Td>{item.bitcoin_address}</Td>
-                                                                </Tr>
-                                                                <Tr>
-                                                                    <Td>Description:</Td>
-                                                                    <Td>{item.description}</Td>
-                                                                </Tr>
-                                                                <Tr>
-                                                                    <Td>Duration Day:</Td>
-                                                                    <Td>{item.duration_in_day.toString()}</Td>
-                                                                </Tr>
-                                                                <Tr>
-                                                                    <Td>Annual Rata:</Td>
-                                                                    <Td>{item.annual_interest_rate}%</Td>
-                                                                </Tr>
-                                                            </React.Fragment>
-                                                        ))}
-                                                    </Tbody>
-                                                </Table>
-                                            </Box>
-                                        )}
+                                                    <InputGroup>
+
+                                                        <Input type="string" value={transferAddress} border="none" placeholder='address' isDisabled={!isLogin} onChange={handleChangeTransferAddress}></Input >
+
+                                                    </InputGroup>
+                                                </HStack>
+                                                <HStack bg="gray.200" p={1} borderRadius="lg">
+                                                    <InputGroup>
+                                                        <InputLeftElement pointerEvents="none">
+                                                            <Image src='./favicon.png' boxSize="1.2rem" />
+                                                        </InputLeftElement>
+
+                                                        <Input
+                                                            type="number"
+                                                            value={transferBalance}
+                                                            border="none"
+                                                            placeholder='0.0'
+                                                            isDisabled={!isLogin}
+                                                            onChange={handleChangeTransfer}
+                                                            pr="4.5rem" // Add padding to the right to make space for the InputRightElement
+                                                        />
+
+                                                        <InputRightElement width="auto" display="flex" alignItems="center">
+                                                            <Select value={btcUnit} onChange={onChangebtcunit} width="auto" mr={2}>
+                                                                <option value="btc">btc</option>
+                                                                <option value="satoshi">satoshi</option>
+                                                            </Select>
+                                                            <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>
+                                                                MAX
+                                                            </Button>
+                                                        </InputRightElement>
+                                                    </InputGroup>
+                                                </HStack>
+
+                                                <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
+                                                <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
+                                                <Flex width='100%' direction='column' align="center" pt={4}>
+                                                    {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={transferBalance <= 0 || !isOsInited} onClick={transfer_balance}>Transfer</Button>}
+                                                    {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} onClick={login}>Login/Registe</Button>}
+                                                </Flex>
+                                            </VStack>
+                                        </Flex>
+                                    </TabPanel>
+                                    <TabPanel>
+                                        <Flex mt={2} justifyContent="center">
+                                            <VStack align='left' width='410px'>
+                                                <HStack align='end'>
+                                                    <Text fontSize='sm'>BTC Balance:{balance}</Text>
+                                                    <Spacer></Spacer>
+                                                    <Flex>
+                                                        <Text fontSize='sm'>osBTC Balance:{totalBalance}</Text>
+                            
+                                                    </Flex>
+                                                </HStack>
+                                                <HStack bg="gray.200" p={1} borderRadius="lg">
+                                                    <InputGroup>
+                                                        <InputLeftElement
+                                                            pointerEvents="none"
+                                                        >
+                                                            <Image src='./favicon.png' boxSize="1.2rem" />
+                                                        </InputLeftElement>
+                                                        <Input type="number" value={stakeBalance} border="none" placeholder='0.0' isDisabled={!isLogin} onChange={handleChangeStake}></Input >
+
+                                                        <InputRightElement width="auto" display="flex" alignItems="center">
+                                                            <Select value={btcUnit} onChange={onChangebtcunit} width="auto" mr={2}>
+                                                                <option value="btc">btc</option>
+                                                                <option value="satoshi">satoshi</option>
+                                                            </Select>
+                                                            <Button color="orange.300" isDisabled={!isLogin} p={2} fontSize="0.8rem" onClick={onMaxClick}>MAX</Button>
+                                                        </InputRightElement>
+                                                    </InputGroup>
+                                                </HStack>
+                                                <Text fontSize="0.8rem" color='red'><span>{balanceError}</span></Text>
+                                                <Text fontSize='sm'>Exchange Rate 1.00 BTC = 1.00 osBTC</Text>
+                                                <Flex width='100%' direction='column' align="center" pt={4}>
+                                                    {isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} isDisabled={stakeBalance <= 0 || !isOsInited} onClick={onStake}>Stake</Button>}
+                                                    {!isLogin && <Button height="2.5rem" width="40%" color="white" bgColor="orange.400" _hover={{ bg: "orange.200", borderColor: "orange.400" }} onClick={login}>Login/Registe</Button>}
+                                                </Flex>
+                                            </VStack>
+                                        </Flex>
                                     </TabPanel>
                                     <TabPanel>
                                         <TableContainer>
@@ -1194,7 +1141,7 @@ export default function Stake() {
                                                 </Thead>
                                                 <Tbody>
                                                     {
-                                                        allstakeRecords.map((v, i) => {
+                                                        stakeRecords.map((v, i) => {
 
                                                             return (
                                                                 <Tr>
@@ -1202,6 +1149,9 @@ export default function Stake() {
                                                                     <Td>{sub(v.staking_address)}</Td>
                                                                     <Td>{Number(v.sent_amount) / btc}</Td>
                                                                     <Td>{v.duration_in_day.toString()}</Td>
+                                                                    <Td>
+                                                                        <Button onClick={() => unstake_balance(v.txid, wallet, v.network)}>unstake</Button>
+                                                                    </Td>
                                                                 </Tr>
                                                             );
                                                         })
@@ -1212,9 +1162,90 @@ export default function Stake() {
                                     </TabPanel>
                                 </TabPanels>
                             </Tabs>
+                            <Flex direction="column" >
+                                <Tabs minHeight="500px" width="100%" maxWidth="600px">
+                                    <Flex justifyContent="center" borderBottom="1px solid" borderColor="gray.200">
+                                        <TabList>
+                                            <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake Pool Info</Tab>
+                                            <Tab mr={10} _selected={{ color: 'orange.400', borderBottom: '2px solid', borderColor: 'orange.400' }}>Stake Record </Tab>
+                                        </TabList>
+                                    </Flex>
+                                    <TabPanels>
+                                        <TabPanel>
+                                            {stakeSelect.length > 0 && (
+                                                <Box maxWidth="600px" mx="auto">
+
+                                                    <Table variant='simple' size='sm' maxHeight="380px">
+                                                        <Tbody>
+                                                            {stakeSelect.map((item, index) => (
+                                                                <React.Fragment key={index}>
+                                                                    <Tr>
+                                                                        <Td>Name:</Td>
+                                                                        <Td>{item.name}</Td>
+                                                                    </Tr>
+                                                                    <Tr>
+                                                                        <Td>Canister ID:</Td>
+                                                                        <Td>{item.staking_pool_canister.toText()}</Td>
+                                                                    </Tr>
+                                                                    <Tr>
+                                                                        <Td>Address:</Td>
+                                                                        <Td>{item.bitcoin_address}</Td>
+                                                                    </Tr>
+                                                                    <Tr>
+                                                                        <Td>Description:</Td>
+                                                                        <Td>{item.description}</Td>
+                                                                    </Tr>
+                                                                    <Tr>
+                                                                        <Td>Duration Day:</Td>
+                                                                        <Td>{item.duration_in_day.toString()}</Td>
+                                                                    </Tr>
+                                                                    <Tr>
+                                                                        <Td>Annual Rata:</Td>
+                                                                        <Td>{item.annual_interest_rate}%</Td>
+                                                                    </Tr>
+                                                                </React.Fragment>
+                                                            ))}
+                                                        </Tbody>
+                                                    </Table>
+                                                </Box>
+                                            )}
+                                        </TabPanel>
+                                        <TabPanel>
+                                            <TableContainer>
+                                                <Table variant='simple' size="sm">
+                                                    <Thead>
+                                                        <Tr>
+                                                            <Th>Date</Th>
+                                                            <Th>Stake pool</Th>
+                                                            <Th>Ammount(BTC) </Th>
+                                                            <Th>Day</Th>
+                                                        </Tr>
+                                                    </Thead>
+                                                    <Tbody>
+                                                        {
+                                                            allstakeRecords.map((v, i) => {
+
+                                                                return (
+                                                                    <Tr>
+                                                                        <Td>{new Date(Number(v.sent_time) / 1000000).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })}</Td>
+                                                                        <Td>{sub(v.staking_address)}</Td>
+                                                                        <Td>{Number(v.sent_amount) / btc}</Td>
+                                                                        <Td>{v.duration_in_day.toString()}</Td>
+                                                                    </Tr>
+                                                                );
+                                                            })
+                                                        }
+                                                    </Tbody>
+                                                </Table>
+                                            </TableContainer>
+                                        </TabPanel>
+                                    </TabPanels>
+                                </Tabs>
+                            </Flex>
                         </Flex>
-                    </Flex>
-                </Box >
+                    </Box >
+                     */}
+                </Flex>
                 <Modal isOpen={isWalletOpen} onClose={onWalletClose} isCentered={true}>
                     <ModalOverlay />
                     <ModalContent maxW="35%" minW="700px">

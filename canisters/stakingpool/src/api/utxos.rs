@@ -1,7 +1,7 @@
 use ic_cdk::api::management_canister::bitcoin::{BitcoinNetwork, UtxoFilter};
 use wallet::domain::response::UtxosResponse;
 
-use crate::error::StakingError;
+use wallet::error::StakingError;
 
 pub async fn serve(
     address: String,

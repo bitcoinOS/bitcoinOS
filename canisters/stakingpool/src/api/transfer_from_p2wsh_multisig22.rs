@@ -11,8 +11,8 @@ use wallet::utils::{
 };
 
 use crate::domain::Metadata;
-use crate::error::StakingError;
 use crate::repositories;
+use wallet::error::StakingError;
 
 pub(super) async fn serve(
     metadata: Metadata,

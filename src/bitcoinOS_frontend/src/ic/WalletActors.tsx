@@ -14,10 +14,10 @@ import { ReactNode } from "react";
 import { _SERVICE } from "../../../declarations/smartwallet/smartwallet.did";
 import toast from "react-hot-toast";
 import { useInternetIdentity } from "ic-use-internet-identity";
-import { WalletStore } from "../store/index"
+import { WalletStore } from "../store/useWalletStore"
 
 export { type Metadata, type Result_1, type StakingRequest, type Result_3, type Result_5 as StakingRecords, type Result_6 as MetadataRecords, type StakingRecord, type TransferRequest } from "../../../declarations/smartwallet/smartwallet.did";
-export { type TotalStakingRequest, type Result_11 as utxosRecords, type UtxosRequest, type UtxosResponse } from "../../../declarations/smartwallet/smartwallet.did";
+export { type TotalStakingRequest, type Result_12 as utxosRecords, type UtxosRequest, type UtxosResponse, type StakingType } from "../../../declarations/smartwallet/smartwallet.did";
 
 const actorContext = createActorContext<_SERVICE>();
 export const useWalletBackend = createUseActorHook<_SERVICE>(actorContext);
@@ -70,13 +70,16 @@ export default function WalletActors({ children }: { children: ReactNode }) {
       });
     }
   };
-
+  //const httpAgentOptions = import.meta.env.VITE_DFX_NETWORK === "local" ? {} : {
+  //  "host": "https://icp-api.io"
+  //}
   return (
     <ActorProvider<_SERVICE>
       canisterId={currentWallet}
       context={actorContext}
       identity={identity}
       idlFactory={idlFactory}
+      //httpAgentOptions={httpAgentOptions}
       onRequest={handleRequest}
       onResponse={handleResponse}
       onRequestError={handleRequestError}

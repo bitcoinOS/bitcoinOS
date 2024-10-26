@@ -2,7 +2,7 @@
 
 source ./scripts/did.utils.sh
 
-CANISTERS=os,smartwallet,stakingpool,point,steward
+CANISTERS=smartwallet,stakingpool,dbank,os,point,steward,stake
 
 for canister in $(echo $CANISTERS | sed "s/,/ /g")
 do

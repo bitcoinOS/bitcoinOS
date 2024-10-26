@@ -1,29 +1,49 @@
 type BitcoinNetwork = variant { mainnet; regtest; testnet };
 type EcdsaCurve = variant { secp256k1 };
 type EcdsaKeyId = record { name : text; curve : EcdsaCurve };
-type InitArgument = record {
+type FundManagement = variant { Locktime; Transfer };
+type InitStakingPoolArgument = record {
+  status : text;
   os_canister : principal;
   name : text;
   network : BitcoinNetwork;
   description : text;
+  end_time : nat64;
   duration_in_day : nat64;
   steward_canister : principal;
+  start_time : nat64;
+  fund_management : text;
+  minimum_stake_amount : opt nat64;
+  boost_rate : opt nat64;
   annual_interest_rate : nat16;
 };
 type Metadata = record {
   ecdsa_key_id : EcdsaKeyId;
+  status : PoolStatus;
   os_canister : principal;
   owner : principal;
   name : text;
   network : BitcoinNetwork;
   description : text;
+  end_time : nat64;
   duration_in_day : nat64;
   steward_canister : principal;
+  start_time : nat64;
+  fund_management : FundManagement;
+  minimum_stake_amount : opt nat64;
   updated_time : nat64;
+  boost_rate : opt nat64;
   annual_interest_rate : nat16;
 };
 type NetworkResponse = record { network : text };
 type Outpoint = record { txid : text; vout : nat32 };
+type PoolStatus = variant {
+  Terminated;
+  Inactive;
+  Suspended;
+  Activing;
+  Completed;
+};
 type RedeemLog = record {
   req : RedeemRequest;
   send_time : nat64;
@@ -34,11 +54,15 @@ type RedeemRequest = record {
   recipient : text;
   network : BitcoinNetwork;
 };
-type RegisterStakingRequest = record {
+type RegisterStakingRecordRequest = record {
   sender_address : text;
+  memo : opt text;
   txid : text;
   network : BitcoinNetwork;
+  stake_type : StakingType;
   sender : principal;
+  staking_canister : principal;
+  fund_management : text;
   sent_time : nat64;
   sent_amount : nat64;
 };
@@ -57,6 +81,8 @@ type StakingError = variant {
   UnAuthorized : text;
   CreateWalletError : text;
   InvalidNetwork;
+  OsCallError : text;
+  StakingPoolNotFound : text;
   InvalidBitcoinAddress : text;
   InsufficientFunds;
   StakingRecordNotFound : text;
@@ -66,12 +92,15 @@ type StakingRecord = record {
   redeemed_txid : opt text;
   sender_address : text;
   staking_address : text;
+  memo : opt text;
   txid : text;
   network : BitcoinNetwork;
+  stake_type : StakingType;
   sender : principal;
   duration_in_day : nat64;
   actual_amount : nat64;
   staking_canister : principal;
+  fund_management : FundManagement;
   sent_time : nat64;
   sent_amount : nat64;
   sender_canister : principal;
@@ -79,8 +108,34 @@ type StakingRecord = record {
   annual_interest_rate : nat16;
 };
 type StakingStatus = variant { Redeemed; Redeeming; Confirmed; Pending };
+type StakingType = variant { OSWallet; BTCWallet };
 type TransferInfo = record { recipient : text; amount : nat64 };
 type TransferRequest = record { txs : vec TransferInfo };
+type UpdateStakingPoolInfoRequest = record {
+  status : text;
+  name : text;
+  description : text;
+  end_time : nat64;
+  duration_in_day : nat64;
+  start_time : nat64;
+  fund_management : FundManagement;
+  staking_pool_canister : principal;
+  annual_interest_rate : nat16;
+};
+type UpdateStakingPoolInfoResponse = record {
+  status : PoolStatus;
+  name : text;
+  description : text;
+  end_time : nat64;
+  duration_in_day : nat64;
+  start_time : nat64;
+  fund_management : FundManagement;
+  annual_interest_rate : nat16;
+};
+type UpdateStakingPoolStatusRequest = record {
+  status : text;
+  staking_pool_canister : principal;
+};
 type Utxo = record { height : nat32; value : nat64; outpoint : Outpoint };
 type UtxoFilter = variant { page : blob; min_confirmations : nat32 };
 type UtxosRequest = record { filter : opt UtxoFilter; address : text };
@@ -90,13 +145,15 @@ type UtxosResponse = record {
   tip_block_hash : blob;
   utxos : vec Utxo;
 };
-service : (InitArgument) -> {
+service : (InitStakingPoolArgument) -> {
+  add_staking_record : (RegisterStakingRecordRequest) -> (StakingRecord);
   balance : (text) -> (Result);
   confirm_staking_record : () -> (bool);
   confirm_staking_record_one : (text) -> (opt StakingRecord);
   counter : () -> (nat) query;
   get_staking : (text) -> (opt StakingRecord) query;
   list_staking : () -> (Result_1) query;
+  list_staking_by_wallet : (text) -> (Result_1) query;
   metadata : () -> (Result_2) query;
   network : () -> (NetworkResponse) query;
   p2pkh_address : () -> (text);
@@ -104,10 +161,14 @@ service : (InitArgument) -> {
   redeem : (RedeemRequest) -> (Result_3);
   redeem_from_p2wsh_multisig22 : (RedeemRequest) -> (Result_3);
   redeem_logs : () -> (vec RedeemLog) query;
-  register_staking_record : (RegisterStakingRequest) -> (StakingRecord);
+  register_staking_record : (RegisterStakingRecordRequest) -> (StakingRecord);
   set_steward_canister : (principal) -> (text);
   transfer_from_p2pkh : (TransferRequest) -> (Result_3);
   transfer_from_p2wsh_multisig22 : (TransferRequest) -> (Result_3);
   tvl : () -> (nat64) query;
+  update_staking_pool_info : (UpdateStakingPoolInfoRequest) -> (
+      UpdateStakingPoolInfoResponse,
+    );
+  update_staking_pool_status : (UpdateStakingPoolStatusRequest) -> (text);
   utxos : (UtxosRequest) -> (Result_4);
 }

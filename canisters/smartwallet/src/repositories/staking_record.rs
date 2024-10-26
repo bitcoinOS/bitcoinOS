@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+
+use candid::Principal;
 use ic_cdk::api::management_canister::main::CanisterId;
 use wallet::domain::{staking::StakingRecord, TxId};
 
@@ -38,6 +41,16 @@ pub(crate) fn list_staking() -> Vec<StakingRecord> {
             .map(|(_, r)| r.to_owned())
             .collect()
     })
+}
+
+pub(crate) fn my_staked_pools(owner: &Principal) -> Vec<CanisterId> {
+    let staked_pools: HashSet<CanisterId> = list_staking()
+        .iter()
+        .filter(|r| &r.sender == owner)
+        .map(|r| r.staking_canister)
+        .collect();
+
+    staked_pools.into_iter().collect()
 }
 
 pub(crate) fn update(pool_record: StakingRecord) -> Result<(), WalletError> {

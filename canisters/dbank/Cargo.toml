@@ -1,0 +1,37 @@
+[package]
+name = "dbank"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# for ICP
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+ic-cdk-timers = { workspace = true }
+ic-stable-structures = { workspace = true }
+
+# amplijfy = { workspace = true }
+bitcoin = { workspace = true, features=["std"] }
+
+getrandom = { workspace = true }
+hex = { workspace = true }
+maybe-async ={ workspace = true }
+miniscript = { workspace = true, features=["std"] }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+
+thiserror = { workspace = true }
+# zeroize = { workspace = true }
+# zeroize_derive = { workspace = true }
+
+ic-wasi-polyfill = { workspace = true }
+
+wallet = { path = "../../packages/wallet" }
+

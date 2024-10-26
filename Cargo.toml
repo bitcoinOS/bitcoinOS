@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "canisters/*",
-    "packages/*",
+    "canisters/*", "packages/icrc-helper",
+    "packages/wallet",
 ]
 
 resolver = "2"
@@ -9,11 +9,15 @@ resolver = "2"
 [workspace.dependencies]
 # for ICP
 candid = "0.10"
-ic-cdk = "0.14"
-ic-cdk-macros = "0.14"
-ic-ledger-types = "0.11"
-ic-cdk-timers = "0.8" # Feel free to remove this dependency if you don't need timers
+ic-cdk = "0.15"
+ic-cdk-macros = "0.15"
+ic-ledger-types = "0.12"
+ic-cdk-timers = "0.9" # Feel free to remove this dependency if you don't need timers
 ic-stable-structures = "0.6"
+ic-wasi-polyfill = "0.5.0"
+icrc-ledger-agent = { git = "https://github.com/dfinity/ic", package = "icrc-ledger-client", branch = "master" }
+
+
 ciborium = "0.2"
 
 # for Bitcoin
@@ -27,32 +31,17 @@ hex = "0.4"
 maybe-async = "0.2"
 miniscript = { version = "12.0", features = ["std"] }
 
-# for RGB
-# aluvm = "0.11.0-beta.4"
-amplify = "4.6.0"
-# bp-core = "0.11.0-beta.4"
+# amplify = "4.6.0"
 ripemd = "0.1"
 
-# rgb-std = { version = "0.11.0-beta.4", features = ["serde"] }
-# rgb-schemata = "0.11.0-beta.4"
 serde = "1.0"
 serde_json = "1.0"
 sha2 = "0.10.8"
-# strict_encoding = "2.7.0-beta.1"
-# strict_types = "2.7.0-beta.1"
 thiserror = "1"
-zeroize = "1.7"
-zeroize_derive = "1.4"
+# zeroize = "1.7"
+# zeroize_derive = "1.4"
+serde_bytes = "0.11"
 
-[patch.crates-io]
-# bp-consensus = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-# bp-dbc = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-# bp-seals = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-# bp-core = { git = "https://github.com/BP-WG/bp-core", branch = "master" }
-# commit_verify = { git = "https://github.com/LNP-BP/client_side_validation", branch = "master" }
-# rgb-core = { git = "https://github.com/RGB-WG/rgb-core",  branch = "master" }
-# rgb-std = { git = "https://github.com/RGB-WG/rgb-std",  branch = "master" }
-# rgb-schemata = { git = "https://github.com/RGB-WG/rgb-schemata", branch = "master" }
 
 [profile.release]
 debug = 0

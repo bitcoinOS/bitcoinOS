@@ -12,7 +12,7 @@ use wallet::utils::{self, principal_to_derivation_path};
 use wallet::{constants::DEFAULT_FEE_MILLI_SATOSHI, utils::str_to_bitcoin_address};
 
 use crate::domain::Metadata;
-use crate::error::StakingError;
+use wallet::error::StakingError;
 
 pub(super) async fn serve(
     public_key: &[u8],

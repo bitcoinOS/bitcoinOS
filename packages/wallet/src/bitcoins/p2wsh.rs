@@ -27,7 +27,9 @@ pub async fn build_unsigned_transaction_p2wsh_multisig22(
 ) -> Result<TransactionInfo, Error> {
     let fee_per_bytes = super::get_fee_per_byte(network, DEFAULT_FEE_MILLI_SATOSHI).await?;
 
-    ic_cdk::print(format!("Got fee per bytes is: {fee_per_bytes:?} ------------ \n"));
+    ic_cdk::print(format!(
+        "Got fee per bytes is: {fee_per_bytes:?} ------------ \n"
+    ));
 
     // Fetch UTXOs
     ic_cdk::print("Fetching Utxos ------------- \n");
@@ -105,8 +107,12 @@ fn build_transaction_with_fee_p2wsh_multisig_22(
 
     let outputs_and_fee = total_outputs + fee;
 
-    ic_cdk::print(format!("The total spent is: {total_spent:?} -----------\n "));
-    ic_cdk::print(format!("The outputs and fee total is {outputs_and_fee:?} -------------\n "));
+    ic_cdk::print(format!(
+        "The total spent is: {total_spent:?} -----------\n "
+    ));
+    ic_cdk::print(format!(
+        "The outputs and fee total is {outputs_and_fee:?} -------------\n "
+    ));
 
     // Check that we have enough balance to cover the amount we want to spend.
     if total_spent < outputs_and_fee {

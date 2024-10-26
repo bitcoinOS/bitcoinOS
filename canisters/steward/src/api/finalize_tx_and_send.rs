@@ -25,9 +25,12 @@ pub async fn serve(
     )
     .await?;
 
-    let txid = send_transaction(&tx_info.tx, network).await;
+    // let txid = send_transaction(&tx_info.tx, network).await;
+    let txid = tx_info.tx.compute_txid().to_string();
 
-    txid.map(|t| t.to_string())
+    ic_cdk::spawn(send_transaction_for_spawn(tx_info.tx, network));
+
+    Ok(txid)
 }
 
 async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<Txid, StewardError> {
@@ -43,4 +46,8 @@ async fn send_transaction(tx: &Transaction, network: BitcoinNetwork) -> Result<T
     ic_cdk::print("Transaction sent! ------------------ \n");
 
     Ok(txid)
+}
+
+async fn send_transaction_for_spawn(tx: Transaction, network: BitcoinNetwork) {
+    let _ = send_transaction(&tx, network).await;
 }

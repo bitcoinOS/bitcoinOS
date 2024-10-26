@@ -1,6 +1,7 @@
 use ic_cdk::api::management_canister::main::CanisterId;
+use wallet::domain::staking::StakingPoolInfo;
 
-use crate::{domain::StakingPoolInfo, error::Error, repositories};
+use crate::{error::Error, repositories};
 
 pub(super) fn serve(
     staking_pool_canister: CanisterId,

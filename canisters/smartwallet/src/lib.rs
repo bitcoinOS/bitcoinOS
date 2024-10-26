@@ -21,7 +21,9 @@ use ic_cdk::api::management_canister::main::CanisterId;
 use ic_cdk::export_candid;
 
 use serde::Deserialize;
-use wallet::domain::request::{StakingRequest, TransferRequest, UtxosRequest};
+use wallet::domain::request::{
+    RegisterStakingRecordRequest, StakingRequest, TransferRequest, UtxosRequest,
+};
 use wallet::domain::response::UtxosResponse;
 use wallet::domain::staking::StakingRecord;
 use wallet::domain::{EcdsaKeyIds, TxId};
@@ -30,7 +32,7 @@ use wallet::utils::{check_normal_principal, ic_caller, ic_time};
 /// Create a wallet when init the wallet canister
 #[ic_cdk::init]
 async fn init(args: InitArgument) {
-    // ic_wasi_polyfill::init(&[0u8; 32], &[]);
+    ic_wasi_polyfill::init(&[0u8; 32], &[]);
 
     let caller = ic_caller();
     check_normal_principal(caller).expect("user should be a normal principal");

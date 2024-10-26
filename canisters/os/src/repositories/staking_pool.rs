@@ -1,6 +1,7 @@
-use ic_cdk::api::management_canister::{bitcoin::BitcoinNetwork, main::CanisterId};
+use ic_cdk::api::management_canister::main::CanisterId;
+use wallet::domain::staking::{InitStakingPoolArgument, StakingPoolInfo};
 
-use crate::{context::STATE, domain::StakingPoolInfo, error::Error};
+use crate::{context::STATE, error::Error};
 
 pub(crate) fn get(staking_canister: &CanisterId) -> Option<StakingPoolInfo> {
     STATE.with_borrow(|s| s.staking_pools.get(staking_canister))
@@ -16,48 +17,54 @@ pub(crate) fn list_staking_pool() -> Vec<StakingPoolInfo> {
     })
 }
 
-#[allow(clippy::too_many_arguments)]
+pub(crate) fn save(pool_info: StakingPoolInfo) {
+    STATE.with_borrow_mut(|s| {
+        s.staking_pools
+            .insert(pool_info.staking_pool_canister, pool_info)
+    });
+}
+
 pub(crate) fn create_staking_pool(
-    canister_id: CanisterId,
-    network: BitcoinNetwork,
-    os_canister: CanisterId,
+    staking_pool_canister: CanisterId,
     created_at: u64,
-    name: String,
-    description: String,
-    annual_interest_rate: u16,
-    duration_in_millisecond: u64,
     bitcoin_address: String,
-    steward_canister: CanisterId,
+    arg: InitStakingPoolArgument,
 ) -> Result<StakingPoolInfo, Error> {
     STATE.with(|s| {
         let state = &mut s.borrow_mut();
         let staking_pools = &mut state.staking_pools;
 
-        if staking_pools.contains_key(&canister_id) {
+        if staking_pools.contains_key(&staking_pool_canister) {
             Err(Error::StakingPoolAlreadyExists {
-                staking_pool_id: canister_id.to_string(),
+                staking_pool_id: staking_pool_canister.to_string(),
             })
         } else {
             let staking_pool = StakingPoolInfo {
-                name,
-                staking_pool_canister: canister_id,
-                description,
-                network,
-                annual_interest_rate,
-                duration_in_day: duration_in_millisecond,
-                os_canister,
+                name: arg.name,
+                staking_pool_canister,
+                description: arg.description,
+                network: arg.network,
+                annual_interest_rate: arg.annual_interest_rate,
+                duration_in_day: arg.duration_in_day,
+                os_canister: arg.os_canister,
                 created_at,
                 bitcoin_address,
-                steward_canister,
+                steward_canister: arg.steward_canister,
+                status: arg.status.into(),
+                start_time: arg.start_time,
+                // stake_end_time: arg.stake_end_time,
+                end_time: arg.end_time,
+                fund_management: arg.fund_management.into(),
+                boost_rate: arg.boost_rate,
+                minimum_stake_amount: arg.minimum_stake_amount,
             };
 
-            staking_pools.insert(canister_id, staking_pool.clone());
+            staking_pools.insert(staking_pool_canister, staking_pool.clone());
             Ok(staking_pool)
         }
     })
 }
 
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn update_bitcoin_address(
     canister_id: CanisterId,
     bitcoin_address: String,

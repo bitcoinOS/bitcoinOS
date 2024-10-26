@@ -1,4 +1,3 @@
-
 use candid::{CandidType, Decode, Deserialize, Encode};
 use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
 use ic_stable_structures::{storable::Bound, Storable};

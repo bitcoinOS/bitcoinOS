@@ -1,7 +1,8 @@
 use candid::Encode;
 use ic_cdk::api::management_canister::main::{CanisterId, CanisterInstallMode, WasmModule};
+use wallet::domain::staking::InitStakingPoolArgument;
 
-use crate::{domain::request::InitStakingPoolArgument, error::Error, repositories};
+use crate::{error::Error, repositories};
 
 use super::create_staking_pool;
 
@@ -10,17 +11,9 @@ pub(super) async fn serve(
     staking_pool_wasm: WasmModule,
 ) -> Result<(), String> {
     let info = repositories::staking_pool::get(&staking_pool_canister)
-        .ok_or_else(|| format!("Wallet: {staking_pool_canister:?} not found"))?;
+        .ok_or_else(|| format!("Staking pool: {staking_pool_canister:?} not found"))?;
 
-    let arg = InitStakingPoolArgument {
-        name: info.name,
-        network: info.network,
-        description: info.description,
-        annual_interest_rate: info.annual_interest_rate,
-        duration_in_day: info.duration_in_day,
-        os_canister: info.os_canister,
-        steward_canister: info.steward_canister,
-    };
+    let arg: InitStakingPoolArgument = info.into();
 
     let arg_bytes =
         Encode!(&arg).map_err(|e| Error::CandidEncodeError(e.to_string()).to_string())?;

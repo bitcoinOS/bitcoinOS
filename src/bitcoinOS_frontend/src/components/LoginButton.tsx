@@ -5,6 +5,7 @@ import {
 }
   from '@chakra-ui/react'
 import { useInternetIdentity } from "ic-use-internet-identity";
+import { checkIdentityExpiration } from '../utils/utils';
 // import UserStore from "../store/index"
 export function LoginButton() {
   // const { principal, setPrincipal } = UserStore();
@@ -13,6 +14,9 @@ export function LoginButton() {
   // If the user is logged in, clear the identity. Otherwise, log in.
   function handleClick() {
     if (identity) {
+      if (!checkIdentityExpiration(identity)) {
+        login()
+      }
       clear();
     } else {
       login();
@@ -22,6 +26,9 @@ export function LoginButton() {
 
   const text = () => {
     if (identity) {
+      if (!checkIdentityExpiration(identity)) {
+        return "Login/Register"
+      }
       const p = identity.getPrincipal().toString()
       return p.substring(0, 5) + "..." + p.substring(p.length - 3, p.length);
     } else if (isLoggingIn) {

@@ -27,6 +27,11 @@ use crate::error::Error;
 use crate::tx::RecipientAmount;
 use crate::{bitcoins, ecdsa};
 
+use ic_cdk::api::management_canister::http_request::{
+    http_request, CanisterHttpRequestArgument, HttpHeader, HttpMethod,
+};
+use serde_bytes::ByteBuf;
+
 pub type WalletResult<T> = Result<T, Error>;
 
 /// Create a new P2PKH wallet with given arguments
@@ -116,7 +121,7 @@ pub async fn build_transaction(
             tx.clone(),
             EcdsaKeyId::default(),
             vec![],
-            mock_signer,
+            mock_ecdsa_signer,
         )
         .await?;
 
@@ -244,13 +249,13 @@ where
         )
         .await;
 
-        let der_signature = sign_to_der(signature);
+        let mut der_signature = sign_to_der(signature);
 
-        let mut sig_with_hashtype = der_signature;
+        // let mut der_signature = der_signature;
 
-        sig_with_hashtype.push(EcdsaSighashType::All.to_u32() as u8);
+        der_signature.push(EcdsaSighashType::All.to_u32() as u8);
 
-        let sig_push_bytes: PushBytesBuf = sig_with_hashtype.try_into().unwrap();
+        let sig_push_bytes: PushBytesBuf = der_signature.try_into().unwrap();
         let public_key_push_bytes: PushBytesBuf = public_key.to_vec().try_into().unwrap();
         tx_in.script_sig = Builder::new()
             .push_slice(sig_push_bytes.as_ref())
@@ -272,7 +277,7 @@ pub fn validate_p2pkh_address(address: &Address) -> Result<(), Error> {
 }
 
 // A mock for rubber-stamping ECDSA signatures for P2PKH
-pub async fn mock_signer(
+pub async fn mock_ecdsa_signer(
     _derivation_path: Vec<Vec<u8>>,
     _key_id: EcdsaKeyId,
     _message_hash: Vec<u8>,
@@ -348,7 +353,9 @@ pub fn validate_recipient_cnt_must_less_than_100(txs: &[RecipientAmount]) -> Res
     }
 }
 
-pub fn validate_recipient_amount_must_greater_than_1000(txs: &[RecipientAmount]) -> Result<(), Error> {
+pub fn validate_recipient_amount_must_greater_than_1000(
+    txs: &[RecipientAmount],
+) -> Result<(), Error> {
     if txs.iter().any(|info| info.amount.to_sat() < DUST_THRESHOLD) {
         Err(Error::InsufficientFunds)
     } else {
@@ -425,3 +432,106 @@ pub fn ic_time() -> u64 {
 pub fn canister_id() -> Principal {
     ic_cdk::id()
 }
+
+// days number to 1970-01-01
+pub fn time_to_day(t: u64) -> u64 {
+    t / 1000000000 / 86400 * 86400
+}
+// days number to 1970-01-01
+pub fn get_time_for_day() -> u64 {
+    let t = ic_cdk::api::time();
+    t / 1000000000 / 86400 * 86400
+}
+// days number to 1970-01-01
+pub fn add_now_n_day(day: u64) -> u64 {
+    let t: u64 = ic_cdk::api::time();
+    let today = t / 1000000000 / 86400 * 86400;
+    today + day * 86400
+}
+
+pub fn add_day_n_day(now: u64, day: u64) -> u64 {
+    now + day * 86400
+}
+pub fn sub_day_n_day(now: u64, day: u64) -> u64 {
+    now - day * 86400
+}
+
+pub fn gen_invite_code(rand: u128) -> String {
+    let mut code = Vec::new();
+    let seq = rand.to_string();
+    code.append(seq.clone().into_bytes().as_mut());
+    let now_millis = ic_cdk::api::time();
+    let bytes = now_millis.to_be_bytes();
+    // for i in 0..(8 - seq.len()) {
+    //     code.push(bytes[i] % 26 + 97);
+    // }
+
+    for i in bytes.iter().take(8 - seq.len()) {
+        code.push(*i % 26 + 97);
+    }
+
+    String::from_utf8_lossy(&code).to_string()
+}
+pub async fn get_siwb_principal(siwb_canister: Principal, wallet_address: String) -> Principal {
+    let wallet_principal_result: Result<(Result<ByteBuf, String>,), _> =
+        ic_cdk::call(siwb_canister, "get_principal", ((wallet_address.clone()),)).await;
+    match wallet_principal_result {
+        Ok(e) => match e.0 {
+            Ok(ee) => Principal::from_slice(ee.as_slice()),
+            Err(ee) => {
+                ic_cdk::print(format!("get siwb address1:{}", ee));
+                Principal::anonymous()
+            }
+        },
+        Err(e) => {
+            ic_cdk::print(format!("get siwb address1:{}", e.1));
+            Principal::anonymous()
+        }
+    }
+}
+pub fn is_anonymous(caller: Principal) -> bool {
+    caller == Principal::anonymous()
+}
+
+pub async fn http_get(
+    url: String,
+    http_headers: Vec<HttpHeader>,
+    cycles: u128,
+) -> Result<String, Error> {
+    //note "CanisterHttpRequestArgument" and "HttpMethod" are declared in line 4
+    let request = CanisterHttpRequestArgument {
+        url: url.to_string(),
+        method: HttpMethod::GET,
+        body: None,               //optional for request
+        max_response_bytes: None, //optional for request
+        // transform: None,          //optional for request
+        transform: None,
+        headers: http_headers,
+    };
+    //so no need for explicit Cycles.add() as in Motoko
+    match http_request(request, cycles).await {
+        //4. DECODE AND RETURN THE RESPONSE
+
+        //See:https://docs.rs/ic-cdk/latest/ic_cdk/api/management_canister/http_request/struct.HttpResponse.html
+        Ok((response,)) => {
+            let str_body = String::from_utf8(response.body)
+                .expect("Transformed response is not UTF-8 encoded.");
+            Ok(str_body)
+        }
+        Err((r, m)) => {
+            let message =
+                format!("The http_request resulted into error. RejectionCode: {r:?}, Error: {m}");
+            Err(Error::UnkownError(message))
+        }
+    }
+}
+
+// pub fn log(msg: String) -> String {
+//     format!(
+//         "time:{},file:{},line:{},message:{}",
+//         ic_cdk::api::time(),
+//         std::file!(),
+//         std::line!(),
+//         msg
+//     )
+// }
