@@ -95,89 +95,10 @@ use crate::{
 /// Create a smart wallet canister, log the action, and store the wallet owner info
 #[ic_cdk::query]
 async fn create_wallet_canister(name: String) -> Result<Principal, Error> {
+    // Replace with `DBank caniter` to create wallet
     Err(Error::UnAuthorized(name.to_string()))
 }
 
-//     let os = ic_cdk::id();
-//     let owner = ic_cdk::caller();
-//     let created_at = ic_cdk::api::time();
-
-//     check_wallet_count(owner)?;
-
-//     let metadata = get_metadata();
-
-//     let wallet_canister = create_wallet::serve(
-//         name.clone(),
-//         os,
-//         owner,
-//         metadata.clone(),
-//         WALLET_WASM.to_owned(),
-//     )
-//     .await
-//     .map_err(|msg| Error::CreateCanisterFailed { msg })?;
-
-//     append_wallet_action::serve(owner, Action::Create, created_at)?;
-
-//     let wallet_address = fetch_wallet_address(wallet_canister).await?;
-
-//     let wallet_info = WalletInfo {
-//         name,
-//         owner,
-//         wallet_canister,
-//         bitcoin_address: wallet_address,
-//         network: metadata.network,
-//         steward_canister: metadata.steward_canister,
-//         created_at,
-//     };
-
-//     registry_wallet::serve(wallet_info)?;
-
-//     wallet_counter_increment_one::serve()?;
-
-//     Ok(wallet_canister)
-// }
-
-/// Register a new wallet canister if create new staking pool failed before
-// #[ic_cdk::update]
-// fn register_wallet(arg: RegisterWalletRequest) -> Result<WalletInfo, Error> {
-//     let owner = ic_cdk::caller();
-
-//     if !is_controller(&owner) {
-//         return Err(Error::UnAuthorized(owner.to_string()));
-//     }
-
-//     let created_at = ic_cdk::api::time();
-//     let metadata = get_metadata();
-
-//     ic_cdk::print("Created staking pool canister ----------- \n");
-
-//     let info = WalletInfo {
-//         name: arg.name,
-//         owner: arg.owner,
-//         wallet_canister: arg.wallet_canister,
-//         bitcoin_address: arg.bitcoin_address,
-//         network: metadata.network,
-//         steward_canister: metadata.steward_canister,
-//         created_at,
-//     };
-
-//     registry_wallet::serve(info.clone())?;
-
-//     wallet_counter_increment_one::serve()?;
-
-//     Ok(info)
-// }
-
-/// Update wallet canister with new wasm file for tests
-/// TODO: Remove this once tests when deploy to mainnet
-// #[ic_cdk::update]
-// async fn reinstall_wallet_wasm(wallet_canister: CanisterId) -> Result<(), String> {
-//     if is_controller(&ic_cdk::caller()) {
-//         reinstall_wallet_wasm::serve(wallet_canister, WALLET_WASM.to_owned()).await
-//     } else {
-//         Err("UnAuthorized".to_string())
-//     }
-// }
 
 /// Update Staking pool bitcoin address if neccessary
 #[ic_cdk::update]
@@ -188,17 +109,6 @@ fn update_wallet_bitcoin_address(req: UpdateBitcoinAddressRequest) -> Result<Wal
         Err(Error::UnAuthorized(ic_cdk::caller().to_string()))
     }
 }
-
-/// Update wallet with new wasm file for tests
-/// TODO: Remove this once tests when deploy to mainnet
-// #[ic_cdk::update]
-// async fn upgrade_wallet_wasm(wallet_canister: CanisterId) -> Result<(), String> {
-//     if is_controller(&ic_cdk::caller()) {
-//         upgrade_wallet_wasm::serve(wallet_canister, WALLET_WASM.to_owned()).await
-//     } else {
-//         Err("UnAuthorized".to_string())
-//     }
-// }
 
 /// Create a Staking Pool with given annualized interest rate and duration, name and description
 #[ic_cdk::update]
@@ -231,29 +141,7 @@ async fn create_staking_pool_canister(
         boost_rate: req.boost_rate,
         minimum_stake_amount: req.minimum_stake_amount,
     };
-    // let staking_pool_canister = create_staking_pool::serve(
-    //     init_arg.clone(),
-    //     STAKING_POOL_WASM.to_owned(),
-    //     metadata.wallet_cycles,
-    //     vec![os_canister, owner],
-    // )
-    // .await
-    // .map_err(|msg| Error::CreateCanisterFailed { msg })?;
-
-    // ic_cdk::print("Created staking pool canister ----------- \n");
-
-    // let staking_pool_address = fetch_wallet_address(staking_pool_canister).await?;
-
-    // let info = registry_staking_pool::serve(
-    //     staking_pool_canister,
-    //     created_at,
-    //     staking_pool_address,
-    //     init_arg,
-    // )?;
-
-    // staking_pool_increment_one::serve()?;
-
-    // Ok(info)
+  
     let point_canister_option = get_canister_module::serve("point".to_string()).await;
     if let Some(point_canister) = point_canister_option {
         let staking_pool_canister = create_staking_pool::serve(
@@ -385,18 +273,6 @@ async fn upgrade_dbank_wasm(dbank_id: u64, dbank_canister: CanisterId) -> Result
     }
 }
 
-// /// Register staking record to os canister when staking pool received a staking record
-// #[ic_cdk::update]
-// async fn register_staking_record(staking_record: StakingRecord) -> bool {
-//     let metadata = get_metadata();
-
-//     if metadata.network != staking_record.network {
-//         return false;
-//     }
-
-//     register_staking_record::serve(staking_record).is_ok()
-// }
-
 /// Update staking pool metadata info
 #[ic_cdk::update]
 async fn update_staking_pool_info(
@@ -451,17 +327,6 @@ async fn add_controller(
     }
 }
 
-// /// Sync the staking record confirmed or not
-// #[ic_cdk::update]
-// async fn confirm_staking_record(staking_canister: CanisterId) -> Result<bool, Error> {
-//     let caller = ic_cdk::caller();
-
-//     if !is_controller(&caller) {
-//         return Err(Error::UnAuthorized(caller.to_string()));
-//     }
-
-//     confirm_staking_record::serve(staking_canister).await
-// }
 
 #[ic_cdk::update]
 async fn register_canister_module(
@@ -496,19 +361,6 @@ async fn login_or_create(user_request: UserRequest) -> Result<UserInfo, Error> {
             init_user(user_request.user_id, user_request.user_type).await;
             let user = get_user_info(user_request.user_id);
 
-            // 创建钱包
-            // Comment for ii canister wallet 2024-08-13
-            // let new_wallet_id = if user_request.user_type == UserType::II {
-            //     let wallet = create_my_wallet().await;
-            //     match wallet {
-            //         Ok(r) => Some(r),
-            //         Err(_) => None,
-            //     }
-            // } else {
-            //     None
-            // };
-
-            // If request is a II user, get or create a dbank wallet for user
             let primary_wallet = if user_request.user_type == UserType::II {
                 get_or_create_my_wallet(user_request.name.clone())
                     .await
@@ -833,6 +685,7 @@ fn remove_invited(user_id: Principal) {
         let _ = repositories::user::update_user_info(new_user);
     }
 }
+
 #[ic_cdk::update]
 fn bind_wallet(bind_request: BindRequest) -> Result<bool, Error> {
     bind_wallet::serve(bind_request)
