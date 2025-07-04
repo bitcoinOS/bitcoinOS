@@ -16,3 +16,4 @@ dfx canister install frontend --ic
 # wallet ybrlv-6yaaa-aaaah-qddaq-cai success
 
 dfx canister deposit-cycles --ic 1_000_000_000_000 tyg77-iiaaa-aaaah-qdc7q-cai
+dfx canister deposit-cycles --ic 1_000_000_000_000 7hwzm-laaaa-aaaah-qddqa-cai

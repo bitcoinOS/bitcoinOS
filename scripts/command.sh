@@ -71,3 +71,11 @@ dfx canister call --ic os register_staking_pool '(record { duration_in_day = 30:
 
 -- get address
 dfx canister call --candid canisters/dbank/dbank.did asrmz-lmaaa-aaaaa-qaaeq-cai p2wpkh_address
+
+-- update staking pool info
+dfx canister call --ic os update_staking_pool_info '(record { staking_pool_canister = principal "tyg77-iiaaa-aaaah-qdc7q-cai"; name = "Babylon Staking"; description = "A financial product based on Babylon staking, with an annualized rate of return of 10%"; annual_interest_rate = 10:nat16; bitcoin_address = "tb1q82l3kvlvu5ph4hkv53kuwawd2sguk97cymha2gdclcngn6vflyhqfq4rvd"; status = "active"; start_time = 1_721_664_000_000_000_000:nat64; end_time = 1767196799000000000:nat64; fund_management = variant { Transfer }; duration_in_day = 400:nat64 })'
+dfx canister call --ic os update_staking_pool_info '(record { staking_pool_canister = principal "4ttm4-caaaa-aaaah-qdefq-cai"; name = "Babylon Staking for everyone"; description = "A financial product based on Babylon staking, with an annualized rate of return of 10%"; annual_interest_rate = 10:nat16; bitcoin_address = "tb1qpc9prgt7d20jqr0e0gtd39lng824mmg0zrc64ydapz4ctw5ljnss3rn2y0"; status = "activing"; start_time = 1_721_664_000_000_000_000:nat64; end_time = 1767196799000000000:nat64; fund_management = variant { Transfer }; duration_in_day = 400:nat64 })'
+
+-- update staking pool status
+dfx canister call --ic os update_staking_pool_status '(record { staking_pool_canister = principal "tyg77-iiaaa-aaaah-qdc7q-cai"; status = "active" })'
+
