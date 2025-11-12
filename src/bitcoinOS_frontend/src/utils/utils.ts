@@ -13,7 +13,7 @@ export const icphost = 'https://identity.ic0.app'
 export const backend_ip = 'https://api.bifipal.com/'
 
 //export const nftCanisterId = 'asrmz-lmaaa-aaaaa-qaaeq-cai'
-export const nftCanisterId = 'tfitq-wqaaa-aaaap-aa2xq-cai'
+export const nftCanisterId = 'yrdz3-2yaaa-aaaah-qcvpa-cai'
 
 export function useIdentitySelect() {
     const {
